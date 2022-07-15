@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Extensions\" />
+    <None Remove="Extensions\ModelExtensions\" />
+    <None Remove="Comparer\" />
+    <None Remove="Logger\" />
+    <None Remove="Amazon.Lambda.Core" />
+    <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="Http\" />
+    <None Remove="Exceptions\" />
+    <None Remove="Security\" />
+    <None Remove="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <None Remove="Converters\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Extensions\ModelExtensions\" />
+    <Folder Include="Comparer\" />
+    <Folder Include="Logger\" />
+    <Folder Include="Http\" />
+    <Folder Include="Exceptions\" />
+    <Folder Include="Security\" />
+    <Folder Include="Converters\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.7" />
+  </ItemGroup>
+</Project>

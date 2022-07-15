@@ -1,0 +1,60 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using HCA.Infrastructure.Logger;
+using Amazon.Lambda.Core;
+using HCA.Infrastructure.Security.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using HCA.Infrastructure.Security.Contracts;
+using HCA.Infrastructure.Security.Hashing;
+using Microsoft.Extensions.Configuration;
+
+namespace HCA.Infrastructure
+{
+    public static class Startup
+    {
+        public static IServiceCollection AddAppLogging(this IServiceCollection services, ILambdaContext context)
+        {
+            return services
+                    .AddScoped(p => context.Logger)
+                    .AddScoped<ILogger, AppLogger>();
+        }
+
+        public static IServiceCollection AddConsoleLogging(this IServiceCollection services)
+        {
+            return services
+                    .AddScoped<ILogger, ConsoleAppAppLogger>();
+        }
+
+        public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<TokenOptions>(configuration.GetSection("TokenOptions"));
+            var tokenOptions = configuration.GetSection("TokenOptions").Get<TokenOptions>();
+
+            var signingConfigurations = new SigningConfigurations(tokenOptions.Secret);
+            services.AddSingleton(signingConfigurations);
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(jwtBearerOptions =>
+                    {
+                        jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters()
+                        {
+                            ValidateAudience = true,
+                            ValidateLifetime = true,
+                            ValidateIssuerSigningKey = true,
+                            ValidIssuer = tokenOptions.Issuer,
+                            ValidAudience = tokenOptions.Audience,
+                            IssuerSigningKey = signingConfigurations.SecurityKey,
+                            ClockSkew = TimeSpan.Zero
+                        };
+                    });
+
+            services.AddSingleton(tokenOptions);
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<ITokenHandler, Security.Tokens.TokenHandler>();
+
+            return services;
+        }
+    }
+
+}
+

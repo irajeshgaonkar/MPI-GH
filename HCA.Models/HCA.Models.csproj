@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="MuleSoft\" />
+    <None Remove="Requests\" />
+    <None Remove="Response\" />
+    <None Remove="File\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="MuleSoft\" />
+    <Folder Include="Request\" />
+    <Folder Include="Response\" />
+    <Folder Include="File\" />
+  </ItemGroup>
+</Project>
