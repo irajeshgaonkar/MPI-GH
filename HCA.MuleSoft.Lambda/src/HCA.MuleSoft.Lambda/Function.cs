@@ -90,13 +90,24 @@ public class Function
         var logger = serviceProvider.GetRequiredService<ILogger>();
         var fileDataLoader = serviceProvider.GetRequiredService<IFileDataLoader>();
 
-
         var response = await S3Client.GetObjectMetadataAsync(request.BucketName, request.FileName);
         logger.LogInformation(response.Headers.ContentType);
         logger.LogInformation(response.HttpStatusCode.ToString());
         var fileContent = await S3Client.GetObjectAsync(request.BucketName, request.FileName);
         var fileStream = fileContent.ResponseStream;
-        await fileDataLoader.ProcessFile(request.FileName, new StreamReader(fileStream));
+        var streamReader = new StreamReader(fileStream);
+        await fileDataLoader.ProcessFile(request.FileName, streamReader);
+        await WriteFileToS3(serviceProvider, fileStream, request.BucketName, request.FileName);
+    }
+
+    private async Task WriteFileToS3(ServiceProvider serviceProvider, Stream stream, string bucketName, string fileName)
+    {
+        //var logger = serviceProvider.GetRequiredService<ILogger>();
+        //logger.LogInformation("started uplodated file");
+        //var fileWriter = serviceProvider.GetRequiredService<FileWriter>();
+        //MemoryStream memoryStream = await fileWriter.WriteFile(new Guid("99a4ed1d-6c0a-41ac-a663-a5ae91912822"));
+        //await S3Client.UploadObjectFromStreamAsync(bucketName, "output_" + fileName, memoryStream, new Dictionary<string, object>());
+        //logger.LogInformation("Successfully uplodated file");
     }
 
     private T? DeSerialize<T>(string payLoad)
@@ -114,6 +125,9 @@ public class Function
     public ServiceProvider ConfigureServices(ILambdaContext context, IServiceCollection services, IConfiguration configuration)
     {
         var serviceProvider = services
+                                .AddScoped((s) => S3Client)
+                                //.AddFileWriterReader()
+                                .AddScoped<FileWriter>()
                                 .AddAppLogging(context)
                                 .AddDbContext(configuration)
                                 .AddRepositories()

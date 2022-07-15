@@ -102,6 +102,11 @@ public class UnMergeSourcesResponse : BaseResponse
     public Source UnmergedSource { get; set; }
 }
 
+public class DemographicSearchResponse : BaseResponse
+{
+    public List<ClientIdentity> ClientIdentities { get; set; }
+}
+
 public class LinkSourcesRequest : BaseRequest
 {
     public LinkSourcesRequest(Guid requestId, string trackingId, Source linkToSource, Source source)
@@ -166,4 +171,16 @@ public class UnMergingSourcesRequest : BaseRequest
 
     [Required]
     public Source UnmergeSource { get; set; }
+}
+
+public class DemographicSearchRequest : BaseRequest
+{
+    public DemographicSearchRequest(Guid requestId, string trackingId, IdentityFilter filter)
+        : base(requestId, trackingId)
+    {
+        Filter = filter;
+    }
+
+    [Required]
+    public IdentityFilter Filter { get; set; }
 }

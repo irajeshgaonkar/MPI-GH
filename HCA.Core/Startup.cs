@@ -42,7 +42,8 @@ public static class Startup
             .AddScoped<ILinkIdentityProcessor, LinkIdentityProcessor>()
             .AddScoped<IUnLinkIdentityProcessor, UnLinkIdentityProcessor>()
             .AddScoped<IMergeIdentityProcessor, MergeIdentityProcessor>()
-            .AddScoped<IUnMergeIdentityProcessor, UnMergeIdentityProcessor>();
+            .AddScoped<IUnMergeIdentityProcessor, UnMergeIdentityProcessor>()
+            .AddScoped<IDemographicSearchProcessor, DemographicSearchProcessor>();
 
         return services;
     }

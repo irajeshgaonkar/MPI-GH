@@ -16,11 +16,21 @@ public class ClientIdentityRequestRepository : IClientIdentityRequestRepository
         _dataAdapter = dataAdapter;
     }
 
-    public async Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(Guid requestId) {
-        var requests = _dbContext.ClientIdentityRequests
-                            .Where(c => c.RequestId == requestId && c.Status == DataConstants.Statuses.NotStarted)
-                            .AsEnumerable();
-        return await Task.FromResult(requests);
+    public async Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(Guid requestId, string? status = null) {
+        if (null != status)
+        {
+            var requests = _dbContext.ClientIdentityRequests
+                                .Where(c => c.RequestId == requestId && c.Status == DataConstants.Statuses.NotStarted)
+                                .AsEnumerable();
+            return await Task.FromResult(requests);
+        }
+        else
+        {
+            var requests = _dbContext.ClientIdentityRequests
+                                .Where(c => c.RequestId == requestId)
+                                .AsEnumerable();
+            return await Task.FromResult(requests);
+        }
     }
 
     public async Task InsertBulk(IEnumerable<ClientIdentityRequestEntity> entities)

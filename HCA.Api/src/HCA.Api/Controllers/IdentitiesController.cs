@@ -20,7 +20,13 @@ namespace HCA.Api.Controllers
         [HttpPost]
         public async Task<PagenatedCollection<ClientIdentity>> Identities([FromBody] IdentityFilter filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20)
         {
-            var identitityModels = await _clientIdentityService.GetAll(pagNumber, recordsPerPage);
+            if (!filter.HasFilter())
+            {
+                var searchResult = await _clientIdentityService.GetAll(pagNumber, recordsPerPage);
+                return searchResult;
+            }
+
+            var identitityModels = await _clientIdentityService.Search(pagNumber, recordsPerPage, filter);
             return identitityModels;
         }
 

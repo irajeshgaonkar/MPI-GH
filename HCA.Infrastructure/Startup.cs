@@ -25,6 +25,14 @@ namespace HCA.Infrastructure
                     .AddScoped<ILogger, ConsoleAppAppLogger>();
         }
 
+        //public static IServiceCollection AddFileWriterReader(this IServiceCollection services)
+        //{
+        //    return services
+        //            .AddScoped<IFileWriter, FileWriter>()
+        //            .AddScoped<IFileReader, FileReader>()
+        //            ;
+        //}
+
         public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<TokenOptions>(configuration.GetSection("TokenOptions"));

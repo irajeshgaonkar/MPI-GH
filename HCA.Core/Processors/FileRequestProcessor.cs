@@ -1,4 +1,5 @@
 ﻿using HCA.Core.Mapper;
+using HCA.Core.Processors.CsvFileProcessor;
 using HCA.Data;
 using HCA.Data.Entities;
 using HCA.Data.Repository;
@@ -9,6 +10,58 @@ using HCA.Models;
 using HCA.Models.Request;
 
 namespace HCA.Core.Processors;
+
+public class FileWriter
+{
+    private readonly IFileReader _fileReader;
+
+    private readonly IFileRequestRepository _fileRequestRepository;
+
+    private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
+
+    private readonly IMapper<ClientIdentityRequestEntity, ClientIdentityRequest> _clientIdentityRequestMapper;
+
+    public FileWriter(IFileRequestRepository fileRequestRepository, IClientIdentityRequestRepository clientIdentityRequestRepository,
+        IMapper<ClientIdentityRequestEntity, ClientIdentityRequest> clientIdentityRequestMapper,
+        IFileReader fileReader)
+    {
+        _fileRequestRepository = fileRequestRepository;
+        _clientIdentityRequestRepository = clientIdentityRequestRepository;
+        _clientIdentityRequestMapper = clientIdentityRequestMapper;
+        _fileReader = fileReader;
+    }
+
+    public async Task<MemoryStream> WriteFile(Guid requestId, StreamReader streamReader)
+    {
+        //var fileRequest = await _fileRequestRepository.GetRequest(requestId);
+        var requests = await _clientIdentityRequestRepository.GetRequests(requestId);
+        var models = _clientIdentityRequestMapper.MapToModelCollection(requests);
+
+        var inputLines = _fileReader.ReadLines(streamReader);
+        var headerLines = new List<string>();
+        headerLines.Add(inputLines[0]);
+        headerLines.Add(inputLines[1]);
+        headerLines.Add("MPI Link ID,Source System ID,Source System Last Update ,First Name,Middle Name,Last Name,Suffix,Birth Date,Gender,SSN,Address Type,Address Line 1 ,Address Line 2,Address Line 3,City ,State,Zip Code,Zip Plus Four,Phone type,Phone number,Email type,Email Address,Protectec Population Flag,Protected Population Type,Status,Message,,,,,");
+
+        var lines = new CsvFileWrite().GetCsvFileLines(models);
+
+
+        MemoryStream streamToReturn = new MemoryStream();
+        var writer = new StreamWriter(streamToReturn);
+
+        foreach(var line in headerLines)
+        {
+            writer.WriteLine(line);
+        }
+
+        foreach (var line in lines)
+        {
+            writer.WriteLine(line + ",,,,,");
+        }
+
+        return streamToReturn;
+    }
+}
 
 public class FileRequestProcessor : RequestProcessorBase
 {
@@ -67,7 +120,7 @@ public class FileRequestProcessor : RequestProcessorBase
 
     private async Task ProcessPostIdentity()
     {
-        int maxDegreeOfParallelism = 1;
+        int maxDegreeOfParallelism = 5;
         var processor = _processorProvider.PostIdentityProcessor;
         var groupedRequests = await GetGroupedRequests();
         await groupedRequests.ParallelForEachAsync((requests) => ProcessClientIdentity(processor, requests), maxDegreeOfParallelism);
@@ -109,7 +162,7 @@ public class FileRequestProcessor : RequestProcessorBase
     {
         Guid requestId = _fileRequest.RequestId;
         LogInformation($"RequestId {requestId}: Started getting the request records");
-        var requests = (await _clientIdentityRequestRepository.GetRequests(requestId)).Take(3).ToList();
+        var requests = (await _clientIdentityRequestRepository.GetRequests(requestId, DataConstants.Statuses.NotStarted)).ToList();
         var models = _clientIdentityRequestMapper.MapToModelCollection(requests);
         LogInformation($"RequestId {requestId}: Completed getting the request, records Count: {requests.Count}");
         var groupedRequests = models.GroupBySourceNameAndId();

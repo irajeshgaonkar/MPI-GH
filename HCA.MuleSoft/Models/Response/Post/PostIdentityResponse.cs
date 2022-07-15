@@ -20,3 +20,19 @@ public class PostIdentityResponse : BaseResponse<PostIdentityResponseContent>
     }
 }
 
+public class DemoGraphicSearchResponse: BaseResponse<DemographicSearchContent>
+{
+    public DemoGraphicSearchResponse(string trackingId, Guid auditId, bool retryableError, string message, List<string> errors, DemographicSearchContent content)
+            : base(trackingId, auditId, retryableError, message, errors, content)
+    {
+    }
+
+}
+
+public class DemographicSearchContent
+{
+    public List<PostIdentityResponseContent> SearchResults { get; set; }
+}
+
+
+

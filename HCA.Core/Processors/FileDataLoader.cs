@@ -34,7 +34,7 @@ namespace HCA.Core.Processors
             _fileRequestRepository = fileRequestRepository;
         }
 
-        public async Task ProcessFile(string fileName, StreamReader stream)
+        public async Task<Guid> ProcessFile(string fileName, StreamReader stream)
         {
             LogInformation($"Started File Parsing file {fileName}");
             var fileRequest = await CreateFileRequest(fileName);
@@ -51,7 +51,7 @@ namespace HCA.Core.Processors
                     fileRequest.Message = $"Error parsing the records - {errorMeesages.CombineToString()}";
                     await _fileRequestRepository.Update(fileRequest);
                     await LogInfo(fileRequest.RequestId, "Error parsing the records - {errorMeesage}");
-                    return;
+                    return fileRequest.RequestId;
                 }
 
                 for(int i = 0; i < clientIdentityRequestsList.Count; ++i)
@@ -79,12 +79,14 @@ namespace HCA.Core.Processors
                 await _fileRequestRepository.Update(fileRequest);
 
                 LogInformation($"Completed File Parsing and loading data into database for file {fileName}");
+                return fileRequest.RequestId;
             }
             catch(Exception ex)
             {
                 fileRequest.Status = DataConstants.Statuses.ParsingFailed;
                 fileRequest.Message = $"Error parsing the records - {ex}";
                 await _fileRequestRepository.Update(fileRequest);
+                throw;
             }
         }
 

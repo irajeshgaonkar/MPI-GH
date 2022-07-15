@@ -14,6 +14,7 @@ using HCA.MuleSoft;
 using HCA.MuleSoft.Models.Response;
 using HCA.MuleSoft.RequestBuilder;
 using HCA.Infrastructure.Extensions;
+using HCA.Models.MuleSoft;
 
 namespace HCA.Core.Processors;
 
@@ -96,6 +97,11 @@ public interface IMergeIdentityProcessor : IProcessor<MergingSourcesRequest, Mer
 }
 
 public interface IUnMergeIdentityProcessor : IProcessor<UnMergingSourcesRequest, UnMergeSourcesResponse>
+{
+
+}
+
+public interface IDemographicSearchProcessor : IProcessor<DemographicSearchRequest, DemographicSearchResponse>
 {
 
 }
@@ -279,6 +285,72 @@ public class UnLinkIdentityProcessor : BaseProcessor, IUnLinkIdentityProcessor
             UnlinkedSource = unLinkResponse.Content.UnlinkedSource,
             UnlinkedFromId = unLinkResponse.Content.UnlinkedFromId,
             UnlinkedFromSource = unLinkResponse.Content.UnlinkedFromSource,
+        };
+    }
+}
+
+public class DemographicSearchProcessor : BaseProcessor, IDemographicSearchProcessor
+{
+    private readonly ILogger _logger;
+
+    private readonly IDemographicSearchRequestBuilder _demographicSearchRequestBuilder;
+
+    private readonly IMuleSoftRepository _muleSoftRepository;
+
+    private readonly IClientIdentityRepository _clientIdentityRepository;
+
+    public DemographicSearchProcessor(IClientIdentityRequestRepository clientIdentityRequestRepository,
+        IClientIdentityRepository clientIdentityRepository,
+        IDemographicSearchRequestBuilder demographicSearchRequestBuilder,
+        IMuleSoftRepository muleSoftRepository, ILogger logger,
+        IMapper<ClientIdentityRequestEntity, ClientIdentityRequest> clientIdentityRequestMapper
+       ) : base(logger, clientIdentityRequestRepository, clientIdentityRequestMapper)
+    {
+        _clientIdentityRepository = clientIdentityRepository;
+        _demographicSearchRequestBuilder = demographicSearchRequestBuilder;
+        _muleSoftRepository = muleSoftRepository;
+    }
+
+    public async Task<DemographicSearchResponse> ProcessRequest(DemographicSearchRequest request)
+    {
+        LogPrefix = "Demographic Identity Processor";
+        var result = new List<ClientIdentity>();
+
+        var muleSoftRequest = _demographicSearchRequestBuilder.Build(request);
+        var searchResponse = await _muleSoftRepository.DemographicSearch(muleSoftRequest);
+
+        if (HasErrors(searchResponse) || null == searchResponse.Content)
+        {
+            var errorMessage = searchResponse.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+
+        var sources = new List<Source>();
+
+        foreach(var groupedByIdentity in searchResponse.Content.SearchResults)
+        {
+            foreach(var identity in groupedByIdentity.IdentityGroupedBySource)
+            {
+                sources.AddRange(identity.Sources);
+            }
+        }
+
+        var clientIdentites = await _clientIdentityRepository.GetBySources(sources);
+
+        foreach (var clientIdentityEntity in clientIdentites)
+        {
+            var identityModel = ClientIdentityMapper.MapToClientIdentityModel(clientIdentityEntity);
+            var identities = ClientIdentityMapper.MapToClientIdentity(identityModel);
+
+            foreach (var identity in identities)
+            {
+                result.Add(identity);
+            }
+        }
+
+        return new DemographicSearchResponse()
+        {
+            ClientIdentities = result
         };
     }
 }

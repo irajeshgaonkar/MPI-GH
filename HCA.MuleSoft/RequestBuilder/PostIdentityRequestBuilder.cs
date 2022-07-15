@@ -31,7 +31,7 @@ public class MergeIdentitiesRequestBuilder : IMergeIdentitiesRequestBuilder
 {
     public MergeIdentitiesRequest Build(MergingSourcesRequest request)
     {
-        var mergingSources = new MergingSources (request.ToSurviveSource, request.ToRetireSource);
+        var mergingSources = new MergingSources(request.ToSurviveSource, request.ToRetireSource);
         return new MergeIdentitiesRequest(request.TrackingId, mergingSources);
     }
 }
@@ -63,14 +63,14 @@ public class PostIdentityRequestBuilder : IPostIdentityRequestBuilder
     private PostIdentityRequestContent BuildPostIdentityContent(IEnumerable<ClientIdentityRequest> requests)
     {
         var identity = BuildIdentity(requests);
-        return new (identity);
+        return new(identity);
     }
 
     private Identity BuildIdentity(IEnumerable<ClientIdentityRequest> requests)
     {
         var identity = new Identity();
 
-        foreach(var request in requests)
+        foreach (var request in requests)
         {
             identity.Sources.Add(request.GetSource());
             identity.Names.Add(request.GetName());
@@ -86,5 +86,52 @@ public class PostIdentityRequestBuilder : IPostIdentityRequestBuilder
     }
 }
 
+
+public class DemographicSearchRequestBuilder : IDemographicSearchRequestBuilder
+{
+    public PostIdentityRequest Build(DemographicSearchRequest request)
+    {
+        var content = BuildPostIdentityContent(request);
+        var trackingId = DomainExtensions.GetTrackingId();
+        return new PostIdentityRequest(trackingId, content);
+    }
+
+    private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchRequest request)
+    {
+        var identity = BuildIdentity(request);
+        return new(identity);
+    }
+
+    private Identity BuildIdentity(DemographicSearchRequest demographicSearchRequest)
+    {
+        var request = demographicSearchRequest.Filter;
+        var identity = new Identity();
+
+        identity.Sources = request.Sources;
+
+        foreach(var name in request.Names)
+        {
+            identity.Names.Add(new HCA.Models.MuleSoft.Name(name.First, name.Middle, name.Last, name.Suffix));
+        }
+
+        foreach (var address in request.Addresses)
+        {
+            identity.Addresses.Add(new HCA.Models.MuleSoft.Address(address.Line1, address.Line2, address.City, address.State, address.PostalCode));
+        }
+
+        foreach (var phoneNumber in request.PhoneNumbers)
+        {
+            identity.PhoneNumbers.Add(new HCA.Models.MuleSoft.PhoneNumber(phoneNumber.Number, phoneNumber.AreaCode, phoneNumber.Extension, phoneNumber.CountryCode));
+        }
+
+
+        identity.Emails = request.Emails;
+        identity.Ssns = request.Ssns;
+        identity.Genders = request.Genders;
+        identity.DatesOfBirth = request.DateOfBirths;
+
+        return identity;
+    }
+}
 
 

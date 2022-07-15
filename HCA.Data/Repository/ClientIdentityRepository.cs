@@ -1,5 +1,6 @@
 ﻿using HCA.Data.Entities;
 using HCA.Infrastructure.Extensions;
+using HCA.Models.MuleSoft;
 using Microsoft.EntityFrameworkCore;
 
 namespace HCA.Data.Repository;
@@ -107,6 +108,29 @@ public class ClientIdentityRepository : IClientIdentityRepository
         }
 
         await _dbContext.SaveChangesAsync();
+    }
+
+
+
+    public async Task<IEnumerable<ClientIdentityEntity>> GetBySources(List<Source> sources)
+    {
+        var result = new List<ClientIdentityEntity>();
+        foreach(var source in sources)
+        {
+            var clientIdentities = GetBySource(source.Name, source.Id).ToList();
+            if (clientIdentities != null)
+            {
+                foreach(var clientIdentity in clientIdentities)
+                {
+                    if (clientIdentity != null)
+                    {
+                        result.Add(clientIdentity);
+                    }
+                }
+            }
+        }
+
+        return await Task.FromResult(result);
     }
 
     private IEnumerable<ClientIdentityEntity?> GetBySource(string sourceSystemName, string sourceSystemId)

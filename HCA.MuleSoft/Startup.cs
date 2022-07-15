@@ -31,6 +31,7 @@ public static class Startup
             .AddScoped<IMergeIdentitiesRequestBuilder, MergeIdentitiesRequestBuilder>()
             .AddScoped<IUnMergeIdentitiesRequestBuilder, UnMergeIdentitiesRequestBuilder>()
             .AddScoped<IPostIdentityRequestBuilder, PostIdentityRequestBuilder>()
+            .AddScoped<IDemographicSearchRequestBuilder, DemographicSearchRequestBuilder>()
             .AddScoped<IHttpAdapter, HttpAdapter>()
             .AddScoped<IMuleSoftRepository, MuleSoftRepository>();
     }

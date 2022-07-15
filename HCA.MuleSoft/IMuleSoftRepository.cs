@@ -20,6 +20,8 @@ public interface IMuleSoftRepository
     Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest mergeIdentitiesRequest);
 
     Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest unMergeIdentitiesRequest);
+
+    Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest searchRequest);
 }
 
 public class MuleSoftRepository : IMuleSoftRepository
@@ -75,6 +77,16 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest unMergeIdentitiesRequest)
     {
         var response = await _httpAdapter.Post<UnMergeIdentitiesResponse, UnMergeIdentitiesRequest>("unMergeIdentities", unMergeIdentitiesRequest);
+
+        if (null == response)
+            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
+
+        return response;
+    }
+
+    public async Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest searchRequest)
+    {
+        var response = await _httpAdapter.Post<DemoGraphicSearchResponse, PostIdentityRequest>("demographicsSearch", searchRequest);
 
         if (null == response)
             throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");

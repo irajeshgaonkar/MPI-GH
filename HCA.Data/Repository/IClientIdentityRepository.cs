@@ -1,4 +1,5 @@
 ﻿using HCA.Data.Entities;
+using HCA.Models.MuleSoft;
 
 namespace HCA.Data.Repository;
 
@@ -15,4 +16,6 @@ public interface IClientIdentityRepository
     Task UpdateMpiLinkId(string sourceSystemName, string sourceSystemId, string newMpiLinkId);
 
     Task<int> GetCount();
+
+    Task<IEnumerable<ClientIdentityEntity>> GetBySources(List<Source> sources);
 }

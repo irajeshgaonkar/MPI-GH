@@ -4,7 +4,7 @@ namespace HCA.Data.Repository;
 
 public interface IClientIdentityRequestRepository
 {
-    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(Guid requestId);
+    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(Guid requestId, string? status = null);
 
     Task InsertBulk(IEnumerable<ClientIdentityRequestEntity> entities);
 

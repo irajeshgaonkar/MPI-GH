@@ -220,11 +220,12 @@ public class ClientIdentityMapper
     {
         var clientIdentities = new List<ClientIdentity>();
 
+
         foreach (var address in model.Addresses)
         {
             var clientIdentity = new ClientIdentity();
 
-            clientIdentity.Id = model.Id;
+            clientIdentity.Id =model.Id;
             clientIdentity.MPILinkId = model.MpiLinkId ?? "";
             clientIdentity.SourceSystemId = model.SourceSystemId;
             clientIdentity.SourceName = model.SourceSystemName;

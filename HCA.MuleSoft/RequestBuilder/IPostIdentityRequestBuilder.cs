@@ -31,4 +31,9 @@ public interface IUnMergeIdentitiesRequestBuilder : IRequestBuilder<UnMergeIdent
 
 }
 
+public interface IDemographicSearchRequestBuilder : IRequestBuilder<PostIdentityRequest, DemographicSearchRequest>
+{
+
+}
+
 

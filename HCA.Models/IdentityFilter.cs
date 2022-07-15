@@ -3,6 +3,32 @@ using HCA.Models.MuleSoft;
 
 namespace HCA.Models
 {
+	public static class IdentityFilterExtensions
+    {
+		public static bool HasFilter(this IdentityFilter identityFilter)
+        {
+			foreach(var ssn in identityFilter.Ssns)
+            {
+				if (!string.IsNullOrWhiteSpace(ssn)) return true;
+            }
+
+			foreach(var email in identityFilter.Emails)
+			{
+				if (!string.IsNullOrWhiteSpace(email)) return true;
+			}
+
+			foreach(var name in identityFilter.Names)
+            {
+				if (!string.IsNullOrWhiteSpace(name.First)) return true;
+				if (!string.IsNullOrWhiteSpace(name.Middle)) return true;
+				if (!string.IsNullOrWhiteSpace(name.Last)) return true;
+				if (!string.IsNullOrWhiteSpace(name.Suffix)) return true;
+			}
+
+			return false;
+		}
+    }
+
 	public class IdentityFilter
 	{
 		public IdentityFilter()

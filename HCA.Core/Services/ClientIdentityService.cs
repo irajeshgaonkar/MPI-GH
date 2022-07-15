@@ -18,6 +18,8 @@ public interface IClientIdentityService
 {
     Task<PagenatedCollection<ClientIdentity>> GetAll(int pageNumber, int recordsPerPage);
 
+    Task<PagenatedCollection<ClientIdentity>> Search(int pageNumber, int recordsPerPage, IdentityFilter filter);
+
     Task<LinkIdentitiesResponseContent?> LinkIdentities(LinkingSources linkingSources);
 
     Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UnLinkingSources unLinkingSources);
@@ -43,9 +45,13 @@ public class ClientIdentityService : IClientIdentityService
 
     private readonly IUnMergeIdentityProcessor _unMergeIdentityProcessor;
 
+
+    private readonly IDemographicSearchProcessor _demographicSearchProcessor;
+
     public ClientIdentityService(IClientIdentityRepository clientIdentityRepository, ILinkIdentityProcessor linkIdentityProcessor,
         IUnLinkIdentityProcessor unLinkIdentityProcessor, IMergeIdentityProcessor mergeIdentityProcessor,
-        IUnMergeIdentityProcessor unMergeIdentityProcessor, IUserRequestRepository userRequestRepository)
+        IUnMergeIdentityProcessor unMergeIdentityProcessor, IUserRequestRepository userRequestRepository,
+        IDemographicSearchProcessor demographicSearchProcessor)
     {
         _clientIdentityRepository = clientIdentityRepository;
         _linkIdentityProcessor = linkIdentityProcessor;
@@ -53,6 +59,7 @@ public class ClientIdentityService : IClientIdentityService
         _mergeIdentityProcessor = mergeIdentityProcessor;
         _unMergeIdentityProcessor = unMergeIdentityProcessor;
         _userRequestRepository = userRequestRepository;
+        _demographicSearchProcessor = demographicSearchProcessor;
     }
 
     public async Task<PagenatedCollection<ClientIdentity>> GetAll(int pageNumber, int recordsPerPage)
@@ -64,6 +71,7 @@ public class ClientIdentityService : IClientIdentityService
         var clientIdentityEntities = await _clientIdentityRepository.GetAll(skip, recordsPerPage);
 
         var count = clientIdentityEntities.ToList().Count();
+        int i = 1;
 
         foreach (var clientIdentityEntity in clientIdentityEntities)
         {
@@ -72,6 +80,7 @@ public class ClientIdentityService : IClientIdentityService
 
             foreach (var identity in identities)
             {
+                identity.Id = i++;
                 result.Add(identity);
             }
         }
@@ -176,6 +185,34 @@ public class ClientIdentityService : IClientIdentityService
                 UnmergedFromSource = response.UnmergedFromSource,
                 UnmergedSource = response.UnmergedSource
             };
+        }
+        catch (HcaMuleSoftException e)
+        {
+            await UpdateProcessStatus(userRequest, DataConstants.Statuses.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<PagenatedCollection<ClientIdentity>> Search(int pageNumber, int recordsPerPage, IdentityFilter filter)
+    {
+        var userRequest = await CreateUserRequest(filter);
+
+        try
+        {
+            var skip = pageNumber * recordsPerPage;
+            var searchRequest = new DemographicSearchRequest(userRequest.RequestId, userRequest.RequestId.ToString(), filter);
+            var result = await _demographicSearchProcessor.ProcessRequest(searchRequest);
+
+            var paginatedCollection = new PagenatedCollection<ClientIdentity>
+            {
+                RecordsCount = result.ClientIdentities.Count(),
+                PageNumber = pageNumber,
+                RecordsPerPage = recordsPerPage,
+                Data = result.ClientIdentities.Skip(skip).Take(pageNumber)
+            };
+
+            return paginatedCollection;
+
         }
         catch (HcaMuleSoftException e)
         {

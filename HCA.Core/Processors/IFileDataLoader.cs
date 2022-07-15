@@ -2,6 +2,6 @@
 
 public interface IFileDataLoader
 {
-    Task ProcessFile(string fileName, StreamReader stream);
+    Task<Guid> ProcessFile(string fileName, StreamReader stream);
 }
 
