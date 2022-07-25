@@ -20,6 +20,7 @@
     <None Remove="Converters\" />
     <None Remove="FileReadWriter\" />
     <None Remove="AWSSDK.S3" />
+    <None Remove="Attributes\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Extensions\" />
@@ -31,6 +32,7 @@
     <Folder Include="Security\" />
     <Folder Include="Converters\" />
     <Folder Include="FileReadWriter\" />
+    <Folder Include="Attributes\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />

@@ -28,6 +28,7 @@ public class Startup
         services.AddServices();
         services.AddSecurity(Configuration);
         services.AddAutoMapper();
+        services.AddFileProcessors();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline

@@ -14,9 +14,9 @@ public class UserRequestRepository : IUserRequestRepository
         _dataAdapter = dataAdapter;
     }
 
-    public async Task<UserRequestEntity?> GetRequest(Guid requestId)
+    public async Task<UserRequestEntity?> GetRequest(string trackingId)
     {
-        var requests = _dbContext.UserRequests.SingleOrDefault(c => c.RequestId == requestId);
+        var requests = _dbContext.UserRequests.SingleOrDefault(c => c.TrackingId == trackingId);
         return await Task.FromResult(requests);
     }
 

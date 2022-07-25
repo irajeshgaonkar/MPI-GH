@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Net;
+
 namespace HCA.MuleSoft;
 
 public class MuleSoftOptions
@@ -8,5 +9,15 @@ public class MuleSoftOptions
     public string ClientId { get; set; }
 
     public string ClientSecret { get; set; }
+
+    public MuleSoftRetryOptions RetryOptions { get; set; }
 }
 
+public class MuleSoftRetryOptions
+{
+    public int MaxDelayInSeconds { get; set; }
+
+    public int MaxRetries { get; set; }
+
+    public HttpStatusCode[] ReTriableStatusCodes { get; set; }
+}

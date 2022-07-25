@@ -1,96 +1,53 @@
-﻿using HCA.Infrastructure.Exceptions;
-using HCA.Infrastructure.Http;
-using HCA.MuleSoft.Models.Request.Link;
-using HCA.MuleSoft.Models.Request.Merge;
-using HCA.MuleSoft.Models.Request.Post;
-using HCA.MuleSoft.Models.Response.Link;
-using HCA.MuleSoft.Models.Response.Merge;
-using HCA.MuleSoft.Models.Response.Post;
+﻿using HCA.Models.MuleSoft.Request;
+using HCA.Models.MuleSoft.Response;
 
 namespace HCA.MuleSoft;
 
+/// <summary>
+/// Mule soft repository
+/// </summary>
+/// <remarks>Includes http calls to MuleSoft</remarks>
 public interface IMuleSoftRepository
 {
-    Task<PostIdentityResponse> PostIdentity(PostIdentityRequest clientIdentity);
+    /// <summary>
+    /// MuleSoft demographic search api
+    /// </summary>
+    /// <param name="request">Demograph search request <see cref="PostIdentityRequest"/></param>
+    /// <returns>demographc serach response <see cref="DemoGraphicSearchResponse"/></returns>
+    Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
-    Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest linkIdentitiesRequest);
+    /// <summary>
+    /// MuleSoft link identities api call
+    /// </summary>
+    /// <param name="request">Link identities request <see cref="LinkIdentitiesRequest"/></param>
+    /// <returns>Link identities response <see cref="LinkIdentitiesResponse"/></returns>
+    Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request);
 
-    Task<UnLinkIdentitiesResponse> UnLinkIdentities(UnLinkIdentitiesRequest unLinkIdentitiesRequest);
+    /// <summary>
+    /// MuleSoft un link identities api call
+    /// </summary>
+    /// <param name="request">un link identities request <see cref="UnLinkIdentitiesRequest"/></param>
+    /// <returns>Un link identities response <see cref="UnLinkIdentitiesResponse"/></returns>
+    Task<UnLinkIdentitiesResponse> UnLinkIdentities(UnLinkIdentitiesRequest request);
 
-    Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest mergeIdentitiesRequest);
+    /// <summary>
+    /// MuleSoft merge identities api call
+    /// </summary>
+    /// <param name="request">Merge identities request <see cref="MergeIdentitiesRequest"/></param>
+    /// <returns>Merge identities response <see cref="MergeIdentitiesResponse"/></returns>
+    Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest request);
 
-    Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest unMergeIdentitiesRequest);
+    /// <summary>
+    /// MuleSoft un merge identities api call
+    /// </summary>
+    /// <param name="request">Un merge identities request <see cref="UnMergeIdentitiesRequest"/></param>
+    /// <returns>un Merge identities response <see cref="UnMergeIdentitiesResponse"/></returns>
+    Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest request);
 
-    Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest searchRequest);
-}
-
-public class MuleSoftRepository : IMuleSoftRepository
-{
-    private readonly IHttpAdapter _httpAdapter;
-
-    public MuleSoftRepository(IHttpAdapter httpAdapter)
-    {
-        _httpAdapter = httpAdapter;
-    }
-
-    public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest linkIdentitiesRequest)
-    {
-        linkIdentitiesRequest.TrackingId = Guid.NewGuid().ToString();
-        var response = await _httpAdapter.Post<LinkIdentitiesResponse, LinkIdentitiesRequest>("linkIdentities", linkIdentitiesRequest);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
-
-    public async Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest mergeIdentitiesRequest)
-    {
-        var response = await _httpAdapter.Post<MergeIdentitiesResponse, MergeIdentitiesRequest>("mergeIdentities", mergeIdentitiesRequest);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
-
-    public async Task<PostIdentityResponse> PostIdentity(PostIdentityRequest clientIdentity)
-    {
-        var response = await _httpAdapter.Post<PostIdentityResponse, PostIdentityRequest>("postIdentity", clientIdentity);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
-
-    public async Task<UnLinkIdentitiesResponse> UnLinkIdentities(UnLinkIdentitiesRequest unLinkIdentitiesRequest)
-    {
-        var response = await _httpAdapter.Post<UnLinkIdentitiesResponse, UnLinkIdentitiesRequest>("unlinkIdentities", unLinkIdentitiesRequest);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
-
-    public async Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest unMergeIdentitiesRequest)
-    {
-        var response = await _httpAdapter.Post<UnMergeIdentitiesResponse, UnMergeIdentitiesRequest>("unMergeIdentities", unMergeIdentitiesRequest);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
-
-    public async Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest searchRequest)
-    {
-        var response = await _httpAdapter.Post<DemoGraphicSearchResponse, PostIdentityRequest>("demographicsSearch", searchRequest);
-
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
-
-        return response;
-    }
+    /// <summary>
+    /// MuleSoft Post identity api call
+    /// </summary>
+    /// <param name="request">Post identity request <see cref="PostIdentityRequest"/></param>
+    /// <returns>Post identities response <see cref="PostIdentityResponse"/></returns>
+    Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request);
 }

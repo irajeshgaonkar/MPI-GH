@@ -7,13 +7,13 @@ public abstract class RequestProcessorBase
 {
     protected string LogTextPrefix;
 
-    protected readonly ILogger Logger;
+    protected readonly IAppLogger Logger;
 
     protected readonly IRequestProcessLogRepository RequestProcessLogRepository;
 
     protected Guid RequestId;
 
-    protected RequestProcessorBase(ILogger logger, IRequestProcessLogRepository requestProcessLogRepository)
+    protected RequestProcessorBase(IAppLogger logger, IRequestProcessLogRepository requestProcessLogRepository)
     {
         Logger = logger;
         RequestProcessLogRepository = requestProcessLogRepository;

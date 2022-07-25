@@ -1,6 +1,6 @@
-﻿namespace HCA.Core.Processors;
+﻿//namespace HCA.Core.Processors;
 
-public interface IProcessorProvider
-{
-    IPostIdentityProcessor PostIdentityProcessor { get; }
-}
+//public interface IProcessorProvider
+//{
+//    IPostIdentityProcessor PostIdentityProcessor { get; }
+//}

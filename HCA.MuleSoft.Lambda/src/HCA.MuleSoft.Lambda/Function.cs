@@ -3,6 +3,7 @@ using Amazon.Lambda.Core;
 using Amazon.S3;
 using HCA.Core;
 using HCA.Core.Processors;
+using HCA.Core.Processors.File;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Logger;
@@ -44,70 +45,83 @@ public class Function
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task<string> FunctionHandler(string input, ILambdaContext context)
+    public async Task<ResponseModel> FunctionHandler(RequestModel request, ILambdaContext context)
     {
         var configuration = ConfigureSettings();
 
         var serviceProvider = ConfigureServices(context, new ServiceCollection(), configuration);
-        var logger = serviceProvider.GetRequiredService<ILogger>();
-        logger.LogInformation($"Started Processing event {input}");
-
-        var request = DeSerialize<RequestModel>(input);
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        logger.LogInformation($"Started Processing event {request}");
 
         if (null == request)
         {
             logger.LogInformation("Unable to Process the Request, Deserialization error");
-            return string.Empty;
+            return null;
         }
+
+        logger.LogInformation($"Started Processing event {request.BucketName} | {request.FileName}| {request.OperationType} | {request.RequestId} ");
 
         logger.LogInformation($"Started Processing event for operation type {request.OperationType}");
 
         if (request.OperationType == Constants.FileDataLoadOperation)
         {
-            await ProcessFileDataLoadRequest(serviceProvider, request);
+            var requestId = await ProcessFileDataLoadRequest(serviceProvider, request);
+            var response = new ResponseModel()
+            {
+                bucketName = request.BucketName,
+                fileName = request.FileName,
+                operationType = Constants.FileDataProcess,
+                requestId = requestId
+            };
+            return response;
         }
+
         else if (request.OperationType == Constants.FileDataProcess)
         {
             await ProcessFileDataRequest(serviceProvider, request);
+            await WriteFileToS3(serviceProvider, configuration, request);
         }
 
-        return input.ToUpper();
-
+        return null;
     }
 
     private async Task ProcessFileDataRequest(ServiceProvider serviceProvider, RequestModel request)
     {
-        var logger = serviceProvider.GetRequiredService<ILogger>();
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
         logger.LogInformation($"Started processing request {request.RequestId}");
-        var requestId = new Guid(request.RequestId);
-        var fileRequestProcessor = serviceProvider.GetRequiredService<FileRequestProcessor>();
+        var requestId = request.RequestId;
+        var fileRequestProcessor = serviceProvider.GetRequiredService<IFileRequestProcessor>();
         await fileRequestProcessor.ProcessRequest(requestId);
         logger.LogInformation($"Completed processing request {request.RequestId}");
     }
 
-        private async Task ProcessFileDataLoadRequest(ServiceProvider serviceProvider, RequestModel request)
+    private async Task<int> ProcessFileDataLoadRequest(ServiceProvider serviceProvider, RequestModel request)
     {
-        var logger = serviceProvider.GetRequiredService<ILogger>();
-        var fileDataLoader = serviceProvider.GetRequiredService<IFileDataLoader>();
-
-        var response = await S3Client.GetObjectMetadataAsync(request.BucketName, request.FileName);
-        logger.LogInformation(response.Headers.ContentType);
-        logger.LogInformation(response.HttpStatusCode.ToString());
-        var fileContent = await S3Client.GetObjectAsync(request.BucketName, request.FileName);
-        var fileStream = fileContent.ResponseStream;
-        var streamReader = new StreamReader(fileStream);
-        await fileDataLoader.ProcessFile(request.FileName, streamReader);
-        await WriteFileToS3(serviceProvider, fileStream, request.BucketName, request.FileName);
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        var fileProcessor = serviceProvider.GetRequiredService<IFileProcessor>();
+        var streamReader = await GetStreamReader(request.BucketName, request.FileName);
+        var requestId = await fileProcessor.ProcessFile(request.FileName, streamReader);
+        return requestId;
     }
 
-    private async Task WriteFileToS3(ServiceProvider serviceProvider, Stream stream, string bucketName, string fileName)
+    private async Task<StreamReader> GetStreamReader(string bucketName, string fileName)
     {
-        //var logger = serviceProvider.GetRequiredService<ILogger>();
-        //logger.LogInformation("started uplodated file");
-        //var fileWriter = serviceProvider.GetRequiredService<FileWriter>();
-        //MemoryStream memoryStream = await fileWriter.WriteFile(new Guid("99a4ed1d-6c0a-41ac-a663-a5ae91912822"));
-        //await S3Client.UploadObjectFromStreamAsync(bucketName, "output_" + fileName, memoryStream, new Dictionary<string, object>());
-        //logger.LogInformation("Successfully uplodated file");
+        var fileContent = await S3Client.GetObjectAsync(bucketName, fileName);
+        var fileStream = fileContent.ResponseStream;
+        var streamReader = new StreamReader(fileStream);
+        return streamReader;
+    }
+
+    private async Task WriteFileToS3(ServiceProvider serviceProvider, IConfiguration configuration, RequestModel request)
+    {
+        var streamReader = await GetStreamReader(request.BucketName, request.FileName);
+        var outputBucketName = configuration["OputBucketName"];
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        logger.LogInformation("started uplodated file");
+        var fileWriter = serviceProvider.GetRequiredService<IFileWriter>();
+        MemoryStream memoryStream = await fileWriter.WriteFile(request.RequestId, streamReader);
+        await S3Client.UploadObjectFromStreamAsync(outputBucketName, "output_" + request.FileName, memoryStream, new Dictionary<string, object>());
+        logger.LogInformation("Successfully uplodated file");
     }
 
     private T? DeSerialize<T>(string payLoad)
@@ -119,6 +133,18 @@ public class Function
         };
 
         T? result = JsonSerializer.Deserialize<T>(payLoad, serializeOptions);
+        return result;
+    }
+
+    private string Serialize<T>(T payLoad)
+    {
+        var serializeOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+
+        var result = JsonSerializer.Serialize(payLoad, serializeOptions);
         return result;
     }
 
@@ -134,6 +160,8 @@ public class Function
                                 .AddMuleSoft(configuration)
                                 .AddServices()
                                 .AddAutoMapper()
+                                .AddProcessors()
+                                .AddFileProcessors()
                                 .BuildServiceProvider();
 
         return serviceProvider;

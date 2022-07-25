@@ -1,34 +1,35 @@
-﻿using Amazon.Lambda.Core;
+﻿using System.Runtime.CompilerServices;
+using Amazon.Lambda.Core;
 
 namespace HCA.Infrastructure.Logger;
 
-public class ConsoleAppAppLogger : ILogger
+public class AppLogger : IAppLogger
 {
+    private const string _logPrefix = "HCA - MPI => ";
 
-    public void LogInformation(string message) =>
-        WriteLine(message, ConsoleColor.Blue);
+    private readonly ILambdaLogger _logger;
 
-    public void LogError(Exception ex) =>
-        WriteLine(ex.StackTrace ?? "", ConsoleColor.Red);
-
-    public void LogCritical(string message) =>
-        WriteLine(message, ConsoleColor.DarkYellow);
-
-    public void LogDebug(string message) =>
-        WriteLine(message, ConsoleColor.Green);
-
-    public void LogTrace(string message) =>
-        WriteLine(message, ConsoleColor.Cyan);
-
-    public void LogWarning(string message) =>
-        WriteLine(message, ConsoleColor.Yellow);
-
-    private void WriteLine(string message, ConsoleColor color)
+    public AppLogger(ILambdaLogger logger)
     {
-        var previousColor = Console.ForegroundColor;
-        Console.ForegroundColor = color;
-        Console.WriteLine(message);
-        Console.ForegroundColor = previousColor;
+        _logger = logger;
     }
+
+    public void LogInformation(string message, [CallerMemberName] string callerName = "") =>
+        _logger.LogInformation($"{_logPrefix} {callerName}: {message}");
+
+    public void LogError(Exception ex, [CallerMemberName] string callerName = "") =>
+        _logger.LogError($"{_logPrefix} {callerName}: {ex.StackTrace}");
+
+    public void LogCritical(string message, [CallerMemberName] string callerName = "") =>
+        _logger.LogCritical($"{_logPrefix} {callerName}: {message}");
+
+    public void LogDebug(string message, [CallerMemberName] string callerName = "") =>
+        _logger.LogDebug($"{_logPrefix} {callerName}: {message}");
+
+    public void LogTrace(string message, [CallerMemberName] string callerName = "") =>
+        _logger.LogTrace($"{_logPrefix} {callerName}: {message}");
+
+    public void LogWarning(string message, [CallerMemberName] string callerName = "") =>
+        _logger.LogWarning($"{_logPrefix} {callerName}: {message}");
 }
 

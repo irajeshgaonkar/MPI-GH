@@ -18,8 +18,10 @@ public class FileRequestEntity : BaseEntity
     /// <summary>
     /// Uniquely identifies the request, Foreign key for the all the request
     /// </summary>
-    [Column("request_id")]
-    public Guid RequestId { get; set; }
+    [Column("tracking_id")]
+    [Required]
+    [MaxLength(1024)]
+    public string TrackingId { get; set; }
 
     /// <summary>
     /// File Name
@@ -30,17 +32,55 @@ public class FileRequestEntity : BaseEntity
     public string FileName { get; set; }
 
     /// <summary>
+    /// Output File Name
+    /// </summary>
+    [Column("output_file_name")]
+    [MaxLength(1024)]
+    public string? OutputFileName { get; set; }
+
+    /// <summary>
+    /// Source System Agency
+    /// </summary>
+    [Column("source_system_agency")]
+    [Required]
+    [MaxLength(100)]
+    public string SourceSystemAgency { get; set; }
+
+    /// <summary>
+    /// Source system Name
+    /// </summary>
+    [Column("source_system_name")]
+    [Required]
+    [MaxLength(100)]
+    public string SourceSystemName { get; set; }
+
+    /// <summary>
     /// Records count to process in the request
     /// </summary>
     [Column("records_count")]
     public int RecordsCount { get; set; }
 
     /// <summary>
+    /// Records count to process in the request
+    /// </summary>
+    [Column("trailer")]
+    [Required]
+    [MaxLength(100)]
+    public string Trailer { get; set; }
+
+    /// <summary>
     /// Operation to be performed on the File
     /// </summary>
-    [Column("operation_type")]
+    [Column("api_type")]
+    [Required]
     [MaxLength(40)]
-    public string OperationType { get; set; }
+    public string ApiCallType { get; set; }
+
+    /// <summary>
+    /// Requested Date time
+    /// </summary>
+    [Column("file_created_date_time")]
+    public DateTime FileCreatedDateTime { get; set; }
 
     /// <summary>
     /// Requested Date time
@@ -63,7 +103,6 @@ public class FileRequestEntity : BaseEntity
     /// <summary>
     /// Process Status
     /// </summary>
-    /// <remarks>Values: Not Started, Pending, Processing, Failed, Succeded</remarks>
     [Column("status")]
     [MaxLength(40)]
     public string Status { get; set; }
@@ -73,11 +112,4 @@ public class FileRequestEntity : BaseEntity
     /// </summary>
     [Column("message")]
     public string Message { get; set; }
-
-    /// <summary>
-    /// Output File Name
-    /// </summary>
-    [Column("output_file_name")]
-    [MaxLength(1024)]
-    public string? OutputFileName { get; set; }
 }

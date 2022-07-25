@@ -9,7 +9,18 @@ namespace HCA.MuleSoft.Lambda.Models
 
         public string FileName { get; set; }
 
-        public string RequestId { get; set; }
+        public int RequestId { get; set; }
+    }
+
+    public class ResponseModel
+    {
+        public string operationType { get; set; }
+
+        public string bucketName { get; set; }
+
+        public string fileName { get; set; }
+
+        public int requestId { get; set; }
     }
 }
 

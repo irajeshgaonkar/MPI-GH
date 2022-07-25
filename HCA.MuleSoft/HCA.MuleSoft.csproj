@@ -7,32 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Models\" />
-    <None Remove="Models\Request\" />
-    <None Remove="Models\Request\Post\" />
-    <None Remove="RequestBuilder\" />
     <None Remove="Extensions\" />
-    <None Remove="Models\Response\" />
-    <None Remove="Models\Response\Post\" />
-    <None Remove="Models\Request\Link\" />
     <None Remove="Microsoft.Extensions.DependencyInjection" />
     <None Remove="Microsoft.Extensions.Configuration.Binder" />
-    <None Remove="Models\Response\Link\" />
-    <None Remove="Models\Request\Merge\" />
-    <None Remove="Models\Response\Merge\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
-    <Folder Include="Models\Request\" />
-    <Folder Include="Models\Request\Post\" />
-    <Folder Include="RequestBuilder\" />
     <Folder Include="Extensions\" />
-    <Folder Include="Models\Response\" />
-    <Folder Include="Models\Response\Post\" />
-    <Folder Include="Models\Request\Link\" />
-    <Folder Include="Models\Response\Link\" />
-    <Folder Include="Models\Request\Merge\" />
-    <Folder Include="Models\Response\Merge\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HCA.Data\HCA.Data.csproj" />

@@ -4,15 +4,17 @@ namespace HCA.Data.Repository;
 
 public interface IClientIdentityRequestRepository
 {
-    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(Guid requestId, string? status = null);
+    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(int id, string? status = null);
 
     Task InsertBulk(IEnumerable<ClientIdentityRequestEntity> entities);
 
-    Task UpdateReqeust(ClientIdentityRequestEntity requestEntity);
+    Task UpdateRequest(ClientIdentityRequestEntity requestEntity);
 
     Task Update(IEnumerable<ClientIdentityRequestEntity> entities);
 
-    Task UpdateStatus(Guid requestId, IEnumerable<string?> trackingIds, string? status, string? message, string? mpiLinkId);
+    Task UpdateStatus(int id, IEnumerable<string> trackingIds, string? status, string? message, string? mpiLinkId);
+
+    Task Update(IList<int> ids, string? status, string? message, string? trackingId, string? mpiLinkId);
 }
 
 

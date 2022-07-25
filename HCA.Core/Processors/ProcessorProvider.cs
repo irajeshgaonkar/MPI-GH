@@ -1,13 +1,13 @@
-﻿namespace HCA.Core.Processors;
+﻿//namespace HCA.Core.Processors;
 
-public class ProcessorProvider : IProcessorProvider
-{
-    private readonly IPostIdentityProcessor _postIdentityProcessor;
+//public class ProcessorProvider : IProcessorProvider
+//{
+//    private readonly IPostIdentityProcessor _postIdentityProcessor;
 
-    public ProcessorProvider(IPostIdentityProcessor postIdentityProcessor)
-    {
-        _postIdentityProcessor = postIdentityProcessor;
-    }
+//    public ProcessorProvider(IPostIdentityProcessor postIdentityProcessor)
+//    {
+//        _postIdentityProcessor = postIdentityProcessor;
+//    }
 
-    public IPostIdentityProcessor PostIdentityProcessor => _postIdentityProcessor;
-}
+//    public IPostIdentityProcessor PostIdentityProcessor => _postIdentityProcessor;
+//}

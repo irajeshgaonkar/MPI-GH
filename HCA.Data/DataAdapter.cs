@@ -6,11 +6,11 @@ namespace HCA.Data;
 
 public class DataAdapter : IDataAdapter
 {
-    private ILogger _logger;
+    private IAppLogger _logger;
 
     private readonly string _connectionString;
 
-    public DataAdapter(ILogger logger, ConnectionDetails connectionDetails)
+    public DataAdapter(IAppLogger logger, ConnectionDetails connectionDetails)
     {
         _connectionString = connectionDetails.ConnectionString;
         _logger = logger;

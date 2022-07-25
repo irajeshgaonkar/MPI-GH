@@ -13,14 +13,14 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// </summary>
     [Key]
     [Column("client_identity_request_id")]
-    public int ClientIdentityRequestId { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Unique Id for the request - mapping to file request
     /// </summary>
     [Column("request_id")]
     [Required]
-    public Guid RequestId { get; set; }
+    public int RequestId { get; set; }
 
     /// <summary>
     /// Unique Id for the request
@@ -36,6 +36,13 @@ public class ClientIdentityRequestEntity : BaseEntity
     [Column("mpi_link_id")]
     [MaxLength(1024)]
     public string? MpiLinkId { get; set; }
+
+    /// <summary>
+    /// Source System Update Date
+    /// </summary>
+    [Column("source_system_updated")]
+    [Required]
+    public DateTime SourceSystemUpdated { get; set; }
 
     /// <summary>
     /// Source system Name

@@ -1,7 +1,7 @@
 ﻿using System;
 using HCA.Core.Mapper;
 using HCA.Core.Processors;
-using HCA.Core.Processors.CsvFileProcessor;
+using HCA.Core.Processors.File;
 using HCA.Core.Services;
 using HCA.Data.Entities;
 using HCA.Models;
@@ -30,20 +30,13 @@ public static class Startup
         //return services
         //    .AddScoped<IPostIdentityService, PostIdentityService>();
 
-        services.AddScoped<FileRequestProcessor>()
-            .AddScoped<UserRequestProcessor>()
-            .AddScoped<IFileReader, CsvFileReader>()
-            .AddScoped<BaseParser<FileHeaderDataModel>, FileHeaderParser>()
-            .AddScoped<BaseParser<ClientIdentityRequest>, ClientIdentityParser>()
-            .AddScoped<IFileParser, CsvFileParser>()
-            .AddScoped<IFileDataLoader, FileDataLoader>()
-            .AddScoped<IProcessorProvider, ProcessorProvider>()
-            .AddScoped<IPostIdentityProcessor, PostIdentityProcessor>()
-            .AddScoped<ILinkIdentityProcessor, LinkIdentityProcessor>()
-            .AddScoped<IUnLinkIdentityProcessor, UnLinkIdentityProcessor>()
-            .AddScoped<IMergeIdentityProcessor, MergeIdentityProcessor>()
-            .AddScoped<IUnMergeIdentityProcessor, UnMergeIdentityProcessor>()
-            .AddScoped<IDemographicSearchProcessor, DemographicSearchProcessor>();
+        services
+            .AddScoped<IFileRequestProcessor, FileRequestProcessor>()
+            .AddScoped<IRequestUpdater, RequestUpdater>()
+            .AddScoped<IFileProcessor, FilProcessor>()
+            .AddScoped<IMuleSoftRequestExecuter, MuleSoftRequestExecuter>()
+            .AddScoped<IClientIdentityRequestExecutor, ClientIdentityRequestExecutor>()
+            .AddScoped<IFileWriter, FileWriter>();
 
         return services;
     }
@@ -51,7 +44,8 @@ public static class Startup
     public static IServiceCollection AddAutoMapper(this IServiceCollection services)
     {
         return services
-            .AddScoped<IMapper<ClientIdentityRequestEntity, ClientIdentityRequest>, ClientIdentityRequestMapper>()
+            .AddScoped<IClientIdentityRequestMapper, ClientIdentityRequestMapper>()
+            .AddScoped<IFileClientIdentityMapper, FileClientIdentityMapper>()
             .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
     }
 }

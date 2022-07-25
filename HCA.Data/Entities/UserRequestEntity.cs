@@ -19,9 +19,10 @@ public class UserRequestEntity : BaseEntity
     /// <summary>
     /// Uniquely identifies the request, Foreign key for the all the request
     /// </summary>
-    [Column("request_id")]
+    [Column("tracking_id")]
+    [MaxLength(1024)]
     [Required]
-    public Guid RequestId { get; set; }
+    public string TrackingId { get; set; }
 
     /// <summary>
     /// File Name

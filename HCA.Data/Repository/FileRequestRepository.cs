@@ -14,9 +14,9 @@ public class FileRequestRepository : IFileRequestRepository
         _dataAdapter = dataAdapter;
     }
 
-    public async Task<FileRequestEntity?> GetRequest(Guid requestId)
+    public async Task<FileRequestEntity?> GetRequest(int id)
     {
-        var requests = _dbContext.FileRequests.SingleOrDefault(c => c.RequestId == requestId);
+        var requests = _dbContext.FileRequests.SingleOrDefault(c => c.Id == id);
         return await Task.FromResult(requests);
     }
 

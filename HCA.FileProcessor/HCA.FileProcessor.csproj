@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Attributes\" />
+    <None Remove="Enums\" />
+    <None Remove="Models\" />
+    <None Remove="Validators\" />
+    <None Remove="Converters\" />
+    <None Remove="Parsers\" />
+    <None Remove="FileReaders\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+    <Folder Include="Enums\" />
+    <Folder Include="Models\" />
+    <Folder Include="Validators\" />
+    <Folder Include="Converters\" />
+    <Folder Include="Parsers\" />
+    <Folder Include="FileReaders\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
+    <ProjectReference Include="..\HCA.Infrastructure\HCA.Infrastructure.csproj" />
+    <ProjectReference Include="..\HCA.Data\HCA.Data.csproj" />
+  </ItemGroup>
+</Project>

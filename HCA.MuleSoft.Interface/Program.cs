@@ -9,6 +9,7 @@ using HCA.Core;
 using HCA.Core.Processors;
 using System.Text.Json;
 using HCA.Infrastructure.Logger;
+using HCA.Core.Processors.File;
 
 Console.WriteLine("Started Process for request Id: ");
 
@@ -21,40 +22,38 @@ switch (operationType)
 {
     case 'L':
     case 'l':
-        await LoadFileData(serviceProvider, "/Users/gopalakrishnapala/gopal/projects/HCA/Data/", "CSV_test_data_1.csv");
+        await LoadFileData(serviceProvider, "C:\\Data\\", "CSV_test_data_1.csv");
         break;
 
     case 'F':
     case 'f':
-        await ProcessFileDataRequest(serviceProvider, "99a4ed1d-6c0a-41ac-a663-a5ae91912822");
+        await ProcessFileDataRequest(serviceProvider, 10);
         break;
 
     default:
         break;
 }
 
-
 //var fileRequestProcessor = serviceProvider.GetRequiredService<FileRequestProcessor>();
 //await fileRequestProcessor.ProcessRequest(new Guid("50fb76f7-e786-48ad-a7f4-650413c284fe"));
 
 async Task LoadFileData(ServiceProvider serviceProvider, string fileLocation, string fileName)
 {
-    var fileDataLoader = serviceProvider.GetRequiredService<IFileDataLoader>();
+    var fileProcessor = serviceProvider.GetRequiredService<IFileProcessor>();
 
 
     using (var sr = new StreamReader($"{fileLocation}{fileName}"))
     {
-        await fileDataLoader.ProcessFile(fileName, sr);
+        await fileProcessor.ProcessFile(fileName, sr);
     }
 }
 
-async Task ProcessFileDataRequest(ServiceProvider serviceProvider, string requestId)
+async Task ProcessFileDataRequest(ServiceProvider serviceProvider, int requestId)
 {
-    var logger = serviceProvider.GetRequiredService<ILogger>();
+    var logger = serviceProvider.GetRequiredService<IAppLogger>();
     logger.LogInformation($"Started processing request {requestId}");
-    var requestIdGuid = new Guid(requestId);
-    var fileRequestProcessor = serviceProvider.GetRequiredService<FileRequestProcessor>();
-    await fileRequestProcessor.ProcessRequest(requestIdGuid);
+    var fileRequestProcessor = serviceProvider.GetRequiredService<IFileRequestProcessor>();
+    await fileRequestProcessor.ProcessRequest(requestId);
     logger.LogInformation($"Completed processing request {requestId}");
 }
 
@@ -67,6 +66,7 @@ ServiceProvider ConfigureServices(IServiceCollection services, IConfiguration co
                             .AddMuleSoft(configuration)
                             .AddServices()
                             .AddAutoMapper()
+                            .AddFileProcessors()
                             .BuildServiceProvider();
 
     return serviceProvider;

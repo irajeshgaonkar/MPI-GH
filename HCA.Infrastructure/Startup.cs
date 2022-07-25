@@ -16,13 +16,13 @@ namespace HCA.Infrastructure
         {
             return services
                     .AddScoped(p => context.Logger)
-                    .AddScoped<ILogger, AppLogger>();
+                    .AddScoped<IAppLogger, AppLogger>();
         }
 
         public static IServiceCollection AddConsoleLogging(this IServiceCollection services)
         {
             return services
-                    .AddScoped<ILogger, ConsoleAppAppLogger>();
+                    .AddScoped<IAppLogger, ConsoleAppAppLogger>();
         }
 
         //public static IServiceCollection AddFileWriterReader(this IServiceCollection services)

@@ -18,4 +18,6 @@ public interface IClientIdentityRepository
     Task<int> GetCount();
 
     Task<IEnumerable<ClientIdentityEntity>> GetBySources(List<Source> sources);
+
+    Task<IEnumerable<ClientIdentityEntity>> Search(string? fName, string? mName, string? lName, string? email, string? ssn);
 }

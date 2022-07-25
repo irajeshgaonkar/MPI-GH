@@ -1,4 +1,6 @@
 ﻿using HCA.Core.Services;
+using HCA.Infrastructure.Exceptions;
+using HCA.Infrastructure.Logger;
 using HCA.Models;
 using HCA.Models.MuleSoft;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +12,14 @@ namespace HCA.Api.Controllers
     [Route("api/[controller]")]
     public class IdentitiesController : Controller
     {
+        private readonly IAppLogger _logger;
+
         private readonly IClientIdentityService _clientIdentityService;
 
-        public IdentitiesController(IClientIdentityService clientIdentityService)
+        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger logger)
         {
             _clientIdentityService = clientIdentityService;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -33,19 +38,26 @@ namespace HCA.Api.Controllers
         [HttpPut("link")]
         public async Task<IActionResult> Link([FromBody] LinkingSources value)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+                var result = await _clientIdentityService.LinkIdentities(value);
+                if (null == result) return BadRequest("Invalid Input");
+                return Ok(result);
             }
-
-            var result = await _clientIdentityService.LinkIdentities(value);
-
-            if (result == null)
+            catch (HcaBadRequestException e)
             {
-                return BadRequest("Invalid Input");
+                return BadRequest(e.Message);
             }
-
-            return Ok(result);
+            catch (HcaMuleSoftException e)
+            {
+                return BadRequest(e.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex);
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("unlink")]
@@ -101,24 +113,6 @@ namespace HCA.Api.Controllers
 
             return Ok(result);
         }
-
-        //[HttpDelete("delete")]
-        //public async Task<IActionResult> Delete([FromBody] Source value)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    var result = await _clientIdentityService.DeleteIdentity(value);
-
-        //    if (result == null)
-        //    {
-        //        return BadRequest("Invalid Input");
-        //    }
-
-        //    return Ok(result);
-        //}
     }
 }
 

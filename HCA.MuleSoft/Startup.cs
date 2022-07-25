@@ -1,6 +1,5 @@
 ﻿using System;
 using HCA.Infrastructure.Http;
-using HCA.MuleSoft.RequestBuilder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,18 +20,16 @@ public static class Startup
             }
         };
 
+        var mulSoftReTryOptions = muleSoftOptions.RetryOptions;
+
         services.AddSingleton(muleSoftOptions);
+        services.AddSingleton(mulSoftReTryOptions);
         services.AddSingleton(httpOptions);
 
         return services
-            .AddScoped<IPostIdentityRequestBuilder, PostIdentityRequestBuilder>()
-            .AddScoped<ILinkIdentitiesRequestBuilder, LinkIdentityRequestBuilder>()
-            .AddScoped<IUnLinkIdentitiesRequestBuilder, UnLinkIdentityRequestBuilder>()
-            .AddScoped<IMergeIdentitiesRequestBuilder, MergeIdentitiesRequestBuilder>()
-            .AddScoped<IUnMergeIdentitiesRequestBuilder, UnMergeIdentitiesRequestBuilder>()
-            .AddScoped<IPostIdentityRequestBuilder, PostIdentityRequestBuilder>()
-            .AddScoped<IDemographicSearchRequestBuilder, DemographicSearchRequestBuilder>()
+            .AddScoped<IMuleSoftRequestBuilder, MuleSoftRequestBuilder>()
+            .AddScoped<IMuleSoftRepository, MuleSoftRepository>()
             .AddScoped<IHttpAdapter, HttpAdapter>()
-            .AddScoped<IMuleSoftRepository, MuleSoftRepository>();
+            .AddScoped<IDelayCaculator, ExponentialDelayCalculator>();
     }
 }

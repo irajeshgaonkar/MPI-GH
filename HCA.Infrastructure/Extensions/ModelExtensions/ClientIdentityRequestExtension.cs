@@ -1,6 +1,7 @@
 ﻿using System;
 using HCA.Infrastructure.Comparer;
 using HCA.Models;
+using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 
 namespace HCA.Infrastructure.Extensions.ModelExtensions;
@@ -44,6 +45,16 @@ public static class ClientIdentityRequestExtension
         }
 
         return (records, duplicateRecords);
+    }
+
+    public static string GetTrackingId(string sourceName, string sourceSystemId)
+    {
+        return $"{sourceName}-{sourceSystemId}-{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}";
+    }
+
+    public static string GetTrackingId(this Source source)
+    {
+        return GetTrackingId(source.Name, source.Id);
     }
 }
 

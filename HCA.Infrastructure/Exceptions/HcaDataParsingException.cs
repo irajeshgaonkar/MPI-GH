@@ -7,3 +7,10 @@ public class HcaDataParsingException : Exception
     }
 }
 
+public class HcaBadRequestException : Exception
+{
+    public HcaBadRequestException(string message) : base(message)
+    {
+    }
+}
+

@@ -96,17 +96,6 @@ public class ClientIdentityRepository : IClientIdentityRepository
     public async Task Update(ClientIdentityEntity clientIdentity)
     {
         _dbContext.Entry(clientIdentity).State = EntityState.Modified;
-
-        foreach (var communication in clientIdentity.Communications)
-        {
-            _dbContext.ClientIdentityCommunications.Add(communication);
-        }
-
-        foreach (var address in clientIdentity.Addresses)
-        {
-            _dbContext.ClientIdentityAddresses.Add(address);
-        }
-
         await _dbContext.SaveChangesAsync();
     }
 
@@ -247,6 +236,41 @@ public class ClientIdentityRepository : IClientIdentityRepository
 
         return clonedCommuncationIdentity;
 
+    }
+
+    public async Task<IEnumerable<ClientIdentityEntity>> Search(string? fName, string? mName, string? lName, string? email, string? ssn)
+    {
+        if (fName.IsNotEmpty())
+            return _dbContext.ClientIdentities
+                            .Include(c => c.Addresses)
+                            .Include(c => c.Communications)
+                            .Where(c => c.FirstName == fName).AsEnumerable();
+
+        if (mName.IsNotEmpty())
+            return _dbContext.ClientIdentities
+                            .Include(c => c.Addresses)
+                            .Include(c => c.Communications)
+                            .Where(c => c.MiddleName == mName).AsEnumerable();
+
+        if (lName.IsNotEmpty())
+            return _dbContext.ClientIdentities
+                            .Include(c => c.Addresses)
+                            .Include(c => c.Communications)
+                            .Where(c => c.LastName == lName).AsEnumerable();
+
+        if (ssn.IsNotEmpty())
+            return _dbContext.ClientIdentities
+                            .Include(c => c.Addresses)
+                            .Include(c => c.Communications)
+                            .Where(c => c.Ssn == ssn).AsEnumerable();
+
+        //if (email.IsNotEmpty())
+        //    return _dbContext.ClientIdentities
+        //                    .Include(c => c.Addresses)
+        //                    .Include(c => c.Communications)
+        //                    .Where(c => c.Communications == ssn).AsEnumerable();
+
+        return Enumerable.Empty<ClientIdentityEntity>();
     }
 }
 
