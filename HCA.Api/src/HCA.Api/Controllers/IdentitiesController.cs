@@ -63,55 +63,104 @@ namespace HCA.Api.Controllers
         [HttpPut("unlink")]
         public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var result = await _clientIdentityService.UnLinkIdentities(value);
+
+                if (result == null)
+                {
+                    return BadRequest("Invalid Input");
+                }
+
+                return Ok(result);
             }
-
-            var result = await _clientIdentityService.UnLinkIdentities(value);
-
-            if (result == null)
+            catch (HcaBadRequestException e)
             {
-                return BadRequest("Invalid Input");
+                return BadRequest(e.Message);
             }
-
-            return Ok(result);
+            catch (HcaMuleSoftException e)
+            {
+                return BadRequest(e.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex);
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("merge")]
         public async Task<IActionResult> Merge([FromBody] MergingSources value)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var result = await _clientIdentityService.MergeIdentites(value);
+
+                if (result == null)
+                {
+                    return BadRequest("Invalid Input");
+                }
+
+                return Ok(result);
             }
-
-            var result = await _clientIdentityService.MergeIdentites(value);
-
-            if (result == null)
+            catch (HcaBadRequestException e)
             {
-                return BadRequest("Invalid Input");
+                return BadRequest(e.Message);
             }
-
-            return Ok(result);
+            catch (HcaMuleSoftException e)
+            {
+                return BadRequest(e.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex);
+                return StatusCode(500);
+            }
         }
 
         [HttpPut("unmerge")]
         public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var result = await _clientIdentityService.UnMergeIdentities(value);
+
+                if (result == null)
+                {
+                    return BadRequest("Invalid Input");
+                }
+
+                return Ok(result);
+
             }
-
-            var result = await _clientIdentityService.UnMergeIdentities(value);
-
-            if (result == null)
+            catch (HcaBadRequestException e)
             {
-                return BadRequest("Invalid Input");
+                return BadRequest(e.Message);
             }
-
-            return Ok(result);
+            catch (HcaMuleSoftException e)
+            {
+                return BadRequest(e.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex);
+                return StatusCode(500);
+            }
         }
     }
 }

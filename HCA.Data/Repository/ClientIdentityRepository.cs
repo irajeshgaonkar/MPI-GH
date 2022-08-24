@@ -21,7 +21,6 @@ public class ClientIdentityRepository : IClientIdentityRepository
         var identities = _dbContext.ClientIdentities
                             .Include(c => c.Addresses)
                             .Include(c => c.Communications)
-                            .Where(c => c.IsActive == true)
                             .Skip(skip)
                             .Take(take);
 
@@ -30,7 +29,7 @@ public class ClientIdentityRepository : IClientIdentityRepository
 
     public async Task<int> GetCount()
     {
-        var count = _dbContext.ClientIdentities.Where(c => c.IsActive == true).Count();
+        var count = _dbContext.ClientIdentities.Count();
         return await Task.FromResult(count);
     }
 
