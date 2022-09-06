@@ -78,8 +78,8 @@ public class FileWriter : IFileWriter
         var inputLines = _fileReader.ReadLines(streamReader);
         var headerLines = new List<string>();
         headerLines.Add(inputLines[0]);
-        headerLines.Add(inputLines[1]);
-        headerLines.Add("MPI Link ID,Source System ID,Source System Last Update ,First Name,Middle Name,Last Name,Suffix,Birth Date,Gender,SSN,Address Type,Address Line 1 ,Address Line 2,Address Line 3,City ,State,Zip Code,Zip Plus Four,Phone type,Phone number,Email type,Email Address,Protectec Population Flag,Protected Population Type,Status,Message,,,,,");
+        //headerLines.Add(inputLines[1]);
+        //headerLines.Add("MPI Link ID,Source System ID,Source System Last Update ,First Name,Middle Name,Last Name,Suffix,Birth Date,Gender,SSN,Address Type,Address Line 1 ,Address Line 2,Address Line 3,City ,State,Zip Code,Zip Plus Four,Phone type,Phone number,Email type,Email Address,Protectec Population Flag,Protected Population Type,Status,Message,,,,,");
         var lines = new CsvFileWriter().GetCsvFileLines(models);
 
 

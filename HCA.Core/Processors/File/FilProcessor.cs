@@ -79,7 +79,7 @@ public class FilProcessor : IFileProcessor
     {
         List<FileClientIdentity> clientIdentities = new();
 
-        for (int i = 3; i < lines.Count; ++i)
+        for (int i = 1; i < lines.Count; ++i)
         {
             var values = _clientIdentityParser.ParseToValues(lines[i]);
             if (null == values || _clientIdentityParser.IsEmptyLine(values)) break;
