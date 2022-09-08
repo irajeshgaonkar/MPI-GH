@@ -26,6 +26,7 @@ public class ClientIdentityMapper
         result.SourceSystemId = request.SourceSystemId;
         result.SourceSystemAgency = request.SourceSystemAgency;
         result.FirstName = request.FirstName;
+        result.MiddleName = request.MiddleName;
         result.LastName = request.LastName;
         result.NameSuffix = request.NameSuffix;
         result.Ssn = request.Ssn;
