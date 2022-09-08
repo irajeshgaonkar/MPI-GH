@@ -13,8 +13,12 @@ namespace HCA.Core.Mapper
         {
             CreateMap<ClientIdentityRequest, ClientIdentityRequestEntity>();
             CreateMap<ClientIdentityRequestEntity, ClientIdentityRequest>();
-            CreateMap<FileClientIdentity, ClientIdentityRequestEntity>();
+            CreateMap<UserRequest, UserRequestEntity>();
+            CreateMap<UserRequestEntity, UserRequest>();
+            CreateMap<FileRequest, FileRequestEntity>();
+            CreateMap<FileRequestEntity, FileRequest>();
             CreateMap<ClientIdentityRequestEntity, FileClientIdentity>();
+            CreateMap<FileClientIdentity, ClientIdentityRequestEntity>();
         }
     }
 }

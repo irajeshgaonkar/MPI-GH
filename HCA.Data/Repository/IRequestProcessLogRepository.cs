@@ -1,10 +1,10 @@
 ﻿using HCA.Data.Entities;
+using HCA.Data.Repository.Core;
 
 namespace HCA.Data.Repository;
 
-public interface IRequestProcessLogRepository
+public interface IRequestProcessLogRepository : IRepositoryBase<RequestProcessLogEntity>
 {
-    Task<RequestProcessLogEntity> LogStatus(Guid requestId, string message);
 }
 
 

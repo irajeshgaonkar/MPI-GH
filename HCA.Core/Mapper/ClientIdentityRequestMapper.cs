@@ -20,19 +20,19 @@ public class ClientIdentityRequestMapper : IClientIdentityRequestMapper
     }
 
     /// <inheritdoc/>
-    public ClientIdentityRequest MapToModel(Data.Entities.ClientIdentityRequestEntity entity)
+    public ClientIdentityRequest MapToModel(ClientIdentityRequestEntity entity)
     {
         return _mapper.Map<ClientIdentityRequest>(entity);
     }
 
     /// <inheritdoc/>
-    public ClientIdentityRequestEntity MapToEntity(Models.Request.ClientIdentityRequest model)
+    public ClientIdentityRequestEntity MapToEntity(ClientIdentityRequest model)
     {
         return _mapper.Map<ClientIdentityRequestEntity>(model);
     }
 
     /// <inheritdoc/>
-    public IEnumerable<ClientIdentityRequest> MapToModelCollection(IEnumerable<Data.Entities.ClientIdentityRequestEntity> entities)
+    public IEnumerable<ClientIdentityRequest> MapToModelCollection(IEnumerable<ClientIdentityRequestEntity> entities)
     {
         var collection = new List<ClientIdentityRequest>();
 
@@ -48,6 +48,111 @@ public class ClientIdentityRequestMapper : IClientIdentityRequestMapper
     public IEnumerable<ClientIdentityRequestEntity> MapToEntityCollection(IEnumerable<Models.Request.ClientIdentityRequest> models)
     {
         var entities = new List<ClientIdentityRequestEntity>();
+
+        foreach (var model in models)
+        {
+            entities.Add(MapToEntity(model));
+        }
+
+        return entities;
+    }
+}
+
+/// <inheritdoc/>
+public class UserRequestMapper : IUserRequestMapper
+{
+    private readonly IMapper _mapper;
+
+    /// <summary>
+    /// <see cref="UserRequestMapper"/>
+    /// </summary>
+    /// <param name="mapper">Auto mapper</param>
+    public UserRequestMapper(IMapper mapper)
+    {
+        _mapper = mapper;
+    }
+
+    /// <inheritdoc/>
+    public UserRequest MapToModel(UserRequestEntity entity)
+    {
+        return _mapper.Map<UserRequest>(entity);
+    }
+
+    /// <inheritdoc/>
+    public UserRequestEntity MapToEntity(UserRequest model)
+    {
+        return _mapper.Map<UserRequestEntity>(model);
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<UserRequest> MapToModelCollection(IEnumerable<UserRequestEntity> entities)
+    {
+        var collection = new List<UserRequest>();
+
+        foreach (var entity in entities)
+        {
+            collection.Add(MapToModel(entity));
+        }
+
+        return collection;
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<UserRequestEntity> MapToEntityCollection(IEnumerable<UserRequest> models)
+    {
+        var entities = new List<UserRequestEntity>();
+
+        foreach (var model in models)
+        {
+            entities.Add(MapToEntity(model));
+        }
+
+        return entities;
+    }
+}
+
+public class FileRequestMapper : IFileRequestMapper
+{
+    private readonly IMapper _mapper;
+
+    /// <summary>
+    /// <see cref="UserRequestMapper"/>
+    /// </summary>
+    /// <param name="mapper">Auto mapper</param>
+    public FileRequestMapper(IMapper mapper)
+    {
+        _mapper = mapper;
+    }
+
+    /// <inheritdoc/>
+    public FileRequest MapToModel(FileRequestEntity entity)
+    {
+        return _mapper.Map<FileRequest>(entity);
+    }
+
+    /// <inheritdoc/>
+    public FileRequestEntity MapToEntity(FileRequest model)
+    {
+        return _mapper.Map<FileRequestEntity>(model);
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<FileRequest> MapToModelCollection(IEnumerable<FileRequestEntity> entities)
+    {
+        var collection = new List<FileRequest>();
+
+        foreach (var entity in entities)
+        {
+            collection.Add(MapToModel(entity));
+        }
+
+        return collection;
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<FileRequestEntity> MapToEntityCollection(IEnumerable<FileRequest> models)
+    {
+        var entities = new List<FileRequestEntity>();
 
         foreach (var model in models)
         {

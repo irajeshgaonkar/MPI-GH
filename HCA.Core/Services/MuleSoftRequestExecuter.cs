@@ -6,6 +6,7 @@ using HCA.Models.Enums;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
+using HCA.Models.Response;
 using HCA.MuleSoft;
 
 namespace HCA.Core.Services
@@ -17,21 +18,18 @@ namespace HCA.Core.Services
         private readonly IMuleSoftRepository _muleSoftRepository;
         private readonly IMuleSoftRequestBuilder _muleSoftRequestBuilder;
         private readonly IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> requestExecuters;
-        private readonly IRequestUpdater _requestUpdater;
 
         public MuleSoftRequestExecuter(MuleSoftRetryOptions muleSoftRetryOptions, IDelayCaculator delayCaculator,
-            IMuleSoftRepository muleSoftRepository, IMuleSoftRequestBuilder muleSoftRequestBuilder,
-            IRequestUpdater requestUpdater)
+            IMuleSoftRepository muleSoftRepository, IMuleSoftRequestBuilder muleSoftRequestBuilder)
         {
             _muleSoftRetryOptions = muleSoftRetryOptions;
             _delayCaculator = delayCaculator;
             _muleSoftRepository = muleSoftRepository;
             _muleSoftRequestBuilder = muleSoftRequestBuilder;
             requestExecuters = BuildRequestExecutors();
-            _requestUpdater = requestUpdater;
         }
 
-        public async Task<T?> Execute<T>(BaseRequest request) where T : BaseResponse
+        public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater statusUpdater) where T : BaseResponse
         {
             
             for (int i = 0; i < _muleSoftRetryOptions.MaxRetries; ++i)
@@ -39,7 +37,7 @@ namespace HCA.Core.Services
                 try
                 {
                     if (i > 0)
-                        await _requestUpdater.UpdateRequestStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
+                        await statusUpdater.UpdateStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
 
                     var response = await requestExecuters[request.ApiCallType](request);
                     if (response.Success) return response as T;
@@ -47,7 +45,7 @@ namespace HCA.Core.Services
                     if (HasErrors(response))
                     {
                         var errorMessage = response.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-                        await _requestUpdater.UpdateRequestStatus(request, RequestStatus.Failed, $"{errorMessage}");
+                        await statusUpdater.UpdateStatus(request, RequestStatus.Failed, $"{errorMessage}");
                         throw new HcaMuleSoftException(errorMessage);
                     }
 
@@ -138,29 +136,28 @@ namespace HCA.Core.Services
             return response;
         }
 
-        private T CreateResponse<T>(MuleSoftResponse muleSoftResponse) where T : BaseResponse, new()
+        private static T CreateResponse<T>(MuleSoftResponse muleSoftResponse) where T : BaseResponse, new()
         {
-            var value = new T();
-
-            value.TrackingId = muleSoftResponse.TrackingId;
-            value.AuditId = muleSoftResponse.AuditId;
-            value.Success = muleSoftResponse.Success;
-            value.RetryableError = muleSoftResponse.RetryableError;
-            value.Message = muleSoftResponse.Message;
-            value.Errors = muleSoftResponse.Errors;
+            var value = new T
+            {
+                TrackingId = muleSoftResponse.TrackingId,
+                AuditId = muleSoftResponse.AuditId,
+                Success = muleSoftResponse.Success,
+                RetryableError = muleSoftResponse.RetryableError,
+                Message = muleSoftResponse.Message,
+                Errors = muleSoftResponse.Errors
+            };
             return value;
         }
 
-        private T Cast<T>(BaseRequest request) where T : BaseRequest
+        private static T Cast<T>(BaseRequest request) where T : BaseRequest
         {
-            T? muleSoftRequest = request as T;
-
-            if (null == muleSoftRequest)
+            if (request is not T muleSoftRequest)
                 throw new HcaMuleSoftException("Invalid input");
             return muleSoftRequest;
         }
 
-        private bool HasErrors(MuleSoftResponse response)
+        private static bool HasErrors(BaseResponse response)
         {
             if (null != response.Errors && response.Errors.Count > 0) return true;
             if (null == response) return true;

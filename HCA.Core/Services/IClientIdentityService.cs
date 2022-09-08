@@ -1,21 +1,31 @@
 ﻿using HCA.Models;
+using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Response;
+using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
 
 public interface IClientIdentityService
 {
-    Task<PagenatedCollection<ClientIdentity>> GetAll(int pageNumber, int recordsPerPage);
+    Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10);
 
-    Task<PagenatedCollection<ClientIdentity>> Search(int pageNumber, int recordsPerPage, IdentityFilter filter);
+    Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<LinkIdentitiesResponseContent?> LinkIdentities(LinkingSources linkingSources);
+    Task<dynamic?> UnLinkIdentities(UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UnLinkingSources unLinkingSources);
+    Task<dynamic?> MergeIdentities(MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<MergeIdentitiesResponseContent?> MergeIdentites(MergingSources mergingSources);
+    Task<dynamic?> UnMergeIdentities(UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<UnMergeIdentitiesResponseContent?> UnMergeIdentities(UnMergingSources unMergingSources);
+    Task<dynamic?> DemographicSearch(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+}
+
+public interface IUserModifyRecordsService
+{
+    Task<IEnumerable<ClientIdentityModel>> GetUserRecords(string currentUser);
+
+    Task MoveToModify(string userName, int clientIdentityId);
+
+    Task RemoveModify(string userName, int clientIdentityId);
 }
 

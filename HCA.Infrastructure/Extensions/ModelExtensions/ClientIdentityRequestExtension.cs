@@ -56,5 +56,15 @@ public static class ClientIdentityRequestExtension
     {
         return GetTrackingId(source.Name, source.Id);
     }
+
+    public static string GetTrackingId(this Source source, Source source2)
+    {
+        return $"{source.Name}-{source.Id}-{source2.Name}-{source2.Id}-{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}";
+    }
+
+    public static string GetTrackingId()
+    {
+        return DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+    }
 }
 

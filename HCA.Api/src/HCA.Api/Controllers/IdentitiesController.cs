@@ -1,11 +1,14 @@
-﻿using HCA.Core.Services;
-using HCA.Infrastructure.Exceptions;
+﻿using HCA.Api.Dto;
+using HCA.Api.Mapper;
+using HCA.Core.Services;
+using HCA.Data.Entities;
+using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
-using HCA.Models;
+using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
+using HCA.Models.SQS;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace HCA.Api.Controllers
 {
@@ -16,151 +19,111 @@ namespace HCA.Api.Controllers
 
         private readonly IClientIdentityService _clientIdentityService;
 
-        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger logger)
+        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger)
         {
             _clientIdentityService = clientIdentityService;
-            _logger = logger;
+            _logger = appLogger;
         }
 
-        [HttpPost]
-        public async Task<PagenatedCollection<ClientIdentity>> Identities([FromBody] IdentityFilter filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20)
+        [HttpPost("dashboardData")]
+        public async Task<IActionResult> GetDashboardData([FromBody] Identity filter, [FromQuery] string? currentUser, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20)
         {
-            if (!filter.HasFilter())
-            {
-                var searchResult = await _clientIdentityService.GetAll(pagNumber, recordsPerPage);
-                return searchResult;
-            }
+            var (searchBy, searchValue) = GetSearchFilter(filter);
+            var (count, records) = await _clientIdentityService.GetAll(currentUser ?? "User Request", searchBy ?? "", searchValue ?? "", pagNumber, recordsPerPage);
+            var identities = ClientIdentityDtoMapper.GetDto(records);
 
-            var identitityModels = await _clientIdentityService.Search(pagNumber, recordsPerPage, filter);
-            return identitityModels;
+            var result = new PagenatedCollection<ClientIdentityDto>
+            {
+                RecordsCount = count,
+                PageNumber = pagNumber,
+                RecordsPerPage = recordsPerPage,
+                Data = identities
+            };
+
+            return Ok(result);
+        }
+
+
+        [HttpPost("demographicSearch")]
+        public async Task<IActionResult> DemographicSearch([FromBody] Identity filter, [FromQuery] string? currentUser, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var searchResult = await _clientIdentityService.DemographicSearch(filter, currentUser ?? "User Request", processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
         }
 
         [HttpPut("link")]
-        public async Task<IActionResult> Link([FromBody] LinkingSources value)
+        public async Task<IActionResult> Link([FromBody] LinkingSources value, [FromQuery] string? currentUser, [FromQuery] string? processingOptions = null)
         {
-            try
-            {
-                if (!ModelState.IsValid) return BadRequest(ModelState);
-                var result = await _clientIdentityService.LinkIdentities(value);
-                if (null == result) return BadRequest("Invalid Input");
-                return Ok(result);
-            }
-            catch (HcaBadRequestException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (HcaMuleSoftException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex);
-                return StatusCode(500);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.LinkIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            if (null == result) return BadRequest("Invalid Input");
+            return Ok(result);
         }
 
         [HttpPut("unlink")]
-        public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value)
+        public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value, [FromQuery] string? currentUser, [FromQuery] string? processingOptions = null)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var result = await _clientIdentityService.UnLinkIdentities(value);
-
-                if (result == null)
-                {
-                    return BadRequest("Invalid Input");
-                }
-
-                return Ok(result);
-            }
-            catch (HcaBadRequestException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (HcaMuleSoftException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex);
-                return StatusCode(500);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.UnLinkIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
         }
 
         [HttpPut("merge")]
-        public async Task<IActionResult> Merge([FromBody] MergingSources value)
+        public async Task<IActionResult> Merge([FromBody] MergingSources value, [FromQuery] string? currentUser, [FromQuery] string? processingOptions = null)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var result = await _clientIdentityService.MergeIdentites(value);
-
-                if (result == null)
-                {
-                    return BadRequest("Invalid Input");
-                }
-
-                return Ok(result);
-            }
-            catch (HcaBadRequestException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (HcaMuleSoftException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex);
-                return StatusCode(500);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.MergeIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
         }
 
         [HttpPut("unmerge")]
-        public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value)
+        public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value, [FromQuery] string? currentUser, [FromQuery] string? processingOptions = null)
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.UnMergeIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
 
-                var result = await _clientIdentityService.UnMergeIdentities(value);
+        private static (ProcessType, NotificationOptions?) GetProcessingOptions(string? processingOptions)
+        {
+            if (processingOptions.IsEmpty()) return (ProcessType.Sync, null);
+            var options = processingOptions?.SplitByChar('|');
+            if (options == null) return (ProcessType.Sync, null);
+            Enum.TryParse(typeof(ProcessType), options[0], true, out var processTypeObj);
+            if (processTypeObj == null) return (ProcessType.Sync, null);
+            var processType = (ProcessType)processTypeObj;
+            if (options.Length < 3 || processType == ProcessType.Sync) return (ProcessType.Sync, null);
+            var appName = options[1];
+            var messageGroupId = options[2];
+            return (ProcessType.Async, new NotificationOptions() { AppName = appName, MessageGroup = messageGroupId });
+        }
 
-                if (result == null)
-                {
-                    return BadRequest("Invalid Input");
-                }
+        private static (string?, string?) GetSearchFilter(Identity filter)
+        {
+            var name = filter.Names.FirstOrDefault();
 
-                return Ok(result);
+            if (name != null)
+            {
+                if (name.First.IsNotEmpty()) return ("FName", name.First);
+                if (name.Last.IsNotEmpty()) return ("LName", name.Last);
+            }
 
-            }
-            catch (HcaBadRequestException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (HcaMuleSoftException e)
-            {
-                return BadRequest(e.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex);
-                return StatusCode(500);
-            }
+            var ssn = filter.Ssns.FirstOrDefault();
+            if (ssn.IsNotEmpty()) return ("Ssn", ssn);
+
+            var email = filter.Emails.FirstOrDefault();
+            if (email.IsNotEmpty()) return ("Email", email);
+
+            return (null, null);
         }
     }
 }

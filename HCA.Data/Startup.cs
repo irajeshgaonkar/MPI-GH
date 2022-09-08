@@ -13,8 +13,7 @@ public static class Startup
         var connectionDetails = new ConnectionDetails { ConnectionString = configuration["DbConnectionStr"] };
         return services
             .AddSingleton(connectionDetails)
-            .AddDbContext<HcaDbContext>(options => options.UseNpgsql(connectionDetails.ConnectionString))
-            .AddScoped<IDataAdapter, DataAdapter>();
+            .AddDbContext<HcaDbContext>(options => options.UseNpgsql(connectionDetails.ConnectionString));
     }
 
     public static IServiceCollection AddRepositories(this IServiceCollection services)
@@ -24,8 +23,8 @@ public static class Startup
                 .AddScoped<IClientIdentityRequestRepository, ClientIdentityRequestRepository>()
                 .AddScoped<IFileRequestRepository, FileRequestRepository>()
                 .AddScoped<IUserRequestRepository, UserRequestRepository>()
-                .AddScoped<IUserRepository, UserRepository>()
-                .AddScoped<IRequestProcessLogRepository, RequestProcessLogRepository>();
+                .AddScoped<IRequestProcessLogRepository, RequestProcessLogRepository>()
+                .AddScoped<IUserModifyRecordsRepository, UserModifyRecordsRepository>();
     }
 }
 

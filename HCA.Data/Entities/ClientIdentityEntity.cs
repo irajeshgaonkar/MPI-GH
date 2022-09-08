@@ -12,6 +12,13 @@ namespace HCA.Data.Entities;
 public class ClientIdentityEntity : BaseEntity
 {
     /// <summary>
+    /// Primary key for client identity address
+    /// </summary>
+    [Key]
+    [Column("client_identity_id")]
+    public int Id { get; set; }
+
+    /// <summary>
     /// Universal link id
     /// </summary>
     [Column("mpi_link_id")]

@@ -1,4 +1,5 @@
-﻿using HCA.Data.Entities;
+﻿using System.Globalization;
+using HCA.Data.Entities;
 using HCA.Infrastructure.Comparer;
 using HCA.Models;
 using HCA.Models.MuleSoft;
@@ -8,10 +9,7 @@ namespace HCA.Core.Mapper;
 
 public class ClientIdentityMapper
 {
-    //public static ClientIdentity MapToModel(ClientIdentityEntity entity)
-    //{
-    //    return new ClientIdentity();
-    //}
+    private static CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
 
     public static ClientIdentityEntity MapFromRequestToEntity(string linkId, DateTime mpiUpdated, IEnumerable<ClientIdentityRequest> requests)
     {
@@ -19,59 +17,61 @@ public class ClientIdentityMapper
         result.Addresses = new List<ClientIdentityAddressEntity>();
         result.Communications = new List<ClientIdentityCommunicationEntity>();
 
-        foreach (var request in requests)
+        var request = requests.First();
+        bool valiDob = DateOnly.TryParse(request.Dob, culture, DateTimeStyles.None, out var dob);
+        DateTime.TryParse(request.SourceSystemUpdated, culture, DateTimeStyles.None, out var sourceSystemUpdated);
+        bool.TryParse(request.ProtectedPopulationFlag, out var protectedPopulationFlag);
+        result.MpiLinkId = linkId;
+        result.SourceSystemName = request.SourceSystemName;
+        result.SourceSystemId = request.SourceSystemId;
+        result.SourceSystemAgency = request.SourceSystemAgency;
+        result.FirstName = request.FirstName;
+        result.LastName = request.LastName;
+        result.NameSuffix = request.NameSuffix;
+        result.Ssn = request.Ssn;
+        result.Dob = valiDob ? dob : null;
+        result.Gender = request.Gender;
+        result.ProtectedPopulationFlag = protectedPopulationFlag;
+        result.ProtectedPopulationType = request.ProtectedPopulationType ?? "";
+        result.MpiUpdated = mpiUpdated;
+        result.SourceSystemUpdated = sourceSystemUpdated;
+        result.IsActive = true;
+        result.IsDelete = false;
+        result.CreatedBy = "Batch File";
+        result.CreatedDate = DateTime.Now;
+        result.UpdatedBy = "Batch File";
+        result.UpdatedDate = DateTime.Now;
+
+        var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
+        
+        foreach (var addressGroup in requestGroupedByAddress)
         {
-            result.MpiLinkId = linkId;
-            result.SourceSystemName = request.SourceSystemName;
-            result.SourceSystemId = request.SourceSystemId;
-            result.SourceSystemAgency = request.SourceSystemAgency;
-            result.FirstName = request.FirstName;
-            result.LastName = request.LastName;
-            result.NameSuffix = request.NameSuffix;
-            result.Ssn = request.Ssn;
-            result.Dob = request.Dob;
-            result.Gender = request.Gender;
-            result.ProtectedPopulationFlag = request.ProtectedPopulationFlag;
-            result.ProtectedPopulationType = request.ProtectedPopulationType ?? "";
-            result.MpiUpdated = mpiUpdated;
-            result.SourceSystemUpdated = request.SourceSystemUpdated;
-            result.IsActive = true;
-            result.IsDelete = false;
-            result.CreatedBy = "Batch File";
-            result.CreatedDate = DateTime.Now;
-            result.UpdatedBy = "Batch File";
-            result.UpdatedDate = DateTime.Now;
+            List<ClientIdentityAddressCommunicationEntity> addressCommunications = new List<ClientIdentityAddressCommunicationEntity>();
+            var requestGroupedByCommunication = addressGroup.GroupBy(r => r, new ClientIdentityRequestCommunicationComparer());
 
-            var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
-
-            foreach (var addressGroup in requestGroupedByAddress)
-            {
-                var address = new ClientIdentityAddressEntity();
-                var addressRequest = addressGroup.First();
-                address.MpiLinkId = result.MpiLinkId;
-                address.SourceSystemName = result.SourceSystemName;
-                address.SourceSystemId = result.SourceSystemId;
-                address.AddressType = addressRequest.AddressType ?? "";
-                address.AddressLine1 = addressRequest.AddressLine1;
-                address.AddressLine2 = addressRequest.AddressLine2;
-                address.AddressLine3 = addressRequest.AddressLine3;
-                address.City = addressRequest.City;
-                address.State = addressRequest.State;
-                address.ZipCode = addressRequest.ZipCode;
-                address.ZipFour = addressRequest.ZipFour;
-                address.ZipCode = addressRequest.ZipCode;
-                address.ZipFour = addressRequest.ZipFour;
-                address.SourceSystemUpdated = request.SourceSystemUpdated;
-                address.IsActive = true;
-                address.IsDelete = false;
-                address.CreatedBy = "Batch File";
-                address.CreatedDate = DateTime.Now;
-                address.UpdatedBy = "Batch File";
-                address.UpdatedDate = DateTime.Now;
-                result.Addresses.Add(address);
-            }
-
-            var requestGroupedByCommunication = requests.GroupBy(r => r, new ClientIdentityRequestCommunicationComparer());
+            var address = new ClientIdentityAddressEntity();
+            var addressRequest = addressGroup.First();
+            address.MpiLinkId = result.MpiLinkId;
+            address.SourceSystemName = result.SourceSystemName;
+            address.SourceSystemId = result.SourceSystemId;
+            address.AddressType = addressRequest.AddressType ?? "";
+            address.AddressLine1 = addressRequest.AddressLine1;
+            address.AddressLine2 = addressRequest.AddressLine2;
+            address.AddressLine3 = addressRequest.AddressLine3;
+            address.City = addressRequest.City;
+            address.State = addressRequest.State;
+            address.ZipCode = addressRequest.ZipCode;
+            address.ZipFour = addressRequest.ZipFour;
+            address.ZipCode = addressRequest.ZipCode;
+            address.ZipFour = addressRequest.ZipFour;
+            address.SourceSystemUpdated = result.SourceSystemUpdated;
+            address.IsActive = true;
+            address.IsDelete = false;
+            address.CreatedBy = "Batch File";
+            address.CreatedDate = DateTime.Now;
+            address.UpdatedBy = "Batch File";
+            address.UpdatedDate = DateTime.Now;
+            result.Addresses.Add(address);
 
             foreach (var communicationGroup in requestGroupedByCommunication)
             {
@@ -84,7 +84,7 @@ public class ClientIdentityMapper
                 communication.EmailType = communicationRequest.EmailType ?? "";
                 communication.EmailAddress = communicationRequest.EmailAddress ?? "";
                 communication.PhoneNumber = communicationRequest.PhoneNumber ?? "";
-                communication.SourceSystemUpdated = request.SourceSystemUpdated;
+                communication.SourceSystemUpdated = result.SourceSystemUpdated;
                 communication.IsActive = true;
                 communication.IsDelete = false;
                 communication.CreatedBy = "Batch File";
@@ -92,7 +92,30 @@ public class ClientIdentityMapper
                 communication.UpdatedBy = "Batch File";
                 communication.UpdatedDate = DateTime.Now;
                 result.Communications.Add(communication);
+
+
+                var addressCommunication = new ClientIdentityAddressCommunicationEntity()
+                {
+                    Address = address,
+                    Communication = communication
+                };
+
+                addressCommunications.Add(addressCommunication);
             }
+
+            address.AddressCommunications = addressCommunications;
+        }
+
+        return result;
+    }
+
+    public static List<ClientIdentityModel> MapToClientIdentityModel(IEnumerable<ClientIdentityEntity> entities)
+    {
+        var result = new List<ClientIdentityModel>();
+        foreach (var entity in entities)
+        {
+            var model = MapToClientIdentityModel(entity);
+            result.Add(model);
         }
 
         return result;
@@ -116,26 +139,26 @@ public class ClientIdentityMapper
                 ZipFour = clientIdentyAddress.ZipFour
             };
 
+            var communications = new List<ClientIdentityCommunication>();
+            foreach (var addressCommunication in clientIdentyAddress.AddressCommunications)
+            {
+                var clientIdentyCommunication = addressCommunication.Communication;
+
+                var communication = new ClientIdentityCommunication()
+                {
+                    PhoneType = clientIdentyCommunication.PhoneType ?? "",
+                    PhoneNumber = clientIdentyCommunication.PhoneNumber ?? "",
+                    EmailType = clientIdentyCommunication.EmailType ?? "",
+                    EmailAddress = clientIdentyCommunication.EmailAddress ?? ""
+                };
+                communications.Add(communication);
+            }
+            address.Communications = communications;
             addresses.Add(address);
         }
 
-        var communications = new List<ClientIdentityCommunication>();
-
-        foreach (var clientIdentyCommunication in entity.Communications)
-        {
-            var communication = new ClientIdentityCommunication()
-            {
-                PhoneType = clientIdentyCommunication.PhoneType ?? "",
-                PhoneNumber = clientIdentyCommunication.PhoneNumber ?? "",
-                EmailType = clientIdentyCommunication.EmailType ?? "",
-                EmailAddress = clientIdentyCommunication.EmailAddress ?? ""
-            };
-
-            communications.Add(communication);
-        }
-
         var result = new ClientIdentityModel();
-
+        result.Id = entity.Id;
         result.MpiLinkId = entity.MpiLinkId!;
         result.FirstName = entity.FirstName;
         result.LastName = entity.LastName;
@@ -151,53 +174,7 @@ public class ClientIdentityMapper
         result.ProtectedPopulationType = entity.ProtectedPopulationType!;
         result.SourceSystemUpdated = entity.SourceSystemUpdated.ToUniversalTime();
         result.Addresses = addresses;
-        result.Communications = communications;
-
         return result;
-    }
-
-    public static List<ClientIdentity> MapToClientIdentity(ClientIdentityModel model)
-    {
-        var clientIdentities = new List<ClientIdentity>();
-
-        foreach (var address in model.Addresses)
-        {
-            var clientIdentity = new ClientIdentity();
-
-            clientIdentity.Id = model.Id;
-            clientIdentity.MPILinkId = model.MpiLinkId ?? "";
-            clientIdentity.SourceSystemId = model.SourceSystemId;
-            clientIdentity.SourceName = model.SourceSystemName;
-            clientIdentity.SourceSystemLastUpdate = model.SourceSystemUpdated;
-            clientIdentity.FirstName = model.FirstName;
-            clientIdentity.MiddleName = model.MiddleName ?? "";
-            clientIdentity.LastName = model.LastName;
-            clientIdentity.Suffix = model.NameSuffix ?? "";
-            clientIdentity.BirthDate = model.DOB?.ToString() ?? "";
-            clientIdentity.Gender = model.Gender;
-            clientIdentity.SSN = model.SSN ?? "";
-            clientIdentity.AddressType = address.AddressType ?? "";
-            clientIdentity.AddressLine1 = address.AddressLine1;
-            clientIdentity.AddressLine2 = address.AddressLine2 ?? "";
-            clientIdentity.AddressLine3 = address.AddressLine3 ?? "";
-            clientIdentity.City = address.City ?? "";
-            clientIdentity.State = address.State ?? "";
-            clientIdentity.ZipCode = address.ZipCode;
-            clientIdentity.ZipPlusFour = address.ZipFour;
-            clientIdentity.ProtectecPopulationFlag = model.ProtectedPopulationFlag;
-            clientIdentity.ProtectedPopulationType = model.ProtectedPopulationType ?? "";
-
-            foreach (var communication in model.Communications)
-            {
-                clientIdentity.PhoneNumber = communication.PhoneNumber ?? "";
-                clientIdentity.EmailType = communication.EmailType ?? "";
-                clientIdentity.EmailAddress = communication.EmailAddress ?? "";
-            }
-
-            clientIdentities.Add(clientIdentity);
-        }
-
-        return clientIdentities;
     }
 }
 

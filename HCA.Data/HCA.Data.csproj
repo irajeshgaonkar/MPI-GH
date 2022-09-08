@@ -13,10 +13,17 @@
     <None Remove="Microsoft.EntityFrameworkCore.Design" />
     <None Remove="Repository\" />
     <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="AutoFilterer" />
+    <None Remove="Repository\Core\" />
+    <None Remove="Repository\Impl\" />
+    <None Remove="Options\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Entities\" />
     <Folder Include="Repository\" />
+    <Folder Include="Repository\Core\" />
+    <Folder Include="Repository\Impl\" />
+    <Folder Include="Options\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.6" />
@@ -26,6 +33,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="AutoFilterer" Version="2.12.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />

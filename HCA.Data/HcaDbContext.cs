@@ -9,14 +9,13 @@ public class HcaDbContext : DbContext
 
     public HcaDbContext()
     {
-        _conntectionString = @"Host=aurora-postgres-database.cluster-ce211rmnisgi.us-east-1.rds.amazonaws.com;Port=5432;Database=testdb;Username=postgres;Password=admin1234";
+        _conntectionString = "Host=aurora-postgres-database.cluster-ce211rmnisgi.us-east-1.rds.amazonaws.com;Port=5432;Database=testdb;Username=postgres;Password=admin1234;SearchPath='mpicoalation';";
     }
 
     public HcaDbContext(ConnectionDetails connectionDetails)
     {
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         _conntectionString = connectionDetails.ConnectionString;
-        //_conntectionString = @"Host=aurora-postgres-database.cluster-ce211rmnisgi.us-east-1.rds.amazonaws.com;Port=5432;Database=testdb;Username=postgres;Password=admin1234";
     }
 
     public HcaDbContext(DbContextOptions<HcaDbContext> options, ConnectionDetails connectionDetails)
@@ -24,14 +23,7 @@ public class HcaDbContext : DbContext
     {
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         _conntectionString = connectionDetails.ConnectionString;
-        //_conntectionString = @"Host=aurora-postgres-database.cluster-ce211rmnisgi.us-east-1.rds.amazonaws.com;Port=5432;Database=testdb;Username=postgres;Password=admin1234";
     }
-
-    public DbSet<UserEntity> Users { get; set; }
-
-    public DbSet<UserRequestEntity> UserRoles { get; set; }
-
-    public DbSet<RoleEntity> Roles { get; set; }
 
     public DbSet<ClientIdentityEntity> ClientIdentities { get; set; }
 
@@ -41,15 +33,17 @@ public class HcaDbContext : DbContext
 
     public DbSet<ClientIdentityAddressCommunicationEntity> ClientIdentityAddressCommunication { get; set; }
 
-    public DbSet<ClientIdentityRequestEntity> ClientIdentityRequests { get; set; }
-
     public DbSet<FileRequestEntity> FileRequests { get; set; }
+
+    public DbSet<UserRequestEntity> UserRequests { get; set; }
+
+    public DbSet<ClientIdentityRequestEntity> ClientIdentityRequests { get; set; }
 
     public DbSet<MpiLinkIdHistoryEntity> MpiLinkIdHistory { get; set; }
 
     public DbSet<RequestProcessLogEntity> RequestProcessLogs { get; set; }
 
-    public DbSet<UserRequestEntity> UserRequests { get; set; }
+    public DbSet<UserModifyRecordsEntity> UserModifyRecords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -62,32 +56,23 @@ public class HcaDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UserRoleEntity>()
-            .HasKey(ur => new { ur.UserId, ur.RoleId });
-
-        modelBuilder.Entity<UserRoleEntity>()
-            .HasOne(ur => ur.User)
-            .WithMany(u => u.UserRoles)
-            .HasForeignKey(ur => ur.UserId);
-
-        modelBuilder.Entity<UserRoleEntity>()
-            .HasOne(ur => ur.Role)
-            .WithMany(u => u.UserRoles)
-            .HasForeignKey(ur => ur.RoleId);
+        modelBuilder.Entity<ClientIdentityEntity>()
+            .HasKey(c => new { c.SourceSystemName, c.SourceSystemId });
 
         modelBuilder.Entity<ClientIdentityEntity>()
-            .HasKey(c => new { c.MpiLinkId, c.SourceSystemName, c.SourceSystemId });
+            .Property(f => f.Id)
+            .ValueGeneratedOnAdd();
 
         modelBuilder.Entity<ClientIdentityEntity>()
             .HasMany(c => c.Addresses)
             .WithOne(a => a.ClientIdentity)
-            .HasForeignKey(a => new {a.MpiLinkId, a.SourceSystemName, a.SourceSystemId})
+            .HasForeignKey(a => new { a.SourceSystemName, a.SourceSystemId })
             .IsRequired();
 
         modelBuilder.Entity<ClientIdentityEntity>()
             .HasMany(c => c.Communications)
             .WithOne(c => c.ClientIdentity)
-            .HasForeignKey(c => new { c.MpiLinkId, c.SourceSystemName, c.SourceSystemId })
+            .HasForeignKey(c => new { c.SourceSystemName, c.SourceSystemId })
             .IsRequired();
 
         modelBuilder.Entity<ClientIdentityAddressCommunicationEntity>()
@@ -106,4 +91,3 @@ public class HcaDbContext : DbContext
         base.OnModelCreating(modelBuilder);
     }
 }
-

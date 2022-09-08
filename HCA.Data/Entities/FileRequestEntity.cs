@@ -16,6 +16,14 @@ public class FileRequestEntity : BaseEntity
     public int Id { get; set; }
 
     /// <summary>
+    /// Unique Id for the request
+    /// </summary>
+    [Column("request_id")]
+    [MaxLength(200)]
+    [Required]
+    public string RequestId { get; set; }
+
+    /// <summary>
     /// Uniquely identifies the request, Foreign key for the all the request
     /// </summary>
     [Column("tracking_id")]

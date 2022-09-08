@@ -9,7 +9,7 @@ namespace HCA.MuleSoft.Lambda.Models
 
         public string FileName { get; set; }
 
-        public int RequestId { get; set; }
+        public string RequestId { get; set; }
     }
 
     public class ResponseModel
@@ -20,7 +20,7 @@ namespace HCA.MuleSoft.Lambda.Models
 
         public string fileName { get; set; }
 
-        public int requestId { get; set; }
+        public string requestId { get; set; }
     }
 }
 

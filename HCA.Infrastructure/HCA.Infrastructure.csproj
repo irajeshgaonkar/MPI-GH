@@ -21,6 +21,8 @@
     <None Remove="FileReadWriter\" />
     <None Remove="AWSSDK.S3" />
     <None Remove="Attributes\" />
+    <None Remove="Sqs\" />
+    <None Remove="AWSSDK.SQS" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Extensions\" />
@@ -33,6 +35,7 @@
     <Folder Include="Converters\" />
     <Folder Include="FileReadWriter\" />
     <Folder Include="Attributes\" />
+    <Folder Include="Sqs\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
@@ -41,5 +44,6 @@
     <PackageReference Include="Amazon.Lambda.Core" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.7" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.97" />
   </ItemGroup>
 </Project>

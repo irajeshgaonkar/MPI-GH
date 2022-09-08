@@ -9,12 +9,3 @@ public class PostClientIdentityRequest : BaseRequest
 
     public IList<ClientIdentityRequest> Content { get; set; }
 }
-
-public class DemographicSearchClientIdentityRequest : BaseRequest
-{
-    public DemographicSearchClientIdentityRequest(string trackingId) : base(ApiCallType.VEDemographicSearch, trackingId)
-    {
-    }
-
-    public IdentityFilter Content { get; set; }
-}

@@ -27,9 +27,16 @@ public class UserRequestEntity : BaseEntity
     /// <summary>
     /// File Name
     /// </summary>
-    [Column("user_id")]
+    [Column("api_call_type")]
     [Required]
-    public int UserId { get; set; }
+    public string ApiCallType { get; set; }
+
+    /// <summary>
+    /// File Name
+    /// </summary>
+    [Column("user_name")]
+    [Required]
+    public string UserName { get; set; }
 
     /// <summary>
     /// Request Json
@@ -37,6 +44,20 @@ public class UserRequestEntity : BaseEntity
     [Column("request_json")]
     [Required]
     public string RequestJson { get; set; }
+
+    /// <summary>
+    /// Request Json
+    /// </summary>
+    [Column("response_json")]
+    [Required]
+    public string ResponseJson { get; set; }
+
+    /// <summary>
+    /// Request Json
+    /// </summary>
+    [Column("notification_options")]
+    [Required]
+    public string? NotificationOptions { get; set; }
 
     /// <summary>
     /// Requested Date time

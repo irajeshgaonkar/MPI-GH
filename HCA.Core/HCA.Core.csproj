@@ -21,18 +21,23 @@
     <None Remove="Processors\" />
     <None Remove="Services\" />
     <None Remove="Processors\FileProcessor\" />
-    <None Remove="Processors\MuleSoft\" />
+    <None Remove="Processors\StatusUpdater\" />
+    <None Remove="Processors\SQS\" />
+    <None Remove="Amazon.S3" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Mapper\" />
     <Folder Include="Processors\" />
     <Folder Include="Services\" />
     <Folder Include="Processors\File\" />
-    <Folder Include="Processors\MuleSoft\" />
+    <Folder Include="Processors\StatusUpdater\" />
+    <Folder Include="Processors\SQS\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="AutoMapper" Version="11.0.1" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
+    <PackageReference Include="Amazon.S3" Version="0.24.0" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.9.23" />
   </ItemGroup>
 </Project>

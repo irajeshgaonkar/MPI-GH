@@ -1,32 +1,32 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 25.0.1700.4
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.Data", "HCA.Data\HCA.Data.csproj", "{C8CC9A12-3669-40BE-8B63-C195E2B6F402}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Data", "HCA.Data\HCA.Data.csproj", "{C8CC9A12-3669-40BE-8B63-C195E2B6F402}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{53EEBCD8-A6A9-4CBA-9DA3-8BF380021535}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.MuleSoft.Lambda", "HCA.MuleSoft.Lambda\src\HCA.MuleSoft.Lambda\HCA.MuleSoft.Lambda.csproj", "{75F8B490-B235-4A42-BBB6-C6B94FC52658}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft.Lambda", "HCA.MuleSoft.Lambda\src\HCA.MuleSoft.Lambda\HCA.MuleSoft.Lambda.csproj", "{75F8B490-B235-4A42-BBB6-C6B94FC52658}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.MuleSoft", "HCA.MuleSoft\HCA.MuleSoft.csproj", "{7415F64D-E916-430A-9A19-A96729FA6CAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft", "HCA.MuleSoft\HCA.MuleSoft.csproj", "{7415F64D-E916-430A-9A19-A96729FA6CAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.Core", "HCA.Core\HCA.Core.csproj", "{3329398D-FEC5-4B3E-B4D2-FA1B8ECA7D85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Core", "HCA.Core\HCA.Core.csproj", "{3329398D-FEC5-4B3E-B4D2-FA1B8ECA7D85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.Models", "HCA.Models\HCA.Models.csproj", "{25C45F86-659C-4433-9E36-D992A22DB82C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Models", "HCA.Models\HCA.Models.csproj", "{25C45F86-659C-4433-9E36-D992A22DB82C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.Infrastructure", "HCA.Infrastructure\HCA.Infrastructure.csproj", "{CACD9606-C5C4-418F-A6E5-BF402FF750B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Infrastructure", "HCA.Infrastructure\HCA.Infrastructure.csproj", "{CACD9606-C5C4-418F-A6E5-BF402FF750B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.MuleSoft.Interface", "HCA.MuleSoft.Interface\HCA.MuleSoft.Interface.csproj", "{E1629AE9-4992-4AA2-9B82-C717411857B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft.Interface", "HCA.MuleSoft.Interface\HCA.MuleSoft.Interface.csproj", "{E1629AE9-4992-4AA2-9B82-C717411857B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.Api", "HCA.Api\src\HCA.Api\HCA.Api.csproj", "{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Api", "HCA.Api\src\HCA.Api\HCA.Api.csproj", "{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.S3Triggered", "HCA.S3Triggered\src\HCA.S3Triggered\HCA.S3Triggered.csproj", "{F629ADB1-B5C0-42DB-BC1E-C6D165B49962}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.FileProcessor", "HCA.FileProcessor\HCA.FileProcessor.csproj", "{416FCDC5-4683-455E-9958-D1B8487C365E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.FileProcessor", "HCA.FileProcessor\HCA.FileProcessor.csproj", "{416FCDC5-4683-455E-9958-D1B8487C365E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Batch.SQS.Publisher.Lambda", "HCA.Batch.SQS.Publisher.Lambda\src\HCA.Batch.SQS.Publisher.Lambda\HCA.Batch.SQS.Publisher.Lambda.csproj", "{56592BA9-FF08-4E34-A573-D1CADF6BB6C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,14 +66,14 @@ Global
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F629ADB1-B5C0-42DB-BC1E-C6D165B49962}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F629ADB1-B5C0-42DB-BC1E-C6D165B49962}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F629ADB1-B5C0-42DB-BC1E-C6D165B49962}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F629ADB1-B5C0-42DB-BC1E-C6D165B49962}.Release|Any CPU.Build.0 = Release|Any CPU
 		{416FCDC5-4683-455E-9958-D1B8487C365E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{416FCDC5-4683-455E-9958-D1B8487C365E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{416FCDC5-4683-455E-9958-D1B8487C365E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{416FCDC5-4683-455E-9958-D1B8487C365E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56592BA9-FF08-4E34-A573-D1CADF6BB6C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56592BA9-FF08-4E34-A573-D1CADF6BB6C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56592BA9-FF08-4E34-A573-D1CADF6BB6C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56592BA9-FF08-4E34-A573-D1CADF6BB6C1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

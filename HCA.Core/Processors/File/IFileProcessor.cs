@@ -2,7 +2,7 @@
 
 public interface IFileProcessor
 {
-    Task<int> ProcessFile(string fileName, StreamReader streamReader);
+    //Task<int> ProcessFile(string fileName, StreamReader streamReader);
 }
 
 

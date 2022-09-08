@@ -1,21 +1,16 @@
 ﻿using HCA.Data.Entities;
+using HCA.Data.Repository.Core;
 
 namespace HCA.Data.Repository;
 
-public interface IClientIdentityRequestRepository
+public interface IClientIdentityRequestRepository : IRepositoryBase<ClientIdentityRequestEntity>
 {
-    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(int id, string? status = null);
+    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(string requestId, string? status = null);
 
-    Task InsertBulk(IEnumerable<ClientIdentityRequestEntity> entities);
+    Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(string requestId, int batchNumber);
 
-    Task UpdateRequest(ClientIdentityRequestEntity requestEntity);
-
-    Task Update(IEnumerable<ClientIdentityRequestEntity> entities);
-
-    Task UpdateStatus(int id, IEnumerable<string> trackingIds, string? status, string? message, string? mpiLinkId);
-
-    Task Update(IList<int> ids, string? status, string? message, string? trackingId, string? mpiLinkId);
-}
+    Task UpdateStatus(List<int> ids, string? status, string? message, string? mpiLinkId, string? trackingId = null);
+ }
 
 
 

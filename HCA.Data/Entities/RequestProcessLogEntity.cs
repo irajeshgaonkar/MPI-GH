@@ -18,14 +18,20 @@ public class RequestProcessLogEntity : BaseEntity
     /// <summary>
     /// Uniquely identifies the process, Foreign key for the all the request
     /// </summary>
-    [Column("request_id")]
-    public Guid RequestId { get; set; }
+    [Column("tracking_id")]
+    public string TrackingId { get; set; }
 
     /// <summary>
     /// Date Time fo the log
     /// </summary>
     [Column("date_time")]
     public DateTime DateTime { get; set; }
+
+    /// <summary>
+    /// Log Message
+    /// </summary>
+    [Column("status")]
+    public string Status { get; set; }
 
     /// <summary>
     /// Log Message

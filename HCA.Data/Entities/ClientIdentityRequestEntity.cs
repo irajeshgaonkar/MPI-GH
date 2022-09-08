@@ -20,7 +20,15 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// </summary>
     [Column("request_id")]
     [Required]
-    public int RequestId { get; set; }
+    [MaxLength(200)]
+    public string RequestId { get; set; }
+
+    /// <summary>
+    /// Unique Id for the request - mapping to file request
+    /// </summary>
+    [Column("batch_number")]
+    [Required]
+    public int BatchNumber { get; set; }
 
     /// <summary>
     /// Unique Id for the request
@@ -41,8 +49,9 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// Source System Update Date
     /// </summary>
     [Column("source_system_updated")]
+    [MaxLength(100)]
     [Required]
-    public DateTime SourceSystemUpdated { get; set; }
+    public string SourceSystemUpdated { get; set; }
 
     /// <summary>
     /// Source system Name
@@ -110,7 +119,8 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// Date of Birth
     /// </summary>
     [Column("dob")]
-    public DateOnly? Dob { get; set; }
+    [MaxLength(50)]
+    public string? Dob { get; set; }
 
     /// <summary>
     /// Gender
@@ -123,7 +133,8 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// Protected Population flag
     /// </summary>
     [Column("protected_population_flag")]
-    public bool ProtectedPopulationFlag { get; set; }
+    [MaxLength(10)]
+    public string ProtectedPopulationFlag { get; set; }
 
     /// <summary>
     /// Protected Population type

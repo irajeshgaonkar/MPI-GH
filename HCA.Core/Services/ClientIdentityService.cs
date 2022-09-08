@@ -5,230 +5,58 @@ using HCA.Data.Repository;
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
+using HCA.Infrastructure.Sqs;
 using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
+using HCA.Models.Response;
+using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
 
-public interface IClientIdentityRequestExecutor
+public class UserModifyRecordsService : IUserModifyRecordsService
 {
-    Task<T?> Execute<T>(BaseRequest request) where T : BaseResponse;
-}
+    private readonly IUserModifyRecordsRepository _userModifyRecordsRepository;
 
-public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
-{
     private readonly IClientIdentityRepository _clientIdentityRepository;
 
-    private readonly IMuleSoftRequestExecuter _muleSoftRequestExecuter;
-
-    private readonly IRequestUpdater _requestUpdater;
-
-    private readonly IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> requestExecuters;
-
-    public ClientIdentityRequestExecutor(IClientIdentityRepository clientIdentityRepository,
-        IMuleSoftRequestExecuter muleSoftRequestExecuter, IRequestUpdater requestUpdater)
+    public UserModifyRecordsService(IUserModifyRecordsRepository userModifyRecordsRepository,
+        IClientIdentityRepository clientIdentityRepository)
     {
+        _userModifyRecordsRepository = userModifyRecordsRepository;
         _clientIdentityRepository = clientIdentityRepository;
-        _muleSoftRequestExecuter = muleSoftRequestExecuter;
-        _requestUpdater = requestUpdater;
-        requestExecuters = BuildRequestExecutors();
     }
 
-    public async Task<T?> Execute<T>(BaseRequest request) where T : BaseResponse
+    public async Task<IEnumerable<ClientIdentityModel>> GetUserRecords(string currentUser)
     {
-        await _requestUpdater.UpdateRequestStatus(request, RequestStatus.Processing, "Started Processing Request");
-        var response = await requestExecuters[request.ApiCallType](request);
-        if (response.Success) return response as T;
-        await _requestUpdater.UpdateRequestStatus(request, RequestStatus.Failed, "Error processing the request");
-        throw new HcaMuleSoftException("Error processing the request");
+        var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
+        var entities = await _clientIdentityRepository.GetAllByQuery(c => c.IsActive == true && userModifyRecords.Contains(c.Id));
+        var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
+        return models;
     }
 
-    private IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> BuildRequestExecutors()
+    public async Task MoveToModify(string userName, int clientIdentityId)
     {
-        var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>>
+        var entity = new UserModifyRecordsEntity()
         {
-            [ApiCallType.VEPost] = PostIdentity,
-            [ApiCallType.VELink] = LinkIdentities,
-            [ApiCallType.VEUnLink] = UnLinkIdentities,
-            [ApiCallType.VEMerge] = MergeIdentities,
-            [ApiCallType.VEUnMerge] = UnMergeIdentities,
-            [ApiCallType.VEDemographicSearch] = DemographicSearch,
+            UserName = userName,
+            ClientIdentityId = clientIdentityId
         };
 
-        return requestExecuters;
+        _userModifyRecordsRepository.AddAsync(entity);
+        await Task.CompletedTask;
     }
 
-    private async Task<BaseResponse> PostIdentity(BaseRequest request)
+    public async Task RemoveModify(string userName, int clientIdentityId)
     {
-        var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
-        var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest);
+        var entity = await _userModifyRecordsRepository.GetSingleAsync(m => m.UserName == userName && m.ClientIdentityId == clientIdentityId);
 
-        if (null != response && response.Success && null != response.Content?.LinkId)
+        if (entity != null)
         {
-            var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
-            await _clientIdentityRepository.Upsert(entity);
-            return response;
+            _userModifyRecordsRepository.Delete(entity);
         }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task<BaseResponse> LinkIdentities(BaseRequest request)
-    {
-        var linkIdentitiesRequest = Cast<LinkClientIdentityRequest>(request);
-        var linkingSources = linkIdentitiesRequest.Content;
-        var linkToIdentity = (await _clientIdentityRepository.GetBySourceAndId(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id)).FirstOrDefault();
-        var sourceIdentity = (await _clientIdentityRepository.GetBySourceAndId(linkingSources.Source.Name, linkingSources.Source.Id)).FirstOrDefault();
-
-        if (null == linkToIdentity)
-            throw new HcaBadRequestException("link source not found");
-
-        if (null == sourceIdentity)
-            throw new HcaBadRequestException("source not found");
-
-        if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
-            throw new HcaBadRequestException("sources are already linked");
-
-        var response = await _muleSoftRequestExecuter.Execute<LinkClientIdentityResponse>(request);
-        if (null != response && response.Success && null != response.Content?.LinkId)
-        {
-            await _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity.SourceSystemName, sourceIdentity.SourceSystemId, response.Content.LinkId);
-            return response;
-        }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task<BaseResponse> UnLinkIdentities(BaseRequest request)
-    {
-        var unLinkClientIdentityRequest = Cast<UnLinkClientIdentityRequest>(request);
-        var unLinkingSources = unLinkClientIdentityRequest.Content;
-
-        var unlinkFromIdentity = (await _clientIdentityRepository.GetBySourceAndId(unLinkingSources.UnlinkFromSource.Name, unLinkingSources.UnlinkFromSource.Id)).FirstOrDefault();
-        var sourceIdentity = (await _clientIdentityRepository.GetBySourceAndId(unLinkingSources.Source.Name, unLinkingSources.Source.Id)).FirstOrDefault();
-
-        if (null == unlinkFromIdentity)
-            throw new HcaBadRequestException("Un link source not found");
-
-        if (null == sourceIdentity)
-            throw new HcaBadRequestException("source not found");
-
-        //if (unlinkFromIdentity.MpiLinkId != sourceIdentity.MpiLinkId)
-        //    throw new HcaBadRequestException("sources are not linked");
-
-        var response = await _muleSoftRequestExecuter.Execute<UnLinkClientIdentityResponse>(request);
-        if (null != response && response.Success && null != response.Content?.UnlinkedId)
-        {
-            await _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity.SourceSystemName, sourceIdentity.SourceSystemId, response.Content.UnlinkedId);
-            return response;
-        }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task<BaseResponse> MergeIdentities(BaseRequest request)
-    {
-        var mergeClientIdentityRequest = Cast<MergeClientIdentityRequest>(request);
-        var mergingSources = mergeClientIdentityRequest.Content;
-
-        var toSurviveIdentity = (await _clientIdentityRepository.GetBySourceAndId(mergingSources.ToSurviveSource.Name, mergingSources.ToSurviveSource.Id)).FirstOrDefault();
-        var toRetireIdentity = (await _clientIdentityRepository.GetBySourceAndId(mergingSources.ToRetireSource.Name, mergingSources.ToRetireSource.Id)).FirstOrDefault();
-
-        if (null == toSurviveIdentity)
-            throw new HcaBadRequestException("To servive source not found");
-
-        if (null == toRetireIdentity)
-            throw new HcaBadRequestException("To retire source not found");
-
-        var response = await _muleSoftRequestExecuter.Execute<MergeClientIdentityResponse>(request);
-
-        if (null != response && response.Success && null != response.Content?.LinkId)
-        {
-            toRetireIdentity.IsActive = false;
-            toRetireIdentity.IsDelete = true;
-            //toRetireIdentity.MpiLinkId = response.Content.LinkId;
-            await _clientIdentityRepository.Update(toRetireIdentity);
-            return response;
-        }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task<BaseResponse> UnMergeIdentities(BaseRequest request)
-    {
-        var unMergeClientIdentityRequest = Cast<UnMergeClientIdentityRequest>(request);
-        var unMergingSources = unMergeClientIdentityRequest.Content;
-
-        var unmergeFromIdentity = (await _clientIdentityRepository.GetBySourceAndId(unMergingSources.UnmergeFromSource.Name, unMergingSources.UnmergeFromSource.Id)).FirstOrDefault();
-        var unmergeSourceIdentity = (await _clientIdentityRepository.GetBySourceAndId(unMergingSources.UnmergeSource.Name, unMergingSources.UnmergeSource.Id)).FirstOrDefault();
-
-        if (null == unmergeFromIdentity)
-            throw new HcaBadRequestException("Un merge from source not found");
-
-        if (null == unmergeSourceIdentity)
-            throw new HcaBadRequestException("Un merge source not found");
-
-        var response = await _muleSoftRequestExecuter.Execute<UnMergeClientIdentityResponse>(request);
-
-        if (null != response && response.Success && null != response.Content?.UnmergedId)
-        {
-            unmergeSourceIdentity.IsActive = true;
-            unmergeSourceIdentity.IsDelete = false;
-            await _clientIdentityRepository.Update(unmergeSourceIdentity);
-            return response;
-        }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task<BaseResponse> DemographicSearch(BaseRequest request)
-    {
-        var demographicSearchClientIdentityRequest = Cast<DemographicSearchClientIdentityRequest>(request);
-        var response = await _muleSoftRequestExecuter.Execute<DemographicSearchClientIdentityResponse>(demographicSearchClientIdentityRequest);
-        var listClientIdentities = new List<ClientIdentityModel>();
-
-        if (null != response && response.Success && null != response.Content)
-        {
-            foreach (var groupedIdentity in response.Content)
-            {
-                foreach (var identity in groupedIdentity.IdentityGroupedBySource)
-                {
-                    if (identity.Names.Any())
-                    {
-                        foreach (var name in identity.Names)
-                        {
-                            var clientIdentities = await _clientIdentityRepository.Search(identity.Names.First().Name.First, null, null, null, null);
-                            if (null != clientIdentities)
-                            {
-                                if (null == clientIdentities) continue;
-                                
-                                foreach (var clientIdentity in clientIdentities)
-                                {
-                                    var identityModel = ClientIdentityMapper.MapToClientIdentityModel(clientIdentity);
-                                    listClientIdentities.Add(identityModel);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            response.Result = listClientIdentities;
-            return response;
-        }
-
-        throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private T Cast<T>(BaseRequest request) where T : BaseRequest
-    {
-        T? muleSoftRequest = request as T;
-
-        if (null == muleSoftRequest)
-            throw new HcaMuleSoftException("Invalid input");
-        return muleSoftRequest;
     }
 }
 
@@ -236,213 +64,288 @@ public class ClientIdentityService : IClientIdentityService
 {
     private readonly IUserRequestRepository _userRequestRepository;
 
+    private readonly IUserModifyRecordsService _userModifyRecordsService;
+
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
 
     private readonly IClientIdentityRepository _clientIdentityRepository;
 
+    private readonly IUserModifyRecordsRepository _userModifyRecordsRepository;
+
+    private readonly IRequestProcessLogRepository _requestProcessLogRepository;
+
+    private readonly ISqsPublisher _sqsPublisher;
+
+    private readonly IUserRequestMapper _userRequestMapper;
+
     public ClientIdentityService(IUserRequestRepository userRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IClientIdentityRepository clientIdentityRepository)
+        IClientIdentityRepository clientIdentityRepository,
+        IUserModifyRecordsRepository userModifyRecordsRepository,
+        IRequestProcessLogRepository requestProcessLogRepository,
+        IUserModifyRecordsService userModifyRecordsService,
+        ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper)
     {
         _userRequestRepository = userRequestRepository;
         _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
         _clientIdentityRepository = clientIdentityRepository;
+        _userModifyRecordsRepository = userModifyRecordsRepository;
+        _requestProcessLogRepository = requestProcessLogRepository;
+        _sqsPublisher = sqsPublisher;
+        _userRequestMapper = userRequestMapper;
+        _userModifyRecordsService = userModifyRecordsService;
     }
 
-    public async Task<PagenatedCollection<ClientIdentity>> GetAll(int pageNumber, int recordsPerPage)
+    public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10)
     {
-        var skip = pageNumber * recordsPerPage;
-        var result = new List<ClientIdentity>();
+        //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
+        var userModifyRecords = new List<int>();
+        var (count, entities) = await _clientIdentityRepository.GetAll(searchBy, searchValue, userModifyRecords, pageNumber, recordsPerPage);
+        var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
+        return (count, models);
+    }
 
-        var clientIdentitiesCount = await _clientIdentityRepository.GetCount();
-        var clientIdentityEntities = await _clientIdentityRepository.GetAll(skip, recordsPerPage);
-        int i = 1;
+    public async Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{linkingSources.Source.GetTrackingId(linkingSources.LinkToSource)}";
+        var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.VELink, currentUser, trackingId, notificationOptions);
 
-        foreach (var clientIdentityEntity in clientIdentityEntities)
+        try
         {
-            var identityModel = ClientIdentityMapper.MapToClientIdentityModel(clientIdentityEntity);
-            var identities = ClientIdentityMapper.MapToClientIdentity(identityModel);
-
-            foreach (var identity in identities)
+            if (processType == ProcessType.Async)
             {
-                identity.Id = i++;
-                result.Add(identity);
+                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
+                return trackingId;
             }
-        }
 
-        var paginatedCollection = new PagenatedCollection<ClientIdentity>
+            //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
+            return await LinkIdentities(userRequestEntity, linkingSources);
+        }
+        catch (HcaMuleSoftException e)
         {
-            RecordsCount = clientIdentitiesCount,
-            PageNumber = pageNumber,
-            RecordsPerPage = recordsPerPage,
-            Data = result
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> UnLinkIdentities(UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{unLinkingSources.Source.GetTrackingId(unLinkingSources.UnlinkFromSource)}";
+        var userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.VEUnLink, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEUnLink, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, unLinkingSources.UnlinkFromSource, unLinkingSources.Source);
+            return await UnLinkIdentities(userRequestEntity, unLinkingSources);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> MergeIdentities(MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEMerge.GetStringValue()}-{mergingSources.ToSurviveSource.GetTrackingId(mergingSources.ToRetireSource)}";
+        var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.VEMerge, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEMerge, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
+            return await MergeIdentities(userRequestEntity, mergingSources);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> UnMergeIdentities(UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEUnMerge.GetStringValue()}-{unMergingSources.UnmergeSource.GetTrackingId(unMergingSources.UnmergeSource)}";
+        var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.VEUnMerge, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEUnMerge, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
+            return await UnMergeIdentities(userRequestEntity, unMergingSources);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> DemographicSearch(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var userRequestEntity = CreateUserRequest(filter, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEDemographicSearch, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DemographicSearch(userRequestEntity, filter);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+            throw;
+        }
+    }
+
+    private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var linkIdentityRequest = new LinkClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = linkingSources
         };
 
-        return paginatedCollection;
+        var response = await _clientIdentityRequestExecutor.Execute<LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
-    public async Task<LinkIdentitiesResponseContent?> LinkIdentities(LinkingSources linkingSources)
+    private async Task<List<PostIdentityResponseContent>?> DemographicSearch(UserRequestEntity userRequestEntity, Identity filter)
     {
-        var userRequest = await CreateUserRequest(linkingSources);
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var demographicSearhRequest = new DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = filter
+        };
 
-        try
-        {
-            var trackingId = linkingSources.Source.GetTrackingId();
-            var linkIdentityRequest = new LinkClientIdentityRequest(trackingId)
-            {
-                Content = linkingSources
-            };
-            var response = await _clientIdentityRequestExecutor.Execute<LinkClientIdentityResponse>(linkIdentityRequest);
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, "Request Processed Successfully");
-            return response?.Content;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            await UpdateProcessStatus(userRequest, RequestStatus.Failed, e.ToString());
-            throw;
-        }
+        var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
-    public async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UnLinkingSources unLinkingSources)
+    private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)
     {
-        var userRequest = await CreateUserRequest(unLinkingSources);
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var unLinkClientIdentityRequest = new UnLinkClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = unLinkingSources
+        };
 
-        try
-        {
-            var trackingId = unLinkingSources.Source.GetTrackingId();
-            var unLinkClientIdentityRequest = new UnLinkClientIdentityRequest(trackingId)
-            {
-                Content = unLinkingSources
-            };
-            var response = await _clientIdentityRequestExecutor.Execute<UnLinkClientIdentityResponse>(unLinkClientIdentityRequest);
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, "Request Processed Successfully");
-            return response?.Content;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            await UpdateProcessStatus(userRequest, RequestStatus.Failed, e.ToString());
-            throw;
-        }
+        var response = await _clientIdentityRequestExecutor.Execute<UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
-    public async Task<MergeIdentitiesResponseContent?> MergeIdentites(MergingSources mergingSources)
+    private async Task<MergeIdentitiesResponseContent?> MergeIdentities(UserRequestEntity userRequestEntity, MergingSources mergingSources)
     {
-        var userRequest = await CreateUserRequest(mergingSources);
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        try
+        var mergeClientIdentityRequest = new MergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            var trackingId = mergingSources.ToSurviveSource.GetTrackingId();
-            var mergeClientIdentityRequest = new MergeClientIdentityRequest(trackingId)
-            {
-                Content = mergingSources
-            };
-            var response = await _clientIdentityRequestExecutor.Execute<MergeClientIdentityResponse>(mergeClientIdentityRequest);
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, "Request Processed Successfully");
-            return response?.Content;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            await UpdateProcessStatus(userRequest, RequestStatus.Failed, e.ToString());
-            throw;
-        }
+            Content = mergingSources
+        };
+        var response = await _clientIdentityRequestExecutor.Execute<MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
-    public async Task<UnMergeIdentitiesResponseContent?> UnMergeIdentities(UnMergingSources unMergingSources)
+    private async Task<UnMergeIdentitiesResponseContent?> UnMergeIdentities(UserRequestEntity userRequestEntity, UnMergingSources unMergingSources)
     {
-        var userRequest = await CreateUserRequest(unMergingSources);
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        try
+        var unMergeClientIdentityRequest = new UnMergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            var trackingId = unMergingSources.UnmergeSource.GetTrackingId();
-            var unMergeClientIdentityRequest = new UnMergeClientIdentityRequest(trackingId)
-            {
-                Content = unMergingSources
-            };
-            var response = await _clientIdentityRequestExecutor.Execute<UnMergeClientIdentityResponse>(unMergeClientIdentityRequest);
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, "Request Processed Successfully");
-            return response?.Content;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            await UpdateProcessStatus(userRequest, RequestStatus.Failed, e.ToString());
-            throw;
-        }
+            Content = unMergingSources
+        };
+        var response = await _clientIdentityRequestExecutor.Execute<UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
-    public async Task<PagenatedCollection<ClientIdentity>> Search(int pageNumber, int recordsPerPage, IdentityFilter filter)
+    private async Task PublishMessageToSqs(ApiCallType apiCallType, UserRequestEntity userRequestEntity)
     {
-        var userRequest = await CreateUserRequest(filter);
+        var messageType = MessageType.UserRequest;
+        if (messageType == null) throw new ArgumentException($"ClientIdentityService:PublishMessageToSqs: cannot process message for {apiCallType.GetStringValue()}");
 
-        try
+        var userRequest = _userRequestMapper.MapToModel(userRequestEntity);
+        var UserRequestMessage = new UserRequestMessage()
         {
-            var trackingId = Guid.NewGuid().ToString();
-            var skip = pageNumber * recordsPerPage;
-            var demographicSearhRequest = new DemographicSearchClientIdentityRequest(trackingId)
-            {
-                Content = filter
-            };
+            ApiCallType = apiCallType.GetStringValue(),
+            UserRequest = userRequest
+        };
 
-            var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest);
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, "Request Processed Successfully");
-            var result = new List<ClientIdentity>();
-            int i = 1;
-
-            if (null != response)
-            {
-                foreach (var model in response.Result)
-                {
-                    var identities = ClientIdentityMapper.MapToClientIdentity(model);
-
-                    foreach (var identity in identities)
-                    {
-                        identity.Id = i++;
-                        result.Add(identity);
-                    }
-                }
-            }
-
-            var paginatedCollection = new PagenatedCollection<ClientIdentity>
-            {
-                RecordsCount = result.Count(),
-                PageNumber = pageNumber,
-                RecordsPerPage = recordsPerPage,
-                Data = result.Skip(skip).Take(recordsPerPage)
-            };
-
-            return paginatedCollection;
-
-        }
-        catch (HcaMuleSoftException e)
+        var sqsMessage = new SqsMessage()
         {
-            await UpdateProcessStatus(userRequest, RequestStatus.Success, e.ToString());
-            throw;
-        }
+            MessageType = messageType,
+            Payload = SerializationExtensions.Serialize(UserRequestMessage)
+        };
+
+        await _sqsPublisher.PublishMessage(sqsMessage);
     }
 
-    private async Task<UserRequestEntity> CreateUserRequest<T>(T request)
+    private UserRequestEntity CreateUserRequest<T>(T request, ApiCallType apiCallType, string userName, string trackingId, NotificationOptions? notificationOptions)
     {
+        if (request == null) throw new ArgumentNullException("ClientIdentityService:CreateUserRequest:Request cannot be nulle");
+
         var userRequest = new UserRequestEntity()
         {
-            TrackingId = Guid.NewGuid().ToString(),
-            UserId = 1,
+            TrackingId = trackingId,
+            UserName = userName,
+            ApiCallType = apiCallType.GetStringValue(),
             RequestJson = SerializationExtensions.Serialize(request),
+            ResponseJson = string.Empty,
+            NotificationOptions = null == notificationOptions ? string.Empty : SerializationExtensions.Serialize(notificationOptions),
             RequestDateTime = DateTime.Now,
             ProcessStartTime = DateTime.Now,
-            Status = RequestStatus.Processing.GetStringValue(),
+            Status = RequestStatus.NotStarted.GetStringValue(),
             Message = string.Empty,
             RetryCount = 0
         };
 
-        await _userRequestRepository.Insert(userRequest);
+        _userRequestRepository.AddAsync(userRequest);
         return userRequest;
     }
 
-    private async Task UpdateProcessStatus(UserRequestEntity userRequest, RequestStatus status, string message)
+    private void UpdateProcessStatus(UserRequestEntity userRequest, RequestStatus status, string message)
     {
         userRequest.Status = status.GetStringValue();
         userRequest.Message = message;
         userRequest.ProcessEndTime = DateTime.Now;
-        await _userRequestRepository.Update(userRequest);
+        _userRequestRepository.Update(userRequest);
+    }
+
+    private async Task RemoveUserModifyRecords(string userName, Source s1, Source s2)
+    {
+        var source1Id = await _clientIdentityRepository.GetIdBySource(s1.Name, s1.Id);
+        var source2Id = await _clientIdentityRepository.GetIdBySource(s2.Name, s2.Id);
+
+        if (source1Id != null)
+            await _userModifyRecordsService.RemoveModify(userName, source1Id ?? 0);
+
+        if (source2Id != null)
+            await _userModifyRecordsService.RemoveModify(userName, source2Id ?? 0);
     }
 }
 

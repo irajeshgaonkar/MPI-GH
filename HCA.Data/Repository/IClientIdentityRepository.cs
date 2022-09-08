@@ -1,23 +1,23 @@
-﻿using HCA.Data.Entities;
+﻿using System.Linq.Expressions;
+using HCA.Data.Entities;
+using HCA.Data.Repository.Core;
 using HCA.Models.MuleSoft;
 
 namespace HCA.Data.Repository;
 
-public interface IClientIdentityRepository
+public interface IClientIdentityRepository : IRepositoryBase<ClientIdentityEntity>
 {
-    Task Upsert(ClientIdentityEntity clientIdentity);
+    Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(string searchBy = "", string searchValue = "", List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10);
 
-    Task<IEnumerable<ClientIdentityEntity>> GetAll(int skip, int take);
-
-    Task<IEnumerable<ClientIdentityEntity?>> GetBySourceAndId(string sourceSystemName, string sourceSystemId, string? mpiLinkId = null);
-
-    Task Update(ClientIdentityEntity clientIdentity);
+    Task<IEnumerable<ClientIdentityEntity>> GetAllByQuery(Expression<Func<ClientIdentityEntity, bool>> query);
 
     Task UpdateMpiLinkId(string sourceSystemName, string sourceSystemId, string newMpiLinkId);
 
-    Task<int> GetCount();
+    void UpdateMpiLinkId(ClientIdentityEntity clientIdentityEntity, string newMpiLinkId);
 
-    Task<IEnumerable<ClientIdentityEntity>> GetBySources(List<Source> sources);
+    Task<ClientIdentityEntity?> GetBySource(string sourceSystemName, string sourceSystemId);
 
-    Task<IEnumerable<ClientIdentityEntity>> Search(string? fName, string? mName, string? lName, string? email, string? ssn);
+    Task<int?> GetIdBySource(string sourceSystemName, string sourceSystemId);
+
+    Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity);
 }

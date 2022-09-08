@@ -18,9 +18,13 @@
   <ItemGroup>
     <None Remove="Swashbuckle.AspNetCore" />
     <None Remove="Dto\" />
+    <None Remove="Filters\" />
+    <None Remove="Mapper\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Dto\" />
+    <Folder Include="Filters\" />
+    <Folder Include="Mapper\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\HCA.Core\HCA.Core.csproj">

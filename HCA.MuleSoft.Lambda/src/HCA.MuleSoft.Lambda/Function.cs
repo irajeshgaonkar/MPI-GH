@@ -1,12 +1,15 @@
 ﻿using System.Text.Json;
 using Amazon.Lambda.Core;
+using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
 using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
 using HCA.Data;
 using HCA.Infrastructure;
+using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
+using HCA.Models.SQS;
 using HCA.MuleSoft.Lambda.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,63 +48,72 @@ public class Function
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task<ResponseModel> FunctionHandler(RequestModel request, ILambdaContext context)
+    public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
     {
         var configuration = ConfigureSettings();
-
         var serviceProvider = ConfigureServices(context, new ServiceCollection(), configuration);
+
+        foreach(var message in evnt.Records)
+        {
+            await ProcessMessage(serviceProvider, message);
+        }
+    }
+
+    private async Task ProcessMessage(ServiceProvider serviceProvider, SQSEvent.SQSMessage message)
+    {
         var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        logger.LogInformation($"Started Processing event {request}");
+        logger.LogInformation($"Started Processing FunctionHandler {message.Body}");
 
-        if (null == request)
+        var sqsMessage = SerializationExtensions.DeSerializeWithoutCasing<SqsMessage>(message.Body);
+
+        if(sqsMessage == null)
         {
-            logger.LogInformation("Unable to Process the Request, Deserialization error");
-            return null;
+            logger.LogInformation($"Sqs message is empty");
+            return;
+        }
+        logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.MessageType}");
+        logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.Payload}");
+
+        if (sqsMessage.MessageType == MessageType.BatchProcess)
+        {
+            await ProcessBatchRequest(serviceProvider, sqsMessage);
+        }
+    }
+
+    private async Task ProcessBatchRequest(ServiceProvider serviceProvider, SqsMessage request)
+    {
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        logger.LogInformation($"started processing request {request.MessageType}");
+        var batchRequestProcessor = serviceProvider.GetRequiredService<IBatchRequestProcessor>();
+        var requestData = SerializationExtensions.DeSerializeWithoutCasing<BatchProcessMessage>(request.Payload);
+
+        if(requestData == null)
+        {
+            logger.LogInformation($"request data is null for {request.MessageType}");
+            return;
         }
 
-        logger.LogInformation($"Started Processing event {request.BucketName} | {request.FileName}| {request.OperationType} | {request.RequestId} ");
-
-        logger.LogInformation($"Started Processing event for operation type {request.OperationType}");
-
-        if (request.OperationType == Constants.FileDataLoadOperation)
-        {
-            var requestId = await ProcessFileDataLoadRequest(serviceProvider, request);
-            var response = new ResponseModel()
-            {
-                bucketName = request.BucketName,
-                fileName = request.FileName,
-                operationType = Constants.FileDataProcess,
-                requestId = requestId
-            };
-            return response;
-        }
-
-        else if (request.OperationType == Constants.FileDataProcess)
-        {
-            await ProcessFileDataRequest(serviceProvider, request);
-            await WriteFileToS3(serviceProvider, configuration, request);
-        }
-
-        return null;
+        await batchRequestProcessor.ProcessRequest(requestData);
     }
 
     private async Task ProcessFileDataRequest(ServiceProvider serviceProvider, RequestModel request)
     {
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        logger.LogInformation($"Started processing request {request.RequestId}");
-        var requestId = request.RequestId;
-        var fileRequestProcessor = serviceProvider.GetRequiredService<IFileRequestProcessor>();
-        await fileRequestProcessor.ProcessRequest(requestId);
-        logger.LogInformation($"Completed processing request {request.RequestId}");
+        //var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        //logger.LogInformation($"Started processing request {request.RequestId}");
+        //var requestId = request.RequestId;
+        //var fileRequestProcessor = serviceProvider.GetRequiredService<IFileRequestProcessor>();
+        //await fileRequestProcessor.ProcessRequest(12);
+        //logger.LogInformation($"Completed processing request {request.RequestId}");
     }
 
     private async Task<int> ProcessFileDataLoadRequest(ServiceProvider serviceProvider, RequestModel request)
     {
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        var fileProcessor = serviceProvider.GetRequiredService<IFileProcessor>();
-        var streamReader = await GetStreamReader(request.BucketName, request.FileName);
-        var requestId = await fileProcessor.ProcessFile(request.FileName, streamReader);
-        return requestId;
+        //var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        //var fileProcessor = serviceProvider.GetRequiredService<IFileProcessor>();
+        //var streamReader = await GetStreamReader(request.BucketName, request.FileName);
+        //var requestId = await fileProcessor.ProcessFile(request.FileName, streamReader);
+        //return requestId;
+        return 1;
     }
 
     private async Task<StreamReader> GetStreamReader(string bucketName, string fileName)
@@ -114,14 +126,14 @@ public class Function
 
     private async Task WriteFileToS3(ServiceProvider serviceProvider, IConfiguration configuration, RequestModel request)
     {
-        var streamReader = await GetStreamReader(request.BucketName, request.FileName);
-        var outputBucketName = configuration["OputBucketName"];
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        logger.LogInformation("started uplodated file");
-        var fileWriter = serviceProvider.GetRequiredService<IFileWriter>();
-        MemoryStream memoryStream = await fileWriter.WriteFile(request.RequestId, streamReader);
-        await S3Client.UploadObjectFromStreamAsync(outputBucketName, "output_" + request.FileName, memoryStream, new Dictionary<string, object>());
-        logger.LogInformation("Successfully uplodated file");
+        //var streamReader = await GetStreamReader(request.BucketName, request.FileName);
+        //var outputBucketName = configuration["OputBucketName"];
+        //var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        //logger.LogInformation("started uplodated file");
+        //var fileWriter = serviceProvider.GetRequiredService<IFileWriter>();
+        //MemoryStream memoryStream = await fileWriter.WriteFile(123, streamReader);
+        //await S3Client.UploadObjectFromStreamAsync(outputBucketName, "output_" + request.FileName, memoryStream, new Dictionary<string, object>());
+        //logger.LogInformation("Successfully uplodated file");
     }
 
     private T? DeSerialize<T>(string payLoad)
@@ -150,20 +162,7 @@ public class Function
 
     public ServiceProvider ConfigureServices(ILambdaContext context, IServiceCollection services, IConfiguration configuration)
     {
-        var serviceProvider = services
-                                .AddScoped((s) => S3Client)
-                                //.AddFileWriterReader()
-                                .AddScoped<FileWriter>()
-                                .AddAppLogging(context)
-                                .AddDbContext(configuration)
-                                .AddRepositories()
-                                .AddMuleSoft(configuration)
-                                .AddServices()
-                                .AddAutoMapper()
-                                .AddProcessors()
-                                .AddFileProcessors()
-                                .BuildServiceProvider();
-
+        var serviceProvider = services.AddHca(configuration).BuildServiceProvider();
         return serviceProvider;
     }
 

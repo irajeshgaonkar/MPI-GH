@@ -1,4 +1,5 @@
-﻿using HCA.Core;
+﻿using HCA.Api.Filters;
+using HCA.Core;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.MuleSoft;
@@ -17,18 +18,10 @@ public class Startup
     // This method gets called by the runtime. Use this method to add services to the container
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers(o => o.Filters.Add<HcaExceptionFilter>());
         services.AddSwaggerGen();
         services.AddCors();
-        services.AddCors();
-        services.AddConsoleLogging();
-        services.AddDbContext(Configuration);
-        services.AddRepositories();
-        services.AddMuleSoft(Configuration);
-        services.AddServices();
-        services.AddSecurity(Configuration);
-        services.AddAutoMapper();
-        services.AddFileProcessors();
+        services.AddHca(Configuration);
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
@@ -47,10 +40,13 @@ public class Startup
             .AllowAnyHeader();
         });
 
-        app.UseSwagger();
-        app.UseSwaggerUI();
-        app.UseHttpsRedirection();
-
+        //if (env.IsDevelopment())
+        //{
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            app.UseHttpsRedirection();
+        //}
+                
         app.UseRouting();
         app.UseAuthorization();
 
@@ -59,7 +55,7 @@ public class Startup
             endpoints.MapControllers();
             endpoints.MapGet("/", async context =>
             {
-                await context.Response.WriteAsync("Welcome to running ASP.NET Core on AWS Lambda");
+                await context.Response.WriteAsync("Mpi Coallation is running!");
             });
         });
     }

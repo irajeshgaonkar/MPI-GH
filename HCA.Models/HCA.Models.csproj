@@ -14,6 +14,8 @@
     <None Remove="MuleSoft\Request\" />
     <None Remove="MuleSoft\Response\" />
     <None Remove="Request\" />
+    <None Remove="Response\" />
+    <None Remove="SQS\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
@@ -24,5 +26,7 @@
     <Folder Include="MuleSoft\Request\" />
     <Folder Include="MuleSoft\Response\" />
     <Folder Include="Request\" />
+    <Folder Include="Response\" />
+    <Folder Include="SQS\" />
   </ItemGroup>
 </Project>

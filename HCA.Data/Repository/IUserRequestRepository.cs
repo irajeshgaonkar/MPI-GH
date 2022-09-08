@@ -1,13 +1,9 @@
 ﻿using HCA.Data.Entities;
+using HCA.Data.Repository.Core;
 
 namespace HCA.Data.Repository;
 
-public interface IUserRequestRepository
+public interface IUserRequestRepository : IRepositoryBase<UserRequestEntity>
 {
-    Task<UserRequestEntity> Insert(UserRequestEntity entity);
-
-    Task<UserRequestEntity?> GetRequest(string trackingId);
-
-    Task<UserRequestEntity> Update(UserRequestEntity entity);
 }
 

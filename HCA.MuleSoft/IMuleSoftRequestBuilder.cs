@@ -44,5 +44,10 @@ public interface IMuleSoftRequestBuilder
     /// <returns>return Un merge identities request for mulesoft <see cref="UnMergeIdentitiesRequest"></returns>
     UnMergeIdentitiesRequest BuildUnMergeIdentitiesRequest(UnMergeClientIdentityRequest request);
 
+    /// <summary>
+    /// Demographic search request builder
+    /// </summary>
+    /// <param name="request">Demographic search request <see cref="DemographicSearchClientIdentityRequest"/></param>
+    /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
     PostIdentityRequest BuildDemographicSearchRequest(DemographicSearchClientIdentityRequest request);
 }

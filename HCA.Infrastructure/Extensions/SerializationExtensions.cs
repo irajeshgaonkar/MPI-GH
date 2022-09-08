@@ -5,15 +5,21 @@ namespace HCA.Infrastructure.Extensions;
 public static class SerializationExtensions
 {
     public static string Serialize(dynamic obj)
-        => JsonSerializer.Serialize(obj, GetSerializationOptions());
+        => JsonSerializer.Serialize(obj, GetSerializationOptions(JsonNamingPolicy.CamelCase));
+
+    public static string SerializeWithoutCasing(dynamic obj)
+        => JsonSerializer.Serialize(obj, GetSerializationOptions(null));
 
     public static T? DeSerialize<T>(this string jsonString)
-        => JsonSerializer.Deserialize<T>(jsonString, GetSerializationOptions());
+        => JsonSerializer.Deserialize<T>(jsonString, GetSerializationOptions(JsonNamingPolicy.CamelCase));
 
-    private static JsonSerializerOptions GetSerializationOptions()
+    public static T? DeSerializeWithoutCasing<T>(this string jsonString)
+        => JsonSerializer.Deserialize<T>(jsonString, GetSerializationOptions(null));
+
+    private static JsonSerializerOptions GetSerializationOptions(JsonNamingPolicy? jsonNamingPolicy)
         => new()
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = jsonNamingPolicy ,
             WriteIndented = true
         };
 }

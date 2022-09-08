@@ -1,12 +1,9 @@
 ﻿using HCA.Data.Entities;
+using HCA.Data.Repository.Core;
 
 namespace HCA.Data.Repository;
 
-public interface IFileRequestRepository
+public interface IFileRequestRepository : IRepositoryBase<FileRequestEntity>
 {
-    Task<FileRequestEntity> Insert(FileRequestEntity entity);
-
-    Task<FileRequestEntity?> GetRequest(int id);
-
-    Task<FileRequestEntity> Update(FileRequestEntity entity);
+    Task<FileRequestEntity?> GetRequest(string requestId);
 }

@@ -10,7 +10,7 @@ public class ClientIdentityRequest
     /// <summary>
     /// Unique Id for the file - mapping to file request
     /// </summary>
-    public string RequestTrackingId { get; set; }
+    public string RequestId { get; set; }
 
     /// <summary>
     /// Unique Id for the request
@@ -40,7 +40,7 @@ public class ClientIdentityRequest
     /// <summary>
     /// Source System Updated Date time
     /// </summary>
-    public DateTime SourceSystemUpdated { get; set; }
+    public string SourceSystemUpdated { get; set; }
 
     /// <summary>
     /// First Name
@@ -70,7 +70,7 @@ public class ClientIdentityRequest
     /// <summary>
     /// Date of Birth
     /// </summary>
-    public DateOnly? Dob { get; set; }
+    public string? Dob { get; set; }
 
     /// <summary>
     /// Gender
@@ -80,7 +80,7 @@ public class ClientIdentityRequest
     /// <summary>
     /// Protected Population Flag
     /// </summary>
-    public bool ProtectedPopulationFlag { get; set; }
+    public string ProtectedPopulationFlag { get; set; }
 
     /// <summary>
     /// Protected Population Flag Type
