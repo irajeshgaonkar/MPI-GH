@@ -69,8 +69,7 @@ public class CsvFileWriter : IFileWriter
             line += $"{request.AddressLine3},{request.City},{request.State},{request.ZipCode},";
             line += $"{request.ZipFour},{request.PhoneType},{request.PhoneNumber},";
             line += $"{request.EmailType},{request.EmailAddress},{request.ProtectedPopulationFlag},";
-            line += $"{request.ProtectedPopulationType},";
-            line += $"{request.Status},{request.Message}";
+            line += $"{request.ProtectedPopulationType},,,";
             lines.Add(line);
         }
 
