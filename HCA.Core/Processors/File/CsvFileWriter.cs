@@ -38,22 +38,26 @@ public class CsvFileWriter : IFileWriter
     public string GetCsvHeader(FileRequestEntity fileRequestEntity)
     {
         var fileCreatedDate = fileRequestEntity.FileCreatedDateTime.ToString("MM/dd/yyyy");
-        var fileCreatedTime = fileRequestEntity.FileCreatedDateTime.ToString("hh:mm tt");
+        var fileCreatedTime = fileRequestEntity.FileCreatedDateTime.ToString("hh:mm:ss");
         var line = $"{fileRequestEntity.SourceSystemAgency},{fileRequestEntity.SourceSystemName},{fileCreatedDate},{fileCreatedTime},{fileRequestEntity.ApiCallType},";
+        
         for (int i = 6; i < 26; ++i)
         {
             line += ",";
         }
+
         return line;
     }
 
     public string GetTrailerLine(FileRequestEntity fileRequestEntity)
     {
-        var line = $"{fileRequestEntity.Trailer},";
-        for(int i = 1; i <= 26; ++i)
+        var line = $"TRALR,{fileRequestEntity.Trailer}";
+        
+        for(int i = 2; i < 24; ++i)
         {
             line += ",";
         }
+
         return line;
     }
 
@@ -69,7 +73,7 @@ public class CsvFileWriter : IFileWriter
             line += $"{request.AddressLine3},{request.City},{request.State},{request.ZipCode},";
             line += $"{request.ZipFour},{request.PhoneType},{request.PhoneNumber},";
             line += $"{request.EmailType},{request.EmailAddress},{request.ProtectedPopulationFlag},";
-            line += $"{request.ProtectedPopulationType},,,";
+            line += $"{request.ProtectedPopulationType}";
             lines.Add(line);
         }
 

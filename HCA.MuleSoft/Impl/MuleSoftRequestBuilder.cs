@@ -71,9 +71,10 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     {
         var identity = new Identity();
 
+        if (clientIdentities.Count() == 0) throw new ArgumentException("Client identities are required to post the data");
+        identity.Sources.Add(clientIdentities.First().GetSource());
         foreach (var clientIdentity in clientIdentities)
         {
-            identity.Sources.Add(clientIdentity.GetSource());
             identity.Names.Add(clientIdentity.GetName());
             identity.Addresses.Add(clientIdentity.GetAddress());
             identity.Emails.Add(clientIdentity.GetEmailAddress());
@@ -82,6 +83,8 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
             identity.Genders.Add(clientIdentity.GetGender());
             identity.DatesOfBirth.Add(clientIdentity.GetDob());
         }
+
+
 
         return identity;
     }
