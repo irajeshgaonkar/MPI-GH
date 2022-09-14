@@ -67,17 +67,23 @@ public class CsvFileWriter : IFileWriter
 
         foreach (var request in requests)
         {
-            var line = $"{request.MpiLinkId},{request.SourceSystemId},{request.SourceSystemUpdated},{request.FirstName},";
-            line += $"{request.MiddleName},{request.LastName},{request.NameSuffix},{request.Dob},";
-            line += $"{request.Gender},{request.Ssn},{request.AddressType},{request.AddressLine1},{request.AddressLine2},";
-            line += $"{request.AddressLine3},{request.City},{request.State},{request.ZipCode},";
-            line += $"{request.ZipFour},{request.PhoneType},{request.PhoneNumber},";
-            line += $"{request.EmailType},{request.EmailAddress},{request.ProtectedPopulationFlag},";
-            line += $"{request.ProtectedPopulationType}";
+            var line = $"{ProcessFieldForWriting(request.MpiLinkId)},{ProcessFieldForWriting(request.SourceSystemId)},{ProcessFieldForWriting(request.SourceSystemUpdated)},{ProcessFieldForWriting(request.FirstName)},";
+            line += $"{ProcessFieldForWriting(request.MiddleName)},{ProcessFieldForWriting(request.LastName)},{ProcessFieldForWriting(request.NameSuffix)},{ProcessFieldForWriting(request.Dob)},";
+            line += $"{ProcessFieldForWriting(request.Gender)},{ProcessFieldForWriting(request.Ssn)},{ProcessFieldForWriting(request.AddressType)},{ProcessFieldForWriting(request.AddressLine1)},{ProcessFieldForWriting(request.AddressLine2)},";
+            line += $"{ProcessFieldForWriting(request.AddressLine3)},{ProcessFieldForWriting(request.City)},{ProcessFieldForWriting(request.State)},{ProcessFieldForWriting(request.ZipCode)},";
+            line += $"{ProcessFieldForWriting(request.ZipFour)},{ProcessFieldForWriting(request.PhoneType)},{ProcessFieldForWriting(request.PhoneNumber)},";
+            line += $"{ProcessFieldForWriting(request.EmailType)},{ProcessFieldForWriting(request.EmailAddress)},{ProcessFieldForWriting(request.ProtectedPopulationFlag)},";
+            line += $"{ProcessFieldForWriting(request.ProtectedPopulationType)}";
             lines.Add(line);
         }
 
         return lines;
+    }
+
+    private string ProcessFieldForWriting(string? value)
+    {
+        if (value?.Contains(",") == true) return $"\"{value}\"";
+        return value ?? string.Empty;
     }
 
 
