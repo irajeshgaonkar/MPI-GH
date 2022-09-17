@@ -84,8 +84,6 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
             identity.DatesOfBirth.Add(clientIdentity.GetDob());
         }
 
-
-
         return identity;
     }
 }

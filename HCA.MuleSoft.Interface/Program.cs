@@ -17,6 +17,7 @@ using HCA.Infrastructure.Extensions;
 using HCA.Models.Request;
 using HCA.Core.Mapper;
 using HCA.Data.Repository;
+using HCA.Infrastructure.sftp;
 
 Console.WriteLine("Started Process for request Id: ");
 
@@ -45,6 +46,7 @@ var serviceProvider = ConfigureServices(new ServiceCollection(), configuration);
 
 await ProcessBatchRequest(serviceProvider);
 //await LoadFileData(serviceProvider);
+//await SftpTest(serviceProvider, configuration);
 
 
 
@@ -78,6 +80,12 @@ async Task PublishSqsMessage(ServiceProvider serviceProvider, string requestId)
     await sqsPublisher.Publish(requestId);
 }
 
+async Task SftpTest(ServiceProvider serviceProvider, IConfiguration configuration)
+{
+    var sftpToS3FileTransferClient = serviceProvider.GetRequiredService<ISftpToS3FileTransferClient>();
+    await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
+}
+
 async Task ProcessBatchRequest(ServiceProvider serviceProvider)
 {
     //var sqsMessage = new SqsMessage()
@@ -89,7 +97,7 @@ async Task ProcessBatchRequest(ServiceProvider serviceProvider)
     var _clientIdentityRequestRepository = serviceProvider.GetRequiredService<IClientIdentityRequestRepository>();
     var _clientIdentityRequestMapper = serviceProvider.GetRequiredService<IClientIdentityRequestMapper>();
 
-    var requestEntities = await _clientIdentityRequestRepository.GetRequests("537b7be0-1869-48b7-a624-a799bbca55c2", 1);
+    var requestEntities = await _clientIdentityRequestRepository.GetRequests("18e54b21-c0b0-cd75-c788-0929644de426", 1);
     var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
     //if (null == requests || requests.Count() == 0) break;
 

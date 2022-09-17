@@ -1,0 +1,22 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HCA.Infrastructure.Sftp;
+
+public class SftpOptions
+{
+    public string Host { get; set; }
+
+    public string UserName { get; set; }
+
+    public string Password { get; set; }
+
+    public string[] Paths { get; set; }
+
+    public string SourceFolder { get; set; }
+
+    public string DestinationFolder { get; set; }
+}

@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using HCA.Infrastructure.Security.Contracts;
 using HCA.Infrastructure.Security.Hashing;
 using Microsoft.Extensions.Configuration;
+using HCA.Infrastructure.sftp;
+using HCA.Infrastructure.Sftp;
 
 namespace HCA.Infrastructure
 {
@@ -25,13 +27,19 @@ namespace HCA.Infrastructure
                     .AddScoped<IAppLogger, ConsoleAppAppLogger>();
         }
 
-        //public static IServiceCollection AddFileWriterReader(this IServiceCollection services)
-        //{
-        //    return services
-        //            .AddScoped<IFileWriter, FileWriter>()
-        //            .AddScoped<IFileReader, FileReader>()
-        //            ;
-        //}
+
+        public static IServiceCollection AddSftp(this IServiceCollection services, IConfiguration configuration)
+        {
+            //services.Configure<SftpOptions>(configuration.GetSection("SftpOptions"));
+            var sftpOptions = configuration.GetSection("SftpOptions").Get<SftpOptions>();
+
+            services.AddSingleton(sftpOptions);
+            services.AddScoped<ISftpToS3FileTransferClient, SftpToS3FileTransferClient>();
+            services.AddScoped<IS3ToSftpFileTransferClient, S3ToSftpFileTransferClient>();
+            services.AddScoped<IHcaSftpClient, HcaSftpClient>();
+            services.AddScoped<IHcaS3Client, HcaS3Client>();
+            return services;
+        }
 
         public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
         {

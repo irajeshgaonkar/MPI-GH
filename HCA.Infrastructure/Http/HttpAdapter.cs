@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 
@@ -46,8 +47,11 @@ public class HttpAdapter : IHttpAdapter
         using var client = GetHttpClient();
         var uri = GetFullUri(url);
         var content = GetHttpContent(requestBody);
+        Stopwatch stopWatch = new Stopwatch();
+        stopWatch.Start();
         HttpResponseMessage httpResponseMessage = await client.PostAsync(uri, content);
-        _logger.LogInformation($"Completed posting data to {url} with Status Code {httpResponseMessage.StatusCode}");
+        stopWatch.Stop();
+        _logger.LogWarning($"Completed posting data to {url} with Status Code {httpResponseMessage.StatusCode}, Elapsed time {stopWatch.ElapsedMilliseconds}");
         await httpResponseMessage.EnsureSuccess();
         var response = await httpResponseMessage.Deserialize<T>();
         return response;

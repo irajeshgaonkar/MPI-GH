@@ -9,15 +9,15 @@ using HCA.Data;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
+using HCA.Infrastructure.sftp;
 using HCA.Models.SQS;
-using HCA.MuleSoft.Lambda.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
-namespace HCA.MuleSoft.Lambda;
+namespace HCA.Sftp.Lambda;
 
 public class Function
 {
@@ -48,53 +48,20 @@ public class Function
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task FunctionHandler(SQSEvent evnt, ILambdaContext context)
+    public async Task FunctionHandler(string message, ILambdaContext context)
     {
         var configuration = ConfigureSettings();
         var serviceProvider = ConfigureServices(context, new ServiceCollection(), configuration);
-
-        foreach(var message in evnt.Records)
-        {
-            await ProcessMessage(serviceProvider, message);
-        }
+        await SftpTest(serviceProvider, configuration);
     }
 
-    private async Task ProcessMessage(ServiceProvider serviceProvider, SQSEvent.SQSMessage message)
+    async Task SftpTest(ServiceProvider serviceProvider, IConfiguration configuration)
     {
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        //logger.LogInformation($"Started Processing FunctionHandler {message.Body}");
+        //var sftpToS3FileTransferClient = serviceProvider.GetRequiredService<ISftpToS3FileTransferClient>();
+        //await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
 
-        var sqsMessage = SerializationExtensions.DeSerializeWithoutCasing<SqsMessage>(message.Body);
-
-        if(sqsMessage == null)
-        {
-            logger.LogInformation($"Sqs message is empty");
-            return;
-        }
-
-        logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.MessageType}");
-        //logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.Payload}");
-
-        if (sqsMessage.MessageType == MessageType.BatchProcess)
-        {
-            await ProcessBatchRequest(serviceProvider, sqsMessage);
-        }
-    }
-
-    private async Task ProcessBatchRequest(ServiceProvider serviceProvider, SqsMessage request)
-    {
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        logger.LogInformation($"started processing request {request.MessageType}");
-        var batchRequestProcessor = serviceProvider.GetRequiredService<IBatchRequestProcessor>();
-        var requestData = SerializationExtensions.DeSerializeWithoutCasing<BatchProcessMessage>(request.Payload);
-
-        if(requestData == null)
-        {
-            logger.LogInformation($"request data is null for {request.MessageType}");
-            return;
-        }
-
-        await batchRequestProcessor.ProcessRequest(requestData);
+        var s3ToSftpFileTransferClient = serviceProvider.GetRequiredService<IS3ToSftpFileTransferClient>();
+        await s3ToSftpFileTransferClient.TransferFile("mpi-batch-output-bucket", "GP_SFTP_Test.csv", "HCA/ProviderOne/Outbound/GP_SFTP_Test2.csv");
     }
 
     public ServiceProvider ConfigureServices(ILambdaContext context, IServiceCollection services, IConfiguration configuration)
