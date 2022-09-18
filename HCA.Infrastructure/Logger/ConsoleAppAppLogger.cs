@@ -8,7 +8,7 @@ public class ConsoleAppAppLogger : IAppLogger
 
     public void LogInformation(string message, [CallerMemberName] string callerName = "")
     {
-        //WriteLine(message, ConsoleColor.Blue);
+        WriteLine(message, ConsoleColor.Blue);
     }
 
     public void LogError(Exception ex, [CallerMemberName] string callerName = "") =>

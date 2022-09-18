@@ -1,7 +1,9 @@
 ﻿using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Http;
+using HCA.Infrastructure.Logger;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using System.Diagnostics;
 
 namespace HCA.MuleSoft;
 
@@ -10,13 +12,16 @@ public class MuleSoftRepository : IMuleSoftRepository
 {
     private readonly IHttpAdapter _httpAdapter;
 
+    private readonly IAppLogger _appLogger;
+
     /// <summary>
     /// <see cref="MuleSoftRepository"/>
     /// </summary>
     /// <param name="httpAdapter">Http adapter for doing http(s) calls</param>
-    public MuleSoftRepository(IHttpAdapter httpAdapter)
+    public MuleSoftRepository(IHttpAdapter httpAdapter, IAppLogger appLogger)
     {
         _httpAdapter = httpAdapter;
+        _appLogger = appLogger;
     }
 
     ///<inheritdoc />
@@ -45,8 +50,12 @@ public class MuleSoftRepository : IMuleSoftRepository
 
     private async Task<T> Execute<T>(string requestUrl, MuleSoftRequest request)
     {
-
+        var sw = new Stopwatch();
+        sw.Start();
+        _appLogger.LogInformation($"started processing mulesoft request {request.TrackingId}");
         var response = await _httpAdapter.Post<T>(requestUrl, request);
+        sw.Stop();
+        _appLogger.LogInformation($"completed processing mulesoft request {request.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
 
         if (null == response)
             throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
