@@ -1,8 +1,11 @@
 ﻿using HCA.Api.Filters;
+using HCA.Api.Middleware;
+using HCA.Api.Options;
 using HCA.Core;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.MuleSoft;
+using Microsoft.OpenApi.Models;
 
 namespace HCA.Api;
 
@@ -19,7 +22,38 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers(o => o.Filters.Add<HcaExceptionFilter>());
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "HCA MPI Coalition",
+                Version = "v1"
+            });
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "JWT Authorization header using the Bearer scheme."
+            });
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            { 
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    new string[] {}
+                }
+            });
+        });
+
         services.AddCors();
         services.AddHca(Configuration);
     }
@@ -42,16 +76,19 @@ public class Startup
 
         //if (env.IsDevelopment())
         //{
-            app.UseSwagger();
-            app.UseSwaggerUI();
-            app.UseHttpsRedirection();
+        app.UseSwagger();
+        app.UseSwaggerUI();
+        app.UseHttpsRedirection();
         //}
-                
+
         app.UseRouting();
         app.UseAuthorization();
 
+
         app.UseEndpoints(endpoints =>
         {
+            var securityOptions = Configuration.GetSection("SecurityOptions").Get<SecurityOptions>();
+            app.UseMiddleware<JwtMiddleware>(securityOptions);
             endpoints.MapControllers();
             endpoints.MapGet("/", async context =>
             {

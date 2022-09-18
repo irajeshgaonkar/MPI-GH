@@ -1,4 +1,5 @@
-﻿using HCA.Api.Dto;
+﻿using HCA.Api.Attributes;
+using HCA.Api.Dto;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
 using HCA.Data.Entities;
@@ -25,6 +26,8 @@ namespace HCA.Api.Controllers
             _logger = appLogger;
         }
 
+
+        [HcaAuthorize("Admin")]
         [HttpPost("dashboardData")]
         public async Task<IActionResult> GetDashboardData([FromBody] Identity filter, [FromQuery] string? currentUser, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20)
         {
