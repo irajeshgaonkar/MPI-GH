@@ -1,4 +1,6 @@
 ﻿using System.Text.Json;
+using Amazon.CloudWatchEvents;
+using Amazon.Lambda.CloudWatchEvents;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
@@ -48,11 +50,13 @@ public class Function
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task FunctionHandler(string message, ILambdaContext context)
+    public async Task FunctionHandler(CloudWatchEvent<string> message, ILambdaContext context)
     {
         var configuration = ConfigureSettings();
         var serviceProvider = ConfigureServices(context, new ServiceCollection(), configuration);
-        await SftpTest(serviceProvider, configuration);
+        Console.WriteLine($"Processing request {message.DetailType}");
+        Console.WriteLine($"Processing request {message.Detail}");
+        //await SftpTest(serviceProvider, configuration);
     }
 
     async Task SftpTest(ServiceProvider serviceProvider, IConfiguration configuration)
