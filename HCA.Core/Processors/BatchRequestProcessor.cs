@@ -13,6 +13,7 @@ using HCA.Models.Request;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Amazon.S3;
+using HCA.Infrastructure.Sqs;
 
 namespace HCA.Core.Processors;
 
@@ -25,12 +26,13 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private readonly IFileWriter _fileWriter;
     private readonly IFileRequestService _fileRequestService;
     private readonly S3Options _s3Options;
+    private readonly ISqsPublisher _sqsPublisher;
 
     public BatchRequestProcessor(IAppLogger logger,
         IClientIdentityRequestRepository clientIdentityRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
         IRequestProcessLogRepository requestProcessLogRepository,
-        IFileWriter fileWriter, IFileRequestService fileRequestService, S3Options s3Options)
+        IFileWriter fileWriter, IFileRequestService fileRequestService, S3Options s3Options, ISqsPublisher sqsPublisher)
     {
         _logger = logger;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
@@ -39,6 +41,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         _fileWriter = fileWriter;
         _fileRequestService = fileRequestService;
         _s3Options = s3Options;
+        _sqsPublisher = sqsPublisher;
     }
 
     public async Task ProcessRequest(BatchProcessMessage batchRequest)
@@ -50,7 +53,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
             if(requestId != null && IsFileRequestComplete(requestId))
             {
-                // put a message on to SQS
+                await PublishOuputFileGenerationMessage(requestId);
             }
         }
         catch(Exception e)
@@ -135,5 +138,17 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
         await Update(duplicateRecords, string.Empty, RequestStatus.Failed, "Duplicate Record", null);
         return records.ToList();
+    }
+
+    private async Task PublishOuputFileGenerationMessage(string requestId)
+    {
+        var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
+        var sqsMessage = new SqsMessage()
+        {
+            MessageType = MessageType.GenerateOutput,
+            Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
+        };
+
+        await _sqsPublisher.PublishMessage(sqsMessage);
     }
 }

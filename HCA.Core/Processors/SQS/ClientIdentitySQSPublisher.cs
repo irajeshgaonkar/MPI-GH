@@ -1,4 +1,5 @@
 ﻿using HCA.Core.Mapper;
+using HCA.Core.Services;
 using HCA.Data.Entities;
 using HCA.Data.Repository;
 using HCA.Infrastructure.Extensions;
@@ -6,24 +7,14 @@ using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sqs;
 using HCA.Models.Enums;
 using HCA.Models.SQS;
-using System.Text.Json;
 
 namespace HCA.Core.Processors;
-
-public static class MessageType
-{
-    public const string BatchProcess = "Batch";
-
-    public const string UserRequest = "UserRequest";
-
-    public const string UserRequestResponse = "UserRequestResponse";
-}
 
 public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
 {
     private readonly IAppLogger _logger;
 
-    private readonly IFileRequestRepository _fileRequestRepository;
+    private readonly IFileRequestService _fileRequestService;
 
     private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
 
@@ -33,13 +24,13 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
 
     private readonly ISqsPublisher _sqsPublisher;
 
-    public ClientIdentitySQSPublisher(IAppLogger appLogger, IFileRequestRepository 
-        fileRequestRepository, IClientIdentityRequestRepository clientIdentityRequestRepository,
+    public ClientIdentitySQSPublisher(IAppLogger appLogger, IFileRequestService
+        fileRequestService, IClientIdentityRequestRepository clientIdentityRequestRepository,
         IRequestProcessLogRepository requestProcessLogRepository, IClientIdentityRequestMapper clientIdentityRequestMapper,
         ISqsPublisher sqsPublisher)
     {
         _logger = appLogger;
-        _fileRequestRepository = fileRequestRepository;
+        _fileRequestService = fileRequestService;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
         _requestProcessLogRepository = requestProcessLogRepository;
         _clientIdentityRequestMapper = clientIdentityRequestMapper;
@@ -48,7 +39,7 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
 
     public async Task Publish(string requestId)
     {
-        var fileRequest = await _fileRequestRepository.GetRequest(requestId);
+        var fileRequest = await _fileRequestService.UpdatefileRequestStatus(requestId, RequestStatus.Processing.GetStringValue());
 
         if (null == fileRequest)
         {

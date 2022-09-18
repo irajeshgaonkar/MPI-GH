@@ -10,4 +10,6 @@ public interface IFileRequestService
     Task<FileRequest?> GetByFileName(string fileName);
 
     Task<FileRequestEntity?> UpdatefileRequestComplete(string requestId);
+
+    Task<FileRequestEntity?> UpdatefileRequestStatus(string requestId, string status);
 }

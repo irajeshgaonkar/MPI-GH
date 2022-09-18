@@ -62,7 +62,6 @@ public class Function
     private async Task ProcessMessage(ServiceProvider serviceProvider, SQSEvent.SQSMessage message)
     {
         var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        //logger.LogInformation($"Started Processing FunctionHandler {message.Body}");
 
         var sqsMessage = SerializationExtensions.DeSerializeWithoutCasing<SqsMessage>(message.Body);
 
@@ -73,12 +72,34 @@ public class Function
         }
 
         logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.MessageType}");
-        //logger.LogInformation($"Started Processing FunctionHandler {sqsMessage.Payload}");
 
         if (sqsMessage.MessageType == MessageType.BatchProcess)
         {
             await ProcessBatchRequest(serviceProvider, sqsMessage);
+            return;
         }
+
+        if(sqsMessage.MessageType == MessageType.GenerateOutput)
+        {
+            await GenerateOutputFile(serviceProvider, sqsMessage);
+            return;
+        }
+    }
+
+    private async Task GenerateOutputFile(ServiceProvider serviceProvider, SqsMessage request)
+    {
+        var logger = serviceProvider.GetRequiredService<IAppLogger>();
+        logger.LogInformation($"started processing request {request.MessageType}");
+        var outputFileWriter = serviceProvider.GetRequiredService<IOutputFileWriter>();
+        var requestData = SerializationExtensions.DeSerializeWithoutCasing<OuputFileGenerationMessage>(request.Payload);
+
+        if (requestData == null)
+        {
+            logger.LogInformation($"request data is null for {request.MessageType}");
+            return;
+        }
+
+        await outputFileWriter.WriteFile(requestData.RequestId);
     }
 
     private async Task ProcessBatchRequest(ServiceProvider serviceProvider, SqsMessage request)

@@ -54,4 +54,15 @@ public class FileRequestService : IFileRequestService
         _fileRequestRepository.Update(fileRequestEntity);
         return fileRequestEntity;
     }
+
+    public async Task<FileRequestEntity?> UpdatefileRequestStatus(string requestId, string status)
+    {
+        _appLogger.LogInformation($"Started processing GetByTrackingId::GetByFileName for RequestId {requestId}");
+        var fileRequestEntity = await _fileRequestRepository.GetSingleAsync(f => f.RequestId == requestId);
+        if (fileRequestEntity == null) return null;
+        fileRequestEntity.ProcessEndTime = DateTime.Now;
+        fileRequestEntity.Status = status;
+        _fileRequestRepository.Update(fileRequestEntity);
+        return fileRequestEntity;
+    }
 }   

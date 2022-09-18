@@ -8,6 +8,11 @@ public class BatchProcessMessage
     public IEnumerable<ClientIdentityRequest> ClientIdentityRequests { get; set; }
 }
 
+public class OuputFileGenerationMessage
+{
+    public string RequestId { get; set; }
+}
+
 public class SqsMessage
 {
     public string MessageType { get; set; }
