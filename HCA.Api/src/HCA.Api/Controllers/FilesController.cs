@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HCA.Api.Attributes;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
 using HCA.Infrastructure.Logger;
@@ -22,6 +23,7 @@ namespace HCA.Api.Controllers
             _appLogger = logger;
         }
 
+        [HcaAuthorize()]
         [HttpGet("{trackingId}")]
         public async Task<IActionResult> GetFileRequestStatusByTrackingId([FromRoute] string trackingId)
         {

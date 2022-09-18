@@ -32,7 +32,7 @@ public static class FileRequestDtoMapper
 
 public static class ClientIdentityDtoMapper
 {
-    public static IList<ClientIdentityDto> GetDto(IEnumerable<ClientIdentityModel> models)
+    public static IList<ClientIdentityDto> GetDto(IEnumerable<ClientIdentityModel> models, bool showSensitiveData)
     {
         var dtos = new List<ClientIdentityDto>();
 
@@ -53,9 +53,9 @@ public static class ClientIdentityDtoMapper
                         MiddleName = model.MiddleName ?? "",
                         LastName = model.LastName ?? "",
                         Suffix = model.NameSuffix ?? "",
-                        BirthDate = model.DOB.ToString() ?? "",
+                        BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
                         Gender = model.Gender ?? "",
-                        SSN = model.SSN ?? "",
+                        SSN = showSensitiveData ? model.SSN ?? "" : "*****",
                         AddressType = address.AddressType ?? "",
                         AddressLine1 = address.AddressLine1 ?? "",
                         AddressLine2 = address.AddressLine2 ?? "",

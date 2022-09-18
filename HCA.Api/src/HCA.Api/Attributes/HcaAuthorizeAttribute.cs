@@ -9,11 +9,11 @@ namespace HCA.Api.Attributes;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
 {
-    private readonly string? _role;
+    private readonly string[] _roles;
 
-    public HcaAuthorizeAttribute(string? role = null)
+    public HcaAuthorizeAttribute(params string[] roles)
     {
-        _role = role;
+        _roles = roles;
     }
 
     public void OnAuthorization(AuthorizationFilterContext context)
@@ -33,13 +33,15 @@ public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        if ( _role != null)
+        if (_roles != null)
         {
-            var isInRole = user.IsInRole(_role);
-            if(isInRole == false)
+            foreach (var role in _roles)
             {
-                SetForbidden(context);
+                var isInRole = user.IsInRole(role);
+                if (isInRole) return;
             }
+
+            SetForbidden(context);
         }
     }
 
