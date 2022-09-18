@@ -7,7 +7,7 @@ namespace HCA.Core.Services;
 
 public interface IClientIdentityService
 {
-    Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10);
+    Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 
     Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
@@ -19,13 +19,3 @@ public interface IClientIdentityService
 
     Task<dynamic?> DemographicSearch(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 }
-
-public interface IUserModifyRecordsService
-{
-    Task<IEnumerable<ClientIdentityModel>> GetUserRecords(string currentUser);
-
-    Task MoveToModify(string userName, int clientIdentityId);
-
-    Task RemoveModify(string userName, int clientIdentityId);
-}
-

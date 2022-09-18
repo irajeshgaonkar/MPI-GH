@@ -13,7 +13,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
     {
     }
 
-    public async Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(string searchBy = "", string searchValue = "", List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10)
+    public async Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(string searchBy = "", string searchValue = "", List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
     {
         if (userModifyRecords == null) userModifyRecords = new List<int>();
         var skip = pageNumber * recordsPerPage;
@@ -28,14 +28,15 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
             if (searchBy == "Email") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(searchValue)) != null && !userModifyRecords.Contains(c.Id);
         }
 
-        var clientIdentityEntities = await GetAllAsync(searchQuery, ClientIdentitiesInclude, OrderBy, skip, recordsPerPage);
+        var orderByQuery = OrderBy(orderBy) ?? DefaultOrderBy;
+        var clientIdentityEntities = await GetAllAsync(searchQuery, ClientIdentitiesInclude, orderByQuery, skip, recordsPerPage);
         var count = Count(searchQuery);
         return (count, clientIdentityEntities.ToList());
     }
 
     public async Task<IEnumerable<ClientIdentityEntity>> GetAllByQuery(Expression<Func<ClientIdentityEntity, bool>> query)
     {
-        var clientIdentityEntities = await GetAllAsync(query, ClientIdentitiesInclude, OrderBy);
+        var clientIdentityEntities = await GetAllAsync(query, ClientIdentitiesInclude, DefaultOrderBy);
         return clientIdentityEntities.ToList();
     }
 
@@ -52,8 +53,49 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
         return identity;
     }
 
+    private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>>? OrderBy(string orderByStr)
+    {
+        Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> orderBy = null;
 
-    private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> OrderBy = c => c.OrderByDescending(c => c.UpdatedDate);
+        var orderByParts = orderByStr.Split(" ");
+        string columnName = orderByParts[0].Trim();
+        string orderByType = orderByParts.Length > 1 ? orderByParts[1].Trim() : string.Empty;
+
+        if (orderByType == string.Empty || orderByType.ToLower() == "asc")
+        {
+            if (columnName == "MpiLinkId") orderBy = c => c.OrderBy(i => i.MpiLinkId);
+            if (columnName == "SourceSystemId") orderBy = c => c.OrderBy(i => i.SourceSystemId);
+            if (columnName == "SourceSystemName") orderBy = c => c.OrderBy(i => i.SourceSystemName);
+            if (columnName == "SourceSystemUpdated") orderBy = c => c.OrderBy(i => i.SourceSystemUpdated);
+            if (columnName == "FirstName") orderBy = c => c.OrderBy(i => i.FirstName);
+            if (columnName == "MiddleName") orderBy = c => c.OrderBy(i => i.MiddleName);
+            if (columnName == "LastName") orderBy = c => c.OrderBy(i => i.LastName);
+            if (columnName == "NameSuffix") orderBy = c => c.OrderBy(i => i.NameSuffix);
+            if (columnName == "Dob") orderBy = c => c.OrderBy(i => i.Dob);
+            if (columnName == "Gender") orderBy = c => c.OrderBy(i => i.Gender);
+            if (columnName == "Ssn") orderBy = c => c.OrderBy(i => i.Ssn);
+        }
+        else
+        {
+            if (columnName == "MpiLinkId") orderBy = c => c.OrderByDescending(i => i.MpiLinkId);
+            if (columnName == "SourceSystemId") orderBy = c => c.OrderByDescending(i => i.SourceSystemId);
+            if (columnName == "SourceSystemName") orderBy = c => c.OrderByDescending(i => i.SourceSystemName);
+            if (columnName == "SourceSystemUpdated") orderBy = c => c.OrderByDescending(i => i.SourceSystemUpdated);
+            if (columnName == "FirstName") orderBy = c => c.OrderByDescending(i => i.FirstName);
+            if (columnName == "MiddleName") orderBy = c => c.OrderByDescending(i => i.MiddleName);
+            if (columnName == "LastName") orderBy = c => c.OrderByDescending(i => i.LastName);
+            if (columnName == "NameSuffix") orderBy = c => c.OrderByDescending(i => i.NameSuffix);
+            if (columnName == "Dob") orderBy = c => c.OrderByDescending(i => i.Dob);
+            if (columnName == "Gender") orderBy = c => c.OrderByDescending(i => i.Gender);
+            if (columnName == "Ssn") orderBy = c => c.OrderByDescending(i => i.Ssn);
+        }
+
+        return orderBy;
+    }
+
+
+
+    private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> DefaultOrderBy = c => c.OrderByDescending(c => c.UpdatedDate);
 
     private IIncludableQueryable<ClientIdentityEntity, object> ClientIdentitiesInclude(IQueryable<ClientIdentityEntity> clientIdentities) =>
         clientIdentities

@@ -1,6 +1,6 @@
-﻿using HCA.Api.Attributes;
-using HCA.Api.Constants;
+﻿using HCA.Api.Constants;
 using HCA.Api.Dto;
+using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
@@ -12,16 +12,29 @@ using HCA.Models.MuleSoft;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Net;
 
 namespace HCA.Api.Controllers
 {
+
+    /// <summary>
+    /// Provides methods for operations on client identities
+    /// </summary>
     [Route("api/[controller]")]
+    [Consumes("application/json")]
+    [Produces("application/json")]
     public class IdentitiesController : Controller
     {
         private readonly IAppLogger _logger;
 
         private readonly IClientIdentityService _clientIdentityService;
 
+        /// <summary>
+        /// <see cref="IdentitiesController"/>
+        /// </summary>
+        /// <param name="clientIdentityService">Client identity service <see cref="IClientIdentityService"/></param>
+        /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
         public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger)
         {
             _clientIdentityService = clientIdentityService;
@@ -31,18 +44,22 @@ namespace HCA.Api.Controllers
         /// <summary>
         /// Fetches the Dashboard data based on the filter condition
         /// </summary>
-        /// <param name="filter"></param>
-        /// <param name="pagNumber"></param>
-        /// <param name="recordsPerPage"></param>
-        /// <returns></returns>
+        /// <param name="filter">Filter condition for the data</param>
+        /// <param name="pagNumber">current page number</param>
+        /// <param name="recordsPerPage">Records per page</param>
+        /// <param name="orderBy">Order by column nmae</param>
+        /// <returns>Paginated collection of client identities <see cref="PagenatedCollection{ClientIdentityDto}"/></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<ClientIdentityDto>))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [UserFilter]
         [HttpPost("dashboardData")]
-        public async Task<IActionResult> GetDashboardData([FromBody] Identity filter, string currentUser, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string orderBy = "")
+        public async Task<IActionResult> GetDashboardData([FromBody] Identity filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string orderBy = "")
         {
             var (searchBy, searchValue) = GetSearchFilter(filter);
-            var (count, records) = await _clientIdentityService.GetAll(currentUser, searchBy ?? "", searchValue ?? "", pagNumber, recordsPerPage);
-            var showSensitiveData = CanShowSensitiveData(HttpContext);
+            var (count, records) = await _clientIdentityService.GetAll(HttpContext.GetCurrentUser(), searchBy ?? "", searchValue ?? "", pagNumber, recordsPerPage, orderBy);
+            var showSensitiveData = !HttpContext.CanShowSensitiveData();
             var identities = ClientIdentityDtoMapper.GetDto(records, showSensitiveData);
 
             var result = new PagenatedCollection<ClientIdentityDto>
@@ -56,61 +73,80 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="pagNumber"></param>
+        /// <param name="recordsPerPage"></param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<ClientIdentityDto>))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [UserFilter]
         [HttpPost("demographicSearch")]
-        public async Task<IActionResult> DemographicSearch([FromBody] Identity filter, string currentUser, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string? processingOptions = null)
+        public async Task<IActionResult> DemographicSearch([FromBody] Identity filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string? processingOptions = null)
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var searchResult = await _clientIdentityService.DemographicSearch(filter, currentUser, processType, notificationOptions);
+            var searchResult = await _clientIdentityService.DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
 
+        /// <summary>
+        /// Links the 2 client identities
+        /// </summary>
+        /// <param name="value">Linking sources <see cref="LinkingSources" /></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<ClientIdentityDto>))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [UserFilter]
         [HttpPut("link")]
-        public async Task<IActionResult> Link([FromBody] LinkingSources value, string currentUser, [FromQuery] string? processingOptions = null)
+        public async Task<IActionResult> Link([FromBody] LinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.LinkIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            var result = await _clientIdentityService.LinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (null == result) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
         [HcaAuthorize(Roles.Admin)]
-        [UserFilter]
         [HttpPut("unlink")]
-        public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value, string currentUser, [FromQuery] string? processingOptions = null)
+        public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.UnLinkIdentities(value, currentUser, processType, notificationOptions);
+            var result = await _clientIdentityService.UnLinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
         [HcaAuthorize(Roles.Admin)]
-        [UserFilter]
         [HttpPut("merge")]
-        public async Task<IActionResult> Merge([FromBody] MergingSources value, string currentUser, [FromQuery] string? processingOptions = null)
+        public async Task<IActionResult> Merge([FromBody] MergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.MergeIdentities(value, currentUser, processType, notificationOptions);
+            var result = await _clientIdentityService.MergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
         [HcaAuthorize(Roles.Admin)]
-        [UserFilter]
         [HttpPut("unmerge")]
-        public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value, string currentUser, [FromQuery] string? processingOptions = null)
+        public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.UnMergeIdentities(value, currentUser ?? "User Request", processType, notificationOptions);
+            var result = await _clientIdentityService.UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
@@ -146,11 +182,6 @@ namespace HCA.Api.Controllers
             if (email.IsNotEmpty()) return ("Email", email);
 
             return (null, null);
-        }
-
-        private bool CanShowSensitiveData(HttpContext context)
-        {
-            return context.User.IsInRole(Roles.Admin);
         }
     }
 }

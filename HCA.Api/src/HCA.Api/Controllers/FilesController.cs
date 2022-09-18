@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HCA.Api.Attributes;
+using HCA.Api.Filters;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
 using HCA.Infrastructure.Logger;

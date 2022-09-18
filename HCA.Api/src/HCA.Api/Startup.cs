@@ -5,7 +5,9 @@ using HCA.Core;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.MuleSoft;
+using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace HCA.Api;
 
@@ -18,12 +20,26 @@ public class Startup
 
     public IConfiguration Configuration { get; }
 
+    static string BasePath
+    {
+        get
+        {
+            var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+            var fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
+            return basePath;
+        }
+    }
+
     // This method gets called by the runtime. Use this method to add services to the container
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers(o => o.Filters.Add<HcaExceptionFilter>());
         services.AddSwaggerGen(c =>
         {
+            var basePath = BasePath;
+            c.IncludeXmlComments(Path.Combine(basePath, "HCA.Api.xml"));
+            c.IncludeXmlComments(Path.Combine(basePath, "HCA.Models.xml"));
+
             c.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "HCA MPI Coalition",

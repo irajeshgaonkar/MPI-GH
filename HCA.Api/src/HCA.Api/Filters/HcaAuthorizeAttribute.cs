@@ -1,10 +1,9 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Security.Claims;
 using System.Security.Principal;
 
-namespace HCA.Api.Attributes;
+namespace HCA.Api.Filters;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
@@ -19,7 +18,7 @@ public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         var user = context.HttpContext.User;
-        
+
         if (user == null)
         {
             SetUnAuthorized(context);
@@ -47,11 +46,11 @@ public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
 
     private void SetUnAuthorized(AuthorizationFilterContext context)
     {
-        context.Result = new JsonResult(new { message = "Unauthorized" }) { StatusCode = StatusCodes.Status401Unauthorized };
+        context.Result = new UnauthorizedResult();
     }
 
     private void SetForbidden(AuthorizationFilterContext context)
     {
-        context.Result = new JsonResult(new { message = "Forbidden" }) { StatusCode = StatusCodes.Status403Forbidden };
+        context.Result = new ForbidResult();
     }
 }

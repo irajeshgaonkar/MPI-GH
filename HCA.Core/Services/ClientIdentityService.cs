@@ -16,50 +16,6 @@ using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
 
-public class UserModifyRecordsService : IUserModifyRecordsService
-{
-    private readonly IUserModifyRecordsRepository _userModifyRecordsRepository;
-
-    private readonly IClientIdentityRepository _clientIdentityRepository;
-
-    public UserModifyRecordsService(IUserModifyRecordsRepository userModifyRecordsRepository,
-        IClientIdentityRepository clientIdentityRepository)
-    {
-        _userModifyRecordsRepository = userModifyRecordsRepository;
-        _clientIdentityRepository = clientIdentityRepository;
-    }
-
-    public async Task<IEnumerable<ClientIdentityModel>> GetUserRecords(string currentUser)
-    {
-        var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
-        var entities = await _clientIdentityRepository.GetAllByQuery(c => c.IsActive == true && userModifyRecords.Contains(c.Id));
-        var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
-        return models;
-    }
-
-    public async Task MoveToModify(string userName, int clientIdentityId)
-    {
-        var entity = new UserModifyRecordsEntity()
-        {
-            UserName = userName,
-            ClientIdentityId = clientIdentityId
-        };
-
-        _userModifyRecordsRepository.AddAsync(entity);
-        await Task.CompletedTask;
-    }
-
-    public async Task RemoveModify(string userName, int clientIdentityId)
-    {
-        var entity = await _userModifyRecordsRepository.GetSingleAsync(m => m.UserName == userName && m.ClientIdentityId == clientIdentityId);
-
-        if (entity != null)
-        {
-            _userModifyRecordsRepository.Delete(entity);
-        }
-    }
-}
-
 public class ClientIdentityService : IClientIdentityService
 {
     private readonly IUserRequestRepository _userRequestRepository;
@@ -96,11 +52,11 @@ public class ClientIdentityService : IClientIdentityService
         _userModifyRecordsService = userModifyRecordsService;
     }
 
-    public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10)
+    public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
     {
         //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
         var userModifyRecords = new List<int>();
-        var (count, entities) = await _clientIdentityRepository.GetAll(searchBy, searchValue, userModifyRecords, pageNumber, recordsPerPage);
+        var (count, entities) = await _clientIdentityRepository.GetAll(searchBy, searchValue, userModifyRecords, pageNumber, recordsPerPage, orderBy);
         var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
         return (count, models);
     }
