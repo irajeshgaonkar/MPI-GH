@@ -1,4 +1,4 @@
-﻿namespace HCA.Infrastructure.sftp
+﻿namespace HCA.Infrastructure.S3
 {
     public interface IHcaS3Client
     {

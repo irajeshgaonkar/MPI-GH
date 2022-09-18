@@ -31,7 +31,6 @@
     <Folder Include="Logger\" />
     <Folder Include="Http\" />
     <Folder Include="Exceptions\" />
-    <Folder Include="S3\" />
     <Folder Include="Security\" />
     <Folder Include="Converters\" />
     <Folder Include="FileReadWriter\" />

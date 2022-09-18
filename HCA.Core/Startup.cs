@@ -45,7 +45,6 @@ public static class Startup
     public static IServiceCollection AddProcessors(this IServiceCollection services)
     {
         services
-            .AddScoped<IFileProcessor, FilProcessor>()
             .AddScoped<IMuleSoftRequestExecuter, MuleSoftRequestExecuter>()
             .AddScoped<IClientIdentityRequestExecutor, ClientIdentityRequestExecutor>()
             .AddScoped<IBatchRequestProcessor, BatchRequestProcessor>()

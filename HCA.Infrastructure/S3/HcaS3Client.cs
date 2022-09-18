@@ -1,7 +1,7 @@
 ﻿using Amazon.S3;
 using HCA.Infrastructure.Logger;
 
-namespace HCA.Infrastructure.sftp
+namespace HCA.Infrastructure.S3
 {
     public class HcaS3Client : IHcaS3Client
     {

@@ -27,8 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Mapper\" />
-    <Folder Include="Processors\" />
-    <Folder Include="Processors\File\" />
     <Folder Include="Processors\StatusUpdater\" />
     <Folder Include="Processors\SQS\" />
   </ItemGroup>

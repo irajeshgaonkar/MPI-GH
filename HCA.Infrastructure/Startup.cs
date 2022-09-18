@@ -9,6 +9,7 @@ using HCA.Infrastructure.Security.Hashing;
 using Microsoft.Extensions.Configuration;
 using HCA.Infrastructure.sftp;
 using HCA.Infrastructure.Sftp;
+using HCA.Infrastructure.S3;
 
 namespace HCA.Infrastructure
 {

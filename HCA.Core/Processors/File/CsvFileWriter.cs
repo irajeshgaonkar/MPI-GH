@@ -4,12 +4,10 @@ namespace HCA.Core.Processors.File;
 
 public class CsvFileWriter : IFileWriter
 {
-    private readonly IFileRequestRepository _fileRequestRepository;
     private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
 
-    public CsvFileWriter(IFileRequestRepository fileRequestRepository, IClientIdentityRequestRepository clientIdentityRequestRepository)
+    public CsvFileWriter(IClientIdentityRequestRepository clientIdentityRequestRepository)
     {
-        _fileRequestRepository = fileRequestRepository;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
     }
 
@@ -40,24 +38,12 @@ public class CsvFileWriter : IFileWriter
         var fileCreatedDate = fileRequestEntity.FileCreatedDateTime.ToString("MM/dd/yyyy");
         var fileCreatedTime = fileRequestEntity.FileCreatedDateTime.ToString("hh:mm:ss");
         var line = $"{fileRequestEntity.SourceSystemAgency},{fileRequestEntity.SourceSystemName},{fileCreatedDate},{fileCreatedTime},{fileRequestEntity.ApiCallType}";
-        
-        //for (int i = 6; i < 26; ++i)
-        //{
-        //    line += ",";
-        //}
-
         return line;
     }
 
     public string GetTrailerLine(FileRequestEntity fileRequestEntity)
     {
         var line = $"TRALR,{fileRequestEntity.Trailer}";
-        
-        //for(int i = 2; i < 24; ++i)
-        //{
-        //    line += ",";
-        //}
-
         return line;
     }
 

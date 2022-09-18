@@ -1,4 +1,6 @@
-﻿namespace HCA.Infrastructure.sftp
+﻿using HCA.Infrastructure.S3;
+
+namespace HCA.Infrastructure.sftp
 {
     public class SftpToS3FileTransferClient : ISftpToS3FileTransferClient
     {
