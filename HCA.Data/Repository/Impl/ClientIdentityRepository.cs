@@ -55,6 +55,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
 
     private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>>? OrderBy(string orderByStr)
     {
+        if (orderByStr == null) return null;
         Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> orderBy = null;
 
         var orderByParts = orderByStr.Split(" ");

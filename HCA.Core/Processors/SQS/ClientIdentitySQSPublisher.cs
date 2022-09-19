@@ -47,6 +47,7 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
             return;
         }
 
+        _logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
         int i = 1;
         do
         {
@@ -70,10 +71,13 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
             UpdateProcessLog(fileRequest.RequestId, $"Posted message on to SQS for RequestId: {requestId} and BatchNumber: {i}");
             i++;
         } while (true);
+
+        _logger.LogInformation($"Completed Publishing records to SQS for requestId: {requestId}");
     }
 
     private void UpdateProcessLog(string requestId, string message)
     {
+        _logger.LogInformation(message);
         var requestProcessLogEntity = new RequestProcessLogEntity()
         {
             TrackingId = requestId,

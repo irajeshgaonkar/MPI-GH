@@ -51,7 +51,7 @@ public class HttpAdapter : IHttpAdapter
         stopWatch.Start();
         HttpResponseMessage httpResponseMessage = await client.PostAsync(uri, content);
         stopWatch.Stop();
-        _logger.LogWarning($"Completed posting data to {url} with Status Code {httpResponseMessage.StatusCode}, Elapsed time {stopWatch.ElapsedMilliseconds}");
+        _logger.LogInformation($"Completed posting data to {url} with Status Code {httpResponseMessage.StatusCode}, Elapsed time {stopWatch.ElapsedMilliseconds}");
         await httpResponseMessage.EnsureSuccess();
         var response = await httpResponseMessage.Deserialize<T>();
         return response;

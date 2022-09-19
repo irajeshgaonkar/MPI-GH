@@ -19,6 +19,7 @@ using HCA.Core.Mapper;
 using HCA.Data.Repository;
 using HCA.Infrastructure.sftp;
 using HCA.Core.Processors.Sftp;
+using HCA.Infrastructure.Sqs;
 
 Console.WriteLine("Started Process for request Id: ");
 
@@ -44,10 +45,11 @@ var serviceProvider = ConfigureServices(new ServiceCollection(), configuration);
 //}
 
 //await PublishSqsMessage(serviceProvider, "7c87f9bb-398c-526b-9f4f-522169f8f56b");
-
-//await ProcessBatchRequest(serviceProvider);
+await ProcessBatchRequest(serviceProvider);
 //await LoadFileData(serviceProvider);
-await SftpFileTransfer(serviceProvider, configuration);
+//await SftpFileTransfer(serviceProvider, configuration);
+
+//await PublishOuputFileGenerationMessage(serviceProvider, configuration, "276f22a0-0351-aa26-c5f7-8c2aac64014c");
 
 Console.ReadLine();
 
@@ -89,6 +91,18 @@ async Task SftpFileTransfer(ServiceProvider serviceProvider, IConfiguration conf
     sftpProcessor.TransferFilesForProcessing();
     //await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
 }
+ async Task PublishOuputFileGenerationMessage(ServiceProvider serviceProvider, IConfiguration configuration, string requestId)
+{
+    var sqsPublisher = serviceProvider.GetRequiredService<ISqsPublisher>();
+    var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
+    var sqsMessage = new SqsMessage()
+    {
+        MessageType = MessageType.GenerateOutput,
+        Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
+    };
+
+    await sqsPublisher.PublishMessage(sqsMessage);
+}
 
 async Task ProcessBatchRequest(ServiceProvider serviceProvider)
 {
@@ -101,7 +115,7 @@ async Task ProcessBatchRequest(ServiceProvider serviceProvider)
     var _clientIdentityRequestRepository = serviceProvider.GetRequiredService<IClientIdentityRequestRepository>();
     var _clientIdentityRequestMapper = serviceProvider.GetRequiredService<IClientIdentityRequestMapper>();
 
-    var requestEntities = await _clientIdentityRequestRepository.GetRequests("5c29b861-e584-0983-dd3e-83bf1e5bd954", 1);
+    var requestEntities = await _clientIdentityRequestRepository.GetRequests("8628ac0d-f1e9-a03e-e432-8f9b7c8fc88c", 2);
     var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
     //if (null == requests || requests.Count() == 0) break;
 

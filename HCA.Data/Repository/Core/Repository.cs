@@ -23,17 +23,17 @@ public class RepositoryBase<T> : IRepositoryBase<T> where T : class
         return GetAll(predicate, null, null, null, null);
     }
 
-    public bool Any(Expression<Func<T, bool>> predicate)
+    public bool Any(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate)
     {
         IQueryable<T> query = _dataBaseContext.Set<T>();
-        var result = query.Any(predicate);
+        var result = query.Where(condition).Any(predicate);
         return result;
     }
 
-    public bool All(Expression<Func<T, bool>> predicate)
+    public bool All(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate)
     {
         IQueryable<T> query = _dataBaseContext.Set<T>();
-        var result = query.All(predicate);
+        var result = query.Where(condition).All(predicate);
         return result;
     }
 

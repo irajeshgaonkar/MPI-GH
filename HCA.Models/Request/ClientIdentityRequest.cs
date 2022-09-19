@@ -7,6 +7,13 @@ public class ClientIdentityRequest
     /// </summary>
     public int Id { get; set; }
 
+
+    /// <summary>
+    /// /Batch Number
+    /// </summary>
+    public int BatchNumber { get; set; }
+
+
     /// <summary>
     /// Unique Id for the file - mapping to file request
     /// </summary>

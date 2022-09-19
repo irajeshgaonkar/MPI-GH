@@ -57,30 +57,6 @@ public class Function
         return request;
     }
 
-    private T? DeSerialize<T>(string payLoad)
-    {
-        var serializeOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        };
-
-        T? result = JsonSerializer.Deserialize<T>(payLoad, serializeOptions);
-        return result;
-    }
-
-    private string Serialize<T>(T payLoad)
-    {
-        var serializeOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        };
-
-        var result = JsonSerializer.Serialize(payLoad, serializeOptions);
-        return result;
-    }
-
     public ServiceProvider ConfigureServices(ILambdaContext context, IServiceCollection services, IConfiguration configuration)
     {
         var serviceProvider = services.AddHca(configuration).BuildServiceProvider();

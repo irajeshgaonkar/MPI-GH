@@ -50,7 +50,8 @@ public static class Startup
             .AddScoped<IClientIdentityRequestExecutor, ClientIdentityRequestExecutor>()
             .AddScoped<IBatchRequestProcessor, BatchRequestProcessor>()
             .AddScoped<IFileWriter, CsvFileWriter>()
-            .AddScoped<ISftpProcessor, SftpProcessor>();
+            .AddScoped<ISftpProcessor, SftpProcessor>()
+            .AddScoped<IOutputFileWriter, OutputFileWriter>();
 
         return services;
     }

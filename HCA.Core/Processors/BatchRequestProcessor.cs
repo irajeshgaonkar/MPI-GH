@@ -23,36 +23,37 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
-    private readonly IFileWriter _fileWriter;
-    private readonly IFileRequestService _fileRequestService;
-    private readonly S3Options _s3Options;
     private readonly ISqsPublisher _sqsPublisher;
+    private readonly IOutputFileWriter _outputFileWriter;
+
 
     public BatchRequestProcessor(IAppLogger logger,
         IClientIdentityRequestRepository clientIdentityRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IRequestProcessLogRepository requestProcessLogRepository,
-        IFileWriter fileWriter, IFileRequestService fileRequestService, S3Options s3Options, ISqsPublisher sqsPublisher)
+        IRequestProcessLogRepository requestProcessLogRepository,IOutputFileWriter outputFileWriter, ISqsPublisher sqsPublisher)
     {
         _logger = logger;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
         _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
         _requestProcessLogRepository = requestProcessLogRepository;
-        _fileWriter = fileWriter;
-        _fileRequestService = fileRequestService;
-        _s3Options = s3Options;
         _sqsPublisher = sqsPublisher;
+        _outputFileWriter = outputFileWriter;
     }
 
     public async Task ProcessRequest(BatchProcessMessage batchRequest)
     {
         try
         {
+            var clientIdentityRequest = batchRequest.ClientIdentityRequests.FirstOrDefault();
+            var requestId = clientIdentityRequest?.RequestId;
+            var batchNumber = clientIdentityRequest?.BatchNumber;
+            _logger.LogInformation($"Started Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
             await ProcessPostIdentityRequest(batchRequest);
-            var requestId = batchRequest.ClientIdentityRequests.FirstOrDefault()?.RequestId;
+            _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
 
-            if(requestId != null && IsFileRequestComplete(requestId))
+            if (requestId != null && IsFileRequestComplete(requestId))
             {
+                _logger.LogInformation($"Completed Processing all the requests requestId: {requestId}");
                 await PublishOuputFileGenerationMessage(requestId);
             }
         }
@@ -65,9 +66,8 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
     private bool IsFileRequestComplete(string requestId)
     {
-        var res = _clientIdentityRequestRepository.All(c =>
-            c.Status == RequestStatus.Failed.GetStringValue() ||
-            c.Status == RequestStatus.Success.GetStringValue());
+        var res = _clientIdentityRequestRepository.All(c => c.RequestId == requestId, c => c.Status == RequestStatus.Failed.GetStringValue() || c.Status == RequestStatus.Success.GetStringValue());
+        _logger.LogInformation($"All requests completed for request : {requestId}, {res}");
         return res;
     }
 
@@ -142,13 +142,23 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
     private async Task PublishOuputFileGenerationMessage(string requestId)
     {
-        var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
-        var sqsMessage = new SqsMessage()
+        try
         {
-            MessageType = MessageType.GenerateOutput,
-            Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
-        };
+            _logger.LogInformation($"Strated Posting output file generation message to queue");
+            var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
+            var sqsMessage = new SqsMessage()
+            {
+                MessageType = MessageType.GenerateOutput,
+                Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
+            };
 
-        await _sqsPublisher.PublishMessage(sqsMessage);
+            await _sqsPublisher.PublishMessage(sqsMessage);
+            _logger.LogInformation($"Completed Posting output file generation message to queue");
+        }
+        catch(Exception e)
+        {
+            _logger.LogError(e, "Unable to post message to queue");
+            //await _outputFileWriter.WriteFile(requestId);
+        }
     }
 }

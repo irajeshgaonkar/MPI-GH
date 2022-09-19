@@ -10,9 +10,9 @@ public interface IRepositoryBase<T> where T : class
 {
     IQueryable<T> GetAll();
 
-    bool Any(Expression<Func<T, bool>> predicate);
+    bool Any(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate);
 
-    bool All(Expression<Func<T, bool>> predicate);
+    bool All(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate);
 
     IQueryable<T> GetAll(Expression<Func<T, bool>> predicate);
 
