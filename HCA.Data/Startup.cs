@@ -24,7 +24,7 @@ public static class Startup
                 .AddScoped<IFileRequestRepository, FileRequestRepository>()
                 .AddScoped<IUserRequestRepository, UserRequestRepository>()
                 .AddScoped<IRequestProcessLogRepository, RequestProcessLogRepository>()
-                .AddScoped<IUserModifyRecordsRepository, UserModifyRecordsRepository>();
+                .AddScoped<IUserModifyRecordsRepository, UserModifyRecordsRepository>()
+                .AddScoped<ISftpFileTransferRepository, SftpFileTransferRepository>();
     }
 }
-

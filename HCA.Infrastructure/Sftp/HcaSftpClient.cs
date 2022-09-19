@@ -1,7 +1,9 @@
 ﻿using Amazon.S3;
 using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sftp;
+using HCA.Models.Sftp;
 using Renci.SshNet;
+using Renci.SshNet.Sftp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +36,20 @@ namespace HCA.Infrastructure.sftp
         {
             using SftpClient sftpClient = CreateSftpClient();
             await UploadFileAsync(sftpClient, path, stream);
+        }
+
+        public IEnumerable<HcaSftpFile> ListDirectory(string path)
+        {
+            var result = new List<HcaSftpFile>();
+            using SftpClient sftpClient = CreateSftpClient();
+            var files = sftpClient.ListDirectory(path);
+
+            foreach(SftpFile file in files)
+            {
+                result.Add(new HcaSftpFile() { FullName = file.FullName, Name = file.Name, LastModified = file.LastWriteTime });
+            }
+
+            return result;
         }
 
 

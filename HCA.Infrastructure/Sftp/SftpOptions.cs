@@ -19,4 +19,6 @@ public class SftpOptions
     public string SourceFolder { get; set; }
 
     public string DestinationFolder { get; set; }
+
+    public string[] AllowedFileTypes { get; set; }
 }

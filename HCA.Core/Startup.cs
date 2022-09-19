@@ -2,6 +2,7 @@
 using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
+using HCA.Core.Processors.Sftp;
 using HCA.Core.Services;
 using HCA.Data;
 using HCA.Data.Entities;
@@ -24,10 +25,10 @@ public static class Startup
         services.AddRepositories();
         services.AddMuleSoft(configuration);
         services.AddServices();
-        //services.AddSecurity(configuration);
         services.AddAutoMapper();
         services.AddFileProcessors();
         services.AddSqs(configuration);
+        services.AddSftp(configuration);
         return services;
     }
 
@@ -48,7 +49,8 @@ public static class Startup
             .AddScoped<IMuleSoftRequestExecuter, MuleSoftRequestExecuter>()
             .AddScoped<IClientIdentityRequestExecutor, ClientIdentityRequestExecutor>()
             .AddScoped<IBatchRequestProcessor, BatchRequestProcessor>()
-            .AddScoped<IFileWriter, CsvFileWriter>();
+            .AddScoped<IFileWriter, CsvFileWriter>()
+            .AddScoped<ISftpProcessor, SftpProcessor>();
 
         return services;
     }
@@ -66,11 +68,12 @@ public static class Startup
     public static IServiceCollection AddSqs(this IServiceCollection services, IConfiguration configuration)
     {
         var sqsOptions = configuration.GetSection("SqsOptions").Get<SqsOptions>();
-        var outputBucketName = configuration["OputBucketName"];
+        var outputBucketName = configuration["OutputBucketName"];
+        var inputBucketName = configuration["InputBucketName"];
 
         return services
             .AddSingleton(sqsOptions)
-            .AddSingleton(new S3Options { OutputBucketName = outputBucketName})
+            .AddSingleton(new S3Options { OutputBucketName = outputBucketName, InputBucketName = inputBucketName})
             .AddScoped<ISqsPublisher, SqsPublisher>()
             .AddScoped<IClientIdentitySQSPublisher, ClientIdentitySQSPublisher>();
     }

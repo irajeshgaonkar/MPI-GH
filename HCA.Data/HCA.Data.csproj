@@ -19,10 +19,7 @@
     <None Remove="Options\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Entities\" />
-    <Folder Include="Repository\" />
     <Folder Include="Repository\Core\" />
-    <Folder Include="Repository\Impl\" />
     <Folder Include="Options\" />
   </ItemGroup>
   <ItemGroup>

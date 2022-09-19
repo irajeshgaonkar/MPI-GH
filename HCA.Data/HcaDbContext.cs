@@ -45,6 +45,8 @@ public class HcaDbContext : DbContext
 
     public DbSet<UserModifyRecordsEntity> UserModifyRecords { get; set; }
 
+    public DbSet<SftpFileTransferEntity> SftpFileTransfers { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

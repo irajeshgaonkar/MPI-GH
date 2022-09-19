@@ -31,7 +31,6 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddSftp(this IServiceCollection services, IConfiguration configuration)
         {
-            //services.Configure<SftpOptions>(configuration.GetSection("SftpOptions"));
             var sftpOptions = configuration.GetSection("SftpOptions").Get<SftpOptions>();
 
             services.AddSingleton(sftpOptions);

@@ -18,6 +18,7 @@ using HCA.Models.Request;
 using HCA.Core.Mapper;
 using HCA.Data.Repository;
 using HCA.Infrastructure.sftp;
+using HCA.Core.Processors.Sftp;
 
 Console.WriteLine("Started Process for request Id: ");
 
@@ -44,9 +45,9 @@ var serviceProvider = ConfigureServices(new ServiceCollection(), configuration);
 
 //await PublishSqsMessage(serviceProvider, "7c87f9bb-398c-526b-9f4f-522169f8f56b");
 
-await ProcessBatchRequest(serviceProvider);
+//await ProcessBatchRequest(serviceProvider);
 //await LoadFileData(serviceProvider);
-//await SftpTest(serviceProvider, configuration);
+await SftpFileTransfer(serviceProvider, configuration);
 
 Console.ReadLine();
 
@@ -82,10 +83,11 @@ async Task PublishSqsMessage(ServiceProvider serviceProvider, string requestId)
     await sqsPublisher.Publish(requestId);
 }
 
-async Task SftpTest(ServiceProvider serviceProvider, IConfiguration configuration)
+async Task SftpFileTransfer(ServiceProvider serviceProvider, IConfiguration configuration)
 {
-    var sftpToS3FileTransferClient = serviceProvider.GetRequiredService<ISftpToS3FileTransferClient>();
-    await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
+    var sftpProcessor = serviceProvider.GetRequiredService<ISftpProcessor>();
+    sftpProcessor.TransferFilesForProcessing();
+    //await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
 }
 
 async Task ProcessBatchRequest(ServiceProvider serviceProvider)

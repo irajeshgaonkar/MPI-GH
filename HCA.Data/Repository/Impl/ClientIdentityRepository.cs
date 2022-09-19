@@ -63,36 +63,35 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
 
         if (orderByType == string.Empty || orderByType.ToLower() == "asc")
         {
-            if (columnName == "MpiLinkId") orderBy = c => c.OrderBy(i => i.MpiLinkId);
-            if (columnName == "SourceSystemId") orderBy = c => c.OrderBy(i => i.SourceSystemId);
-            if (columnName == "SourceSystemName") orderBy = c => c.OrderBy(i => i.SourceSystemName);
-            if (columnName == "SourceSystemUpdated") orderBy = c => c.OrderBy(i => i.SourceSystemUpdated);
-            if (columnName == "FirstName") orderBy = c => c.OrderBy(i => i.FirstName);
-            if (columnName == "MiddleName") orderBy = c => c.OrderBy(i => i.MiddleName);
-            if (columnName == "LastName") orderBy = c => c.OrderBy(i => i.LastName);
-            if (columnName == "NameSuffix") orderBy = c => c.OrderBy(i => i.NameSuffix);
-            if (columnName == "Dob") orderBy = c => c.OrderBy(i => i.Dob);
-            if (columnName == "Gender") orderBy = c => c.OrderBy(i => i.Gender);
-            if (columnName == "Ssn") orderBy = c => c.OrderBy(i => i.Ssn);
+            if (columnName == "mpiLinkId") orderBy = c => c.OrderBy(i => i.MpiLinkId);
+            if (columnName == "sourceSystemId") orderBy = c => c.OrderBy(i => i.SourceSystemId);
+            if (columnName == "sourceName") orderBy = c => c.OrderBy(i => i.SourceSystemName);
+            if (columnName == "sourceSystemLastUpdate") orderBy = c => c.OrderBy(i => i.SourceSystemUpdated);
+            if (columnName == "firstName") orderBy = c => c.OrderBy(i => i.FirstName);
+            if (columnName == "middleName") orderBy = c => c.OrderBy(i => i.MiddleName);
+            if (columnName == "lastName") orderBy = c => c.OrderBy(i => i.LastName);
+            if (columnName == "suffix") orderBy = c => c.OrderBy(i => i.NameSuffix);
+            if (columnName == "birthDate") orderBy = c => c.OrderBy(i => i.Dob);
+            if (columnName == "gender") orderBy = c => c.OrderBy(i => i.Gender);
+            if (columnName == "ssn") orderBy = c => c.OrderBy(i => i.Ssn);
         }
         else
         {
-            if (columnName == "MpiLinkId") orderBy = c => c.OrderByDescending(i => i.MpiLinkId);
-            if (columnName == "SourceSystemId") orderBy = c => c.OrderByDescending(i => i.SourceSystemId);
-            if (columnName == "SourceSystemName") orderBy = c => c.OrderByDescending(i => i.SourceSystemName);
-            if (columnName == "SourceSystemUpdated") orderBy = c => c.OrderByDescending(i => i.SourceSystemUpdated);
-            if (columnName == "FirstName") orderBy = c => c.OrderByDescending(i => i.FirstName);
-            if (columnName == "MiddleName") orderBy = c => c.OrderByDescending(i => i.MiddleName);
-            if (columnName == "LastName") orderBy = c => c.OrderByDescending(i => i.LastName);
-            if (columnName == "NameSuffix") orderBy = c => c.OrderByDescending(i => i.NameSuffix);
-            if (columnName == "Dob") orderBy = c => c.OrderByDescending(i => i.Dob);
-            if (columnName == "Gender") orderBy = c => c.OrderByDescending(i => i.Gender);
-            if (columnName == "Ssn") orderBy = c => c.OrderByDescending(i => i.Ssn);
+            if (columnName == "mpiLinkId") orderBy = c => c.OrderByDescending(i => i.MpiLinkId);
+            if (columnName == "sourceSystemId") orderBy = c => c.OrderByDescending(i => i.SourceSystemId);
+            if (columnName == "sourceName") orderBy = c => c.OrderByDescending(i => i.SourceSystemName);
+            if (columnName == "sourceSystemLastUpdate") orderBy = c => c.OrderByDescending(i => i.SourceSystemUpdated);
+            if (columnName == "firstName") orderBy = c => c.OrderByDescending(i => i.FirstName);
+            if (columnName == "middleName") orderBy = c => c.OrderByDescending(i => i.MiddleName);
+            if (columnName == "lastName") orderBy = c => c.OrderByDescending(i => i.LastName);
+            if (columnName == "suffix") orderBy = c => c.OrderByDescending(i => i.NameSuffix);
+            if (columnName == "birthDate") orderBy = c => c.OrderByDescending(i => i.Dob);
+            if (columnName == "gender") orderBy = c => c.OrderByDescending(i => i.Gender);
+            if (columnName == "ssn") orderBy = c => c.OrderByDescending(i => i.Ssn);
         }
 
         return orderBy;
     }
-
 
 
     private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> DefaultOrderBy = c => c.OrderByDescending(c => c.UpdatedDate);
@@ -129,6 +128,36 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
         identity.SourceSystemUpdated = entity.SourceSystemUpdated;
         identity.UpdatedBy = entity.UpdatedBy;
         identity.UpdatedDate = entity.UpdatedDate;
+
+        foreach(var address in entity.Addresses)
+        {
+            var matchingAddress = identity.Addresses.FirstOrDefault(i => i.AddressType == address.AddressType && i.AddressLine1 == address.AddressLine1 && i.AddressLine2 == address.AddressLine2
+                && i.AddressLine3 == address.AddressLine3 && i.City == address.City && i.State == address.State && i.ZipCode == address.ZipCode && i.ZipFour == address.ZipFour);
+
+            if (matchingAddress == null)
+            {
+                identity.Addresses.Add(address);
+            }
+            else
+            {
+                foreach(var ac in address.AddressCommunications)
+                {
+                    var communication = matchingAddress.AddressCommunications.FirstOrDefault(mac => mac.Communication.EmailType == ac.Communication.EmailType && mac.Communication.PhoneType == ac.Communication.PhoneType
+                    && mac.Communication.EmailAddress == ac.Communication.EmailAddress && mac.Communication.PhoneNumber == ac.Communication.PhoneNumber)?.Communication;
+
+                    if (communication == null)
+                    {
+                        var addressCommunication = new ClientIdentityAddressCommunicationEntity()
+                        {
+                            Address = matchingAddress,
+                            Communication = ac.Communication
+                        };
+
+                        matchingAddress.AddressCommunications.Add(addressCommunication);
+                    }
+                }
+            }
+        }
 
         Update(identity);
         return identity;

@@ -6,4 +6,3 @@ namespace HCA.Data.Repository;
 public interface IUserRequestRepository : IRepositoryBase<UserRequestEntity>
 {
 }
-

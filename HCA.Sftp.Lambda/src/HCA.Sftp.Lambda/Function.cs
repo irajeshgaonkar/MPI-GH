@@ -7,6 +7,7 @@ using Amazon.S3;
 using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
+using HCA.Core.Processors.Sftp;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Extensions;
@@ -50,22 +51,14 @@ public class Function
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task FunctionHandler(CloudWatchEvent<string> message, ILambdaContext context)
+    public async Task FunctionHandler(dynamic message, ILambdaContext context)
     {
         var configuration = ConfigureSettings();
         var serviceProvider = ConfigureServices(context, new ServiceCollection(), configuration);
-        Console.WriteLine($"Processing request {message.DetailType}");
-        Console.WriteLine($"Processing request {message.Detail}");
-        //await SftpTest(serviceProvider, configuration);
-    }
+        Console.WriteLine($"Processing request {message}");
 
-    async Task SftpTest(ServiceProvider serviceProvider, IConfiguration configuration)
-    {
-        //var sftpToS3FileTransferClient = serviceProvider.GetRequiredService<ISftpToS3FileTransferClient>();
-        //await sftpToS3FileTransferClient.TransferFile("HCA/ProviderOne/Outbound/GP_SFTP_Test.csv", "mpi-batch-output-bucket", "GP_SFTP_Test.csv");
-
-        var s3ToSftpFileTransferClient = serviceProvider.GetRequiredService<IS3ToSftpFileTransferClient>();
-        await s3ToSftpFileTransferClient.TransferFile("mpi-batch-output-bucket", "GP_SFTP_Test.csv", "HCA/ProviderOne/Outbound/GP_SFTP_Test2.csv");
+        var sftpProcessor = serviceProvider.GetRequiredService<ISftpProcessor>();
+        await sftpProcessor.TransferFilesForProcessing();
     }
 
     public ServiceProvider ConfigureServices(ILambdaContext context, IServiceCollection services, IConfiguration configuration)
