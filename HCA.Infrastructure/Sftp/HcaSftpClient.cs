@@ -91,7 +91,7 @@ namespace HCA.Infrastructure.sftp
 
         private SftpClient CreateSftpClient()
         {
-            _appLogger.LogInformation($"Connecting to Sftp {_sftpOptions.Host}, {_sftpOptions.UserName}, {_sftpOptions.Password}");
+            _appLogger.LogInformation($"Connecting to Sftp {_sftpOptions.Host}, {_sftpOptions.UserName}");
             SftpClient sftpClient = new SftpClient(new PasswordConnectionInfo(_sftpOptions.Host, _sftpOptions.UserName, _sftpOptions.Password));
             sftpClient.Connect();
             _appLogger.LogInformation("Successfully connected to sftp");
