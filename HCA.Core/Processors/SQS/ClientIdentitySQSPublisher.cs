@@ -47,12 +47,17 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
             return;
         }
 
-        _logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
+
+        var requestEntities = await _clientIdentityRequestRepository.GetRequests(requestId);
+        var allrequests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
+
+
+        //_logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
+
         int i = 1;
         do
         {
-            var requestEntities = await _clientIdentityRequestRepository.GetRequests(requestId, i);
-            var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
+            var requests = allrequests.Where(x => x.BatchNumber == i).ToList();
             if (null == requests || requests.Count() == 0) break;
 
             var batchProcessMessage = new BatchProcessMessage()
