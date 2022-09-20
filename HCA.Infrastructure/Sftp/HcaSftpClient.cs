@@ -34,8 +34,10 @@ namespace HCA.Infrastructure.sftp
 
         public async Task UploadFileAsync(MemoryStream stream, string path)
         {
+            _appLogger.LogInformation($"Started uploading file to path : {path}");
             using SftpClient sftpClient = CreateSftpClient();
             await UploadFileAsync(sftpClient, path, stream);
+            _appLogger.LogInformation($"Completed uploading file to path : {path}");
         }
 
         public IEnumerable<HcaSftpFile> ListDirectory(string path)

@@ -14,19 +14,19 @@ public class OutputFileWriter : IOutputFileWriter
     private readonly IFileRequestService _fileRequestService;
     private readonly IHcaS3Client _s3Client;
     private readonly S3Options _s3Options;
-    private readonly IHcaSftpClient _hcaSftpClient;
+    private readonly IS3ToSftpFileTransferClient _s3ToSftpFileTransferClient;
     private readonly SftpOptions _sftpOptions;
     private readonly ISftpFileTransferRepository _sftpFileTransferRepository;
 
     public OutputFileWriter(IAppLogger logger, IHcaS3Client s3Client, S3Options s3Options, SftpOptions sftpOptions,
-        IFileWriter fileWriter, IFileRequestService fileRequestService, IHcaSftpClient hcaSftpClient, ISftpFileTransferRepository sftpFileTransferRepository)
+        IFileWriter fileWriter, IFileRequestService fileRequestService, IS3ToSftpFileTransferClient s3ToSftpFileTransferClient, ISftpFileTransferRepository sftpFileTransferRepository)
     {
         _logger = logger;
         _fileWriter = fileWriter;
         _fileRequestService = fileRequestService;
         _s3Client = s3Client;
         _s3Options = s3Options;
-        _hcaSftpClient = hcaSftpClient;
+        _s3ToSftpFileTransferClient = s3ToSftpFileTransferClient;
         _sftpOptions = sftpOptions;
         _sftpFileTransferRepository = sftpFileTransferRepository;
     }
@@ -39,7 +39,7 @@ public class OutputFileWriter : IOutputFileWriter
         {
             var memoryStream = await _fileWriter.WriteFile(fileRequestEntity);
             await WriteToS3(memoryStream, _s3Options.OutputBucketName, fileRequestEntity.OutputFileName!);
-            await TransferFileToSftp(memoryStream, fileRequestEntity.FileName, fileRequestEntity.OutputFileName!);
+            await TransferFileToSftp(fileRequestEntity.FileName, fileRequestEntity.OutputFileName!);
         }
     }
 
@@ -58,18 +58,17 @@ public class OutputFileWriter : IOutputFileWriter
         }
     }
 
-    public async Task TransferFileToSftp(MemoryStream memoryStream, string inputFileName, string fileName)
+    public async Task TransferFileToSftp(string inputFileName, string fileName)
     {
         var path = _sftpFileTransferRepository.GetSingle(t => t.FileName == inputFileName)?.Path;
         
         if(path == null)
         {
             _logger.LogInformation($"Cannot transfer file to sftp, path is null for inputFile {inputFileName}");
-
         }
-        memoryStream.Seek(0, SeekOrigin.Begin);
-        var outputPath = $"{_sftpOptions.DestinationFolder}/{fileName}";
-        await _hcaSftpClient.UploadFileAsync(memoryStream, outputPath);
+
+        var outputPath = $"{path}/{_sftpOptions.DestinationFolder}/{fileName}";
+        await _s3ToSftpFileTransferClient.TransferFile(_s3Options.OutputBucketName, fileName, outputPath);
     }
 }
 

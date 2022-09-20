@@ -19,6 +19,8 @@ namespace HCA.Infrastructure.S3
         {
             try
             {
+
+                _appLogger.LogInformation($"Started downloading file to s3 bucket:{bucketName} fileName:{fileName}");
                 var memoryStream = await DownloadFile(bucketName, fileName);
                 _appLogger.LogInformation($"Successfully downloaded file to s3 bucket:{bucketName} fileName:{fileName}");
                 return memoryStream;
