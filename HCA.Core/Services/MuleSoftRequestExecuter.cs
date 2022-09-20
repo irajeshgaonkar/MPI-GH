@@ -53,7 +53,7 @@ namespace HCA.Core.Services
                 }
                 catch (HcaHttpException e)
                 {
-                    if (!_muleSoftRetryOptions.ReTriableStatusCodes.Contains(e.StatusCode)) throw;
+                    if (!_muleSoftRetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw;
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
             }

@@ -19,5 +19,5 @@ public class MuleSoftRetryOptions
 
     public int MaxRetries { get; set; }
 
-    public HttpStatusCode[] ReTriableStatusCodes { get; set; }
+    public HttpStatusCode[] ReTriableStatusCode { get; set; }
 }
