@@ -61,6 +61,7 @@ namespace HCA.Api.Controllers
             var (count, records) = await _clientIdentityService.GetAll(HttpContext.GetCurrentUser(), searchBy ?? "", searchValue ?? "", pagNumber, recordsPerPage, orderBy);
             var showSensitiveData = HttpContext.CanShowSensitiveData();
             var identities = ClientIdentityDtoMapper.GetDto(records, showSensitiveData);
+            if (identities.Count > count) count = identities.Count;
 
             var result = new PagenatedCollection<ClientIdentityDto>
             {

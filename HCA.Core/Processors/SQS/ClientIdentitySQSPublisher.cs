@@ -6,6 +6,7 @@ using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sqs;
 using HCA.Models.Enums;
+using HCA.Models.Request;
 using HCA.Models.SQS;
 
 namespace HCA.Core.Processors;
@@ -51,33 +52,30 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
         var requestEntities = await _clientIdentityRequestRepository.GetRequests(requestId);
         var allrequests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
 
-
+        var groupedRqeusts = allrequests.GroupBy(g => g.BatchNumber);
         //_logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
-
-        int i = 1;
-        do
-        {
-            var requests = allrequests.Where(x => x.BatchNumber == i).ToList();
-            if (null == requests || requests.Count() == 0) break;
-
-            var batchProcessMessage = new BatchProcessMessage()
-            {
-                ApiCallType = fileRequest.ApiCallType,
-                ClientIdentityRequests = requests
-            };
-
-            var sqsMessage = new SqsMessage()
-            {
-                MessageType = MessageType.BatchProcess,
-                Payload = SerializationExtensions.SerializeWithoutCasing(batchProcessMessage)
-            };
-
-            await _sqsPublisher.PublishMessage(sqsMessage);
-            UpdateProcessLog(fileRequest.RequestId, $"Posted message on to SQS for RequestId: {requestId} and BatchNumber: {i}");
-            i++;
-        } while (true);
-
+        int maxDegreeOfParallelism = 1;
+        await groupedRqeusts.ParallelForEachAsync((requests) => PublishMessageToQueue(requests.ToList(), requests.Key, fileRequest.RequestId, fileRequest.ApiCallType), maxDegreeOfParallelism);
         _logger.LogInformation($"Completed Publishing records to SQS for requestId: {requestId}");
+    }
+
+    private async Task PublishMessageToQueue(IEnumerable<ClientIdentityRequest> identityRequests, int batchNumber, string requestId, string apiCallType)
+    {
+
+        var batchProcessMessage = new BatchProcessMessage()
+        {
+            ApiCallType = apiCallType,
+            ClientIdentityRequests = identityRequests
+        };
+
+        var sqsMessage = new SqsMessage()
+        {
+            MessageType = MessageType.BatchProcess,
+            Payload = SerializationExtensions.SerializeWithoutCasing(batchProcessMessage)
+        };
+
+        await _sqsPublisher.PublishMessage(sqsMessage);
+        //UpdateProcessLog(requestId, $"Posted message on to SQS for RequestId: {requestId} and BatchNumber: {batchNumber}");
     }
 
     private void UpdateProcessLog(string requestId, string message)
