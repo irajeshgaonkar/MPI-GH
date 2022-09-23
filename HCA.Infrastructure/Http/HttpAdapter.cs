@@ -12,18 +12,33 @@ public class HttpAdapter : IHttpAdapter
 
     private readonly HttpOptions _httpOptions;
 
+    private readonly HttpClient _httpClient;
+
     public HttpAdapter(IAppLogger logger, HttpOptions httpOptions)
     {
         _logger = logger;
         _httpOptions = httpOptions;
+        _httpClient = GetHttpClient();
+    }
+
+    private HttpClient GetHttpClient()
+    {
+        var client = new HttpClient();
+        AddCommonHeaders(client);
+        return client;
+    }
+
+    private void AddCommonHeaders(HttpClient httpClient)
+    {
+        foreach (var header in _httpOptions.CommonHeaders)
+            httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
     }
 
     /// <inheritdoc/>
     public async Task<T?> Delete<T>(string url)
     {
-        using var client = GetHttpClient();
         var uri = GetFullUri(url);
-        HttpResponseMessage httpResponseMessage = await client.DeleteAsync(uri);
+        HttpResponseMessage httpResponseMessage = await _httpClient.DeleteAsync(uri);
         await httpResponseMessage.EnsureSuccess();
         var response = await httpResponseMessage.Deserialize<T>();
         return response;
@@ -32,9 +47,8 @@ public class HttpAdapter : IHttpAdapter
     /// <inheritdoc/>
     public async Task<T?> Get<T>(string url)
     {
-        using var client = GetHttpClient();
         var uri = GetFullUri(url);
-        HttpResponseMessage httpResponseMessage = await client.GetAsync(uri);
+        HttpResponseMessage httpResponseMessage = await _httpClient.GetAsync(uri);
         await httpResponseMessage.EnsureSuccess();
         var response = await httpResponseMessage.Deserialize<T>();
         return response;
@@ -44,12 +58,11 @@ public class HttpAdapter : IHttpAdapter
     public async Task<T?> Post<T>(string url, dynamic requestBody)
     {
         _logger.LogInformation($"posting data to {url} started");
-        using var client = GetHttpClient();
         var uri = GetFullUri(url);
         var content = GetHttpContent(requestBody);
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
-        HttpResponseMessage httpResponseMessage = await client.PostAsync(uri, content);
+        HttpResponseMessage httpResponseMessage = await _httpClient.PostAsync(uri, content);
         stopWatch.Stop();
         _logger.LogInformation($"Completed posting data to {url} with Status Code {httpResponseMessage.StatusCode}, Elapsed time {stopWatch.ElapsedMilliseconds}");
         await httpResponseMessage.EnsureSuccess();
@@ -60,27 +73,12 @@ public class HttpAdapter : IHttpAdapter
     /// <inheritdoc/>
     public async Task<T?> Put<T>(string url, dynamic requestBody)
     {
-        using var client = GetHttpClient();
         var uri = GetFullUri(url);
         var content = GetHttpContent(requestBody);
-        HttpResponseMessage httpResponseMessage = await client.PutAsync(uri, content);
+        HttpResponseMessage httpResponseMessage = await _httpClient.PutAsync(uri, content);
         await httpResponseMessage.EnsureSuccess();
         var response = await httpResponseMessage.Deserialize<T>();
         return response;
-    }
-
-    private HttpClient GetHttpClient()
-    {
-        var handler = new HttpClientHandler();
-        var client = new HttpClient(handler);
-        AddCommonHeaders(client);
-        return client;
-    }
-
-    private void AddCommonHeaders(HttpClient httpClient)
-    {
-        foreach (var header in _httpOptions.CommonHeaders)
-            httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
     }
 
     private HttpContent GetHttpContent(dynamic content)

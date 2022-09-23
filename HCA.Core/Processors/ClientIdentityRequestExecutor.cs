@@ -24,10 +24,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
     public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater requestStatusUpdater) where T : BaseResponse
     {
-        await requestStatusUpdater.UpdateStatus(request, RequestStatus.Processing, "Started Processing Request");
+        //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Processing, "Started Processing Request");
         var response = await requestExecuters[request.ApiCallType](request, requestStatusUpdater);
         if (response.Success) return response as T;
-        await requestStatusUpdater.UpdateStatus(request, RequestStatus.Failed, "Error processing the request");
+        //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Failed, "Error processing the request");
         throw new HcaMuleSoftException("Error processing the request");
     }
 

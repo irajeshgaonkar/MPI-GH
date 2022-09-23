@@ -2,6 +2,7 @@
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Http;
+using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
@@ -18,26 +19,31 @@ namespace HCA.Core.Services
         private readonly IMuleSoftRepository _muleSoftRepository;
         private readonly IMuleSoftRequestBuilder _muleSoftRequestBuilder;
         private readonly IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> requestExecuters;
+        private readonly IAppLogger _appLogger;
 
         public MuleSoftRequestExecuter(MuleSoftRetryOptions muleSoftRetryOptions, IDelayCaculator delayCaculator,
-            IMuleSoftRepository muleSoftRepository, IMuleSoftRequestBuilder muleSoftRequestBuilder)
+            IMuleSoftRepository muleSoftRepository, IMuleSoftRequestBuilder muleSoftRequestBuilder, IAppLogger appLogger)
         {
             _muleSoftRetryOptions = muleSoftRetryOptions;
             _delayCaculator = delayCaculator;
             _muleSoftRepository = muleSoftRepository;
             _muleSoftRequestBuilder = muleSoftRequestBuilder;
             requestExecuters = BuildRequestExecutors();
+            _appLogger = appLogger;
         }
 
         public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater statusUpdater) where T : BaseResponse
         {
-            
+            var exception = "Error processing the request";
             for (int i = 0; i < _muleSoftRetryOptions.MaxRetries; ++i)
             {
                 try
                 {
-                    if (i > 0)
-                        await statusUpdater.UpdateStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
+                    //if (i > 0)
+                    //    await statusUpdater.UpdateStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
+
+                    if(i > 0)
+                        _appLogger.LogInformation($"Retrying request {request.TrackingId}, iteration{i}");
 
                     var response = await requestExecuters[request.ApiCallType](request);
                     if (response.Success) return response as T;
@@ -53,12 +59,22 @@ namespace HCA.Core.Services
                 }
                 catch (HcaHttpException e)
                 {
-                    if (!_muleSoftRetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw;
+                    _appLogger.LogInformation($"Retrying for the exception HcaHttpException {e.StatusCode}");
+                    _appLogger.LogError(e);
+                    exception = e.ToString();
+                    if (!_muleSoftRetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw new HcaMuleSoftException(exception);
+                    await Task.Delay(_delayCaculator.Calculate(i + 1));
+                }
+                catch(Exception e)
+                {
+                    _appLogger.LogInformation($"Retrying for the exception Exception");
+                    _appLogger.LogError(e);
+                    exception = e.ToString();
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
             }
 
-            throw new HcaMuleSoftException("Error processing the request");
+            throw new HcaMuleSoftException(exception);
         }
 
         private IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> BuildRequestExecutors()

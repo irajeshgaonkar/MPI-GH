@@ -10,7 +10,7 @@ public class ExponentialDelayCalculator : IDelayCaculator
     public int Calculate(int attemptNumber)
     {
         var delayInSeconds = ((1d / 2d) * (Math.Pow(2d, attemptNumber) - 1d));
-        return _maxDelayInSeconds < delayInSeconds
+        return _maxDelayInSeconds > delayInSeconds
             ? _maxDelayInSeconds
             : Convert.ToInt32(delayInSeconds);
     }
