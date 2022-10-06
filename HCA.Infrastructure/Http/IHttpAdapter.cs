@@ -7,6 +7,14 @@ namespace HCA.Infrastructure.Http;
 public interface IHttpAdapter
 {
     /// <summary>
+    /// Send request async
+    /// </summary>
+    /// <param name="request">Http Request message</param>
+    /// <returns>Http Response message</returns>
+    Task<HttpResponseMessage> SendAsync(HttpRequestMessage request);
+
+
+    /// <summary>
     /// Get request
     /// </summary>
     /// <typeparam name="T">response from get</typeparam>
@@ -19,18 +27,18 @@ public interface IHttpAdapter
     /// </summary>
     /// <typeparam name="T"><Response from post/typeparam>
     /// <param name="url">Post url</param>
-    /// <param name="requestBody">Post request body</param>
+    /// <param name="content">Post request body</param>
     /// <returns>Response from the post request</returns>
-    Task<T?> Post<T>(string url, dynamic requestBody);
+    Task<T?> Post<T>(string url, HttpContent content);
 
     /// <summary>
     /// Put request
     /// </summary>
     /// <typeparam name="T">Response from Put</typeparam>
     /// <param name="url">Put url</param>
-    /// <param name="requestBody">Put request body</param>
+    /// <param name="content">Post request body</param>
     /// <returns>Response from the put request</returns>
-    Task<T?> Put<T>(string url, dynamic requestBody);
+    Task<T?> Put<T>(string url, HttpContent content);
 
     /// <summary>
     /// Delete request

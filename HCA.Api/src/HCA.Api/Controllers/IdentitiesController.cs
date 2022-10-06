@@ -108,7 +108,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
+        //[HcaAuthorize(Roles.Admin)]
         [HttpPut("link")]
         public async Task<IActionResult> Link([FromBody] LinkingSources value, [FromQuery] string? processingOptions = null)
         {
