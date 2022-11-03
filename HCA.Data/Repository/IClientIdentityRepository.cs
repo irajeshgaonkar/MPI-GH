@@ -7,7 +7,7 @@ namespace HCA.Data.Repository;
 
 public interface IClientIdentityRepository : IRepositoryBase<ClientIdentityEntity>
 {
-    Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(string searchBy = "", string searchValue = "", List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
+    Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(Dictionary<string, string> searchFilter, List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 
     Task<IEnumerable<ClientIdentityEntity>> GetAllByQuery(Expression<Func<ClientIdentityEntity, bool>> query);
 

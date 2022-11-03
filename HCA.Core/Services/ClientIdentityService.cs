@@ -52,11 +52,11 @@ public class ClientIdentityService : IClientIdentityService
         _userModifyRecordsService = userModifyRecordsService;
     }
 
-    public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
+    public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
     {
         //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
         var userModifyRecords = new List<int>();
-        var (count, entities) = await _clientIdentityRepository.GetAll(searchBy, searchValue, userModifyRecords, pageNumber, recordsPerPage, orderBy);
+        var (count, entities) = await _clientIdentityRepository.GetAll(searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
         var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
         return (count, models);
     }

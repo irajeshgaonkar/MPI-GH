@@ -6,11 +6,11 @@ namespace HCA.Data.Repository.Core;
 
 public class RepositoryBase<T> : IRepositoryBase<T> where T : class
 {
-    private readonly DbContext _dataBaseContext;
+    protected readonly DbContext DataBaseContext;
 
     public RepositoryBase(DbContext context)
     {
-        _dataBaseContext = context;
+        DataBaseContext = context;
     }
 
     public IQueryable<T> GetAll()
@@ -25,14 +25,14 @@ public class RepositoryBase<T> : IRepositoryBase<T> where T : class
 
     public bool Any(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate)
     {
-        IQueryable<T> query = _dataBaseContext.Set<T>();
+        IQueryable<T> query = DataBaseContext.Set<T>();
         var result = query.Where(condition).Any(predicate);
         return result;
     }
 
     public bool All(Expression<Func<T, bool>> condition, Expression<Func<T, bool>> predicate)
     {
-        IQueryable<T> query = _dataBaseContext.Set<T>();
+        IQueryable<T> query = DataBaseContext.Set<T>();
         var result = query.Where(condition).All(predicate);
         return result;
     }
@@ -191,20 +191,20 @@ public class RepositoryBase<T> : IRepositoryBase<T> where T : class
 
     public virtual void Add(T entity)
     {
-        _dataBaseContext.Set<T>().Add(entity);
-        _dataBaseContext.SaveChanges();
+        DataBaseContext.Set<T>().Add(entity);
+        DataBaseContext.SaveChanges();
     }
 
     public virtual void AddAsync(T entity)
     {
-        _dataBaseContext.Set<T>().AddAsync(entity);
-        _dataBaseContext.SaveChanges();
+        DataBaseContext.Set<T>().AddAsync(entity);
+        DataBaseContext.SaveChanges();
     }
 
     public T Update(T entity)
     {
-        _dataBaseContext.Set<T>().Update(entity);
-        _dataBaseContext.SaveChanges();
+        DataBaseContext.Set<T>().Update(entity);
+        DataBaseContext.SaveChanges();
         return entity;
     }
 
@@ -212,29 +212,29 @@ public class RepositoryBase<T> : IRepositoryBase<T> where T : class
     {
         var entity = GetSingle(predicate: predicate);
         if (entity == null) return;
-        _dataBaseContext.Set<T>().Remove(entity);
-        _dataBaseContext.SaveChanges();
+        DataBaseContext.Set<T>().Remove(entity);
+        DataBaseContext.SaveChanges();
     }
 
     public void Delete(T entity)
     {
-        _dataBaseContext.Set<T>().Remove(entity);
-        _dataBaseContext.SaveChanges();
+        DataBaseContext.Set<T>().Remove(entity);
+        DataBaseContext.SaveChanges();
     }
 
     public int Count()
     {
-        return _dataBaseContext.Set<T>().Count();
+        return DataBaseContext.Set<T>().Count();
     }
 
     public int Count(Expression<Func<T, bool>> predicate)
     {
-        return _dataBaseContext.Set<T>().Count(predicate);
+        return DataBaseContext.Set<T>().Count(predicate);
     }
 
     private IQueryable<T> GetQueryable(Expression<Func<T, bool>>? predicate = null, Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
     {
-        IQueryable<T> query = _dataBaseContext.Set<T>();
+        IQueryable<T> query = DataBaseContext.Set<T>();
 
         if (include != null)
         {

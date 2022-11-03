@@ -55,10 +55,10 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [HttpPost("dashboardData")]
-        public async Task<IActionResult> GetDashboardData([FromBody] Identity filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string orderBy = "")
+        public async Task<IActionResult> GetDashboardData([FromBody] DashboardFillter filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string orderBy = "")
         {
-            var (searchBy, searchValue) = GetSearchFilter(filter);
-            var (count, records) = await _clientIdentityService.GetAll(HttpContext.GetCurrentUser(), searchBy ?? "", searchValue ?? "", pagNumber, recordsPerPage, orderBy);
+            var searchFilter = GetSearchFilter(filter);
+            var (count, records) = await _clientIdentityService.GetAll(HttpContext.GetCurrentUser(), searchFilter, pagNumber, recordsPerPage, orderBy);
             var showSensitiveData = HttpContext.CanShowSensitiveData();
             var identities = ClientIdentityDtoMapper.GetDto(records, showSensitiveData);
             if (identities.Count > count) count = identities.Count;
@@ -166,24 +166,58 @@ namespace HCA.Api.Controllers
             return (ProcessType.Async, new NotificationOptions() { AppName = appName, MessageGroup = messageGroupId });
         }
 
-        private static (string?, string?) GetSearchFilter(Identity filter)
+        private static Dictionary<string, string> GetSearchFilter(DashboardFillter filter)
         {
-            var name = filter.Names.FirstOrDefault();
-
-            if (name != null)
-            {
-                if (name.First.IsNotEmpty()) return ("FName", name.First);
-                if (name.Last.IsNotEmpty()) return ("LName", name.Last);
-            }
-
-            var ssn = filter.Ssns.FirstOrDefault();
-            if (ssn.IsNotEmpty()) return ("Ssn", ssn);
-
-            var email = filter.Emails.FirstOrDefault();
-            if (email.IsNotEmpty()) return ("Email", email);
-
-            return (null, null);
+            var searchFilter = new Dictionary<string, string>();
+            if (filter.FirstName.IsNotEmpty()) searchFilter.Add("FName", filter.FirstName);
+            if (filter.LastName.IsNotEmpty()) searchFilter.Add("LName", filter.LastName);
+            if (filter.Ssn.IsNotEmpty()) searchFilter.Add("Ssn", filter.Ssn);
+            if (filter.Email.IsNotEmpty()) searchFilter.Add("Email", filter.Email);
+            if (filter.LinkId.IsNotEmpty()) searchFilter.Add("MpiLinkId", filter.LinkId);
+            if (filter.SourceSystemId.IsNotEmpty()) searchFilter.Add("SourceId", filter.SourceSystemId);
+            return searchFilter;
         }
+    }
+    /// <summary>
+    /// Dashboard filter
+    /// </summary>
+    public class DashboardFillter
+    {
+        /// <summary>
+        /// First Name
+        /// </summary>
+        /// <example></example>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Last Name
+        /// </summary>
+        /// <example></example>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Email
+        /// </summary>
+        /// <example></example>
+        public string Email { get; set; }
+
+        /// <summary>
+        /// Social Security Number
+        /// </summary>
+        /// <example></example>
+        public string Ssn { get; set; }
+
+        /// <summary>
+        /// Email
+        /// </summary>
+        /// <example></example>
+        public string LinkId { get; set; }
+
+        /// <summary>
+        /// Source System Ide
+        /// </summary>
+        /// <example></example>
+        public string SourceSystemId { get; set; }
     }
 }
 

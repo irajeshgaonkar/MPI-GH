@@ -7,7 +7,7 @@ namespace HCA.Core.Services;
 
 public interface IClientIdentityService
 {
-    Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, string searchBy = "", string searchValue = "", int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
+    Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 
     Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
