@@ -1,8 +1,11 @@
-﻿using HCA.Api.Mapper;
+﻿using HCA.Api.Constants;
+using HCA.Api.Dto;
+using HCA.Api.Filters;
+using HCA.Api.Mapper;
 using HCA.Core.Services;
 using HCA.Infrastructure.Logger;
 using Microsoft.AspNetCore.Mvc;
-
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace HCA.Api.Controllers
 {
@@ -24,6 +27,8 @@ namespace HCA.Api.Controllers
         }
 
         [HttpGet("{trackingId}")]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [SwaggerResponse(StatusCodes.Status200OK, "User Request Detailss", typeof(UserRequestDto))]
         public async Task<IActionResult> GetFileRequestStatusByTrackingId([FromRoute] string trackingId)
         {
             _appLogger.LogInformation($"Started Processing FilesController::GetFileRequestStatusByTrackingId for trackingId: {trackingId}");

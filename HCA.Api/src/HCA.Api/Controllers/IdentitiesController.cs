@@ -9,6 +9,7 @@ using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
+using HCA.Models.MuleSoft.Response;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -102,13 +103,14 @@ namespace HCA.Api.Controllers
         /// <param name="value">Linking sources <see cref="LinkingSources" /></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
         /// <returns></returns>
-        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<ClientIdentityDto>))]
+
         [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Link identities response", typeof(LinkIdentitiesResponseContent))]
         [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        //[HcaAuthorize(Roles.Admin)]
+        [HcaAuthorize(Roles.Admin)]
         [HttpPut("link")]
         public async Task<IActionResult> Link([FromBody] LinkingSources value, [FromQuery] string? processingOptions = null)
         {
@@ -119,6 +121,18 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Un link client identiities
+        /// </summary>
+        /// <param name="value">Un linking sources <see cref="UnLinkingSourcess"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Un link identities response", typeof(UnLinkIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
         [HttpPut("unlink")]
         public async Task<IActionResult> UnLink([FromBody] UnLinkingSources value, [FromQuery] string? processingOptions = null)
@@ -130,6 +144,18 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Merge client identities
+        /// </summary>
+        /// <param name="value">Merge Sources <see cref="MergingSources"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Merge identities response", typeof(MergeIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
         [HttpPut("merge")]
         public async Task<IActionResult> Merge([FromBody] MergingSources value, [FromQuery] string? processingOptions = null)
@@ -141,6 +167,18 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Un merge client identitiess
+        /// </summary>
+        /// <param name="value">Un merge Sources <see cref="UnMergingSources"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Un Merge identities response", typeof(UnMergeIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
         [HttpPut("unmerge")]
         public async Task<IActionResult> UnMerge([FromBody] UnMergingSources value, [FromQuery] string? processingOptions = null)
