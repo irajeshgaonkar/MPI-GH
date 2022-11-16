@@ -1,9 +1,7 @@
 ﻿using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Data.Repository;
-using HCA.Infrastructure.DynamoDb;
 using HCA.Infrastructure.Exceptions;
-using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.Request;
 using HCA.Models.Response;
@@ -15,19 +13,13 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     private readonly IClientIdentityRepository _clientIdentityRepository;
     private readonly IMuleSoftRequestExecuter _muleSoftRequestExecuter;
     private readonly IDictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>> requestExecuters;
-    private readonly NotificationBuilder _notificationBuilder;
-    private readonly HcaDynamoDbClient _dynamoDbClient;
-    private readonly IAppLogger _logger;
 
     public ClientIdentityRequestExecutor(IClientIdentityRepository clientIdentityRepository,
-        IMuleSoftRequestExecuter muleSoftRequestExecuter, IAppLogger logger)
+        IMuleSoftRequestExecuter muleSoftRequestExecuter)
     {
         _clientIdentityRepository = clientIdentityRepository;
         _muleSoftRequestExecuter = muleSoftRequestExecuter;
         requestExecuters = BuildRequestExecutors();
-        _notificationBuilder = new NotificationBuilder();
-        _dynamoDbClient = new HcaDynamoDbClient();
-        _logger = logger;
     }
 
     public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater requestStatusUpdater) where T : BaseResponse
@@ -58,7 +50,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
         var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
-        await UpdatePostIdentitiesNotification(postIdentityRequest, response);
 
         if (null != response && response.Success && null != response.Content?.LinkId)
         {
@@ -87,7 +78,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             throw new HcaBadRequestException("sources are already linked");
 
         var response = await _muleSoftRequestExecuter.Execute<LinkClientIdentityResponse>(request, requestStatusUpdater);
-        await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, response, sourceIdentity.MpiLinkId);
 
         if (null != response && response.Success && null != response.Content?.LinkId)
         {
@@ -97,7 +87,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         throw new HcaBadRequestException("Error processing the request");
     }
-
 
     private async Task<BaseResponse> UnLinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
@@ -113,7 +102,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             throw new HcaBadRequestException("source not found");
 
         var response = await _muleSoftRequestExecuter.Execute<UnLinkClientIdentityResponse>(request, requestStatusUpdater);
-        await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, response, sourceIdentity.MpiLinkId);
 
         if (null != response && response.Success && null != response.Content?.UnlinkedId)
         {
@@ -137,7 +125,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         if (null == toRetireIdentity)
             throw new HcaBadRequestException("To retire source not found");
         var response = await _muleSoftRequestExecuter.Execute<MergeClientIdentityResponse>(request, requestStatusUpdater);
-        await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, response, toRetireIdentity.MpiLinkId);
 
         if (null != response && response.Success && null != response.Content?.LinkId)
         {
@@ -161,7 +148,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         if (null == unmergeSourceIdentity)
             throw new HcaBadRequestException("Un merge source not found");
         var response = await _muleSoftRequestExecuter.Execute<UnMergeClientIdentityResponse>(request, requestStatusUpdater);
-        await UpdateUnMergeIdentitiesNotification(unMergeClientIdentityRequest, response, unmergeSourceIdentity.MpiLinkId);
 
         if (null != response && response.Success && null != response.Content?.UnmergedId)
         {
@@ -176,7 +162,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         var demographicSearchClientIdentityRequest = Cast<DemographicSearchClientIdentityRequest>(request);
         var response = await _muleSoftRequestExecuter.Execute<DemographicSearchClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
-        await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
 
         if (null != response && response.Success && null != response.Content)
         {
@@ -184,84 +169,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
 
         throw new HcaBadRequestException("Error processing the request");
-    }
-
-    private async Task UpdatePostIdentitiesNotification(PostClientIdentityRequest request, PostClientIdentityResponse? response)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildPostIdentityNotification(request, response);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
-    }
-
-    private async Task UpdateLinkIdentitiesNotification(LinkClientIdentityRequest request, LinkClientIdentityResponse? response, string mpiLInkId)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildLinkIdentityNotification(request, response, mpiLInkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
-    }
-
-    private async Task UpdateUnLinkIdentitiesNotification(UnLinkClientIdentityRequest request, UnLinkClientIdentityResponse? response, string previousLinkId)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildUnLinkIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
-    }
-
-    private async Task UpdateMergeIdentitiesNotification(MergeClientIdentityRequest request, MergeClientIdentityResponse? response, string previousLinkId)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildMergeIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
-    }
-
-    private async Task UpdateUnMergeIdentitiesNotification(UnMergeClientIdentityRequest request, UnMergeClientIdentityResponse? response, string previousLinkId)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildUnMergeIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
-    }
-
-    private async Task UpdateDemographicSearchNotification(DemographicSearchClientIdentityRequest request, DemographicSearchClientIdentityResponse response)
-    {
-        try
-        {
-            var notification = _notificationBuilder.BuildDemographicSearchNotification(request, response);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
     }
 
     private T Cast<T>(BaseRequest request) where T : BaseRequest

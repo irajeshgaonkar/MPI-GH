@@ -36,7 +36,6 @@ public static class Startup
     {
         services
             .AddScoped<IClientIdentityService, ClientIdentityService>()
-            .AddScoped<INotificationService, NotificationService>()
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
             .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
