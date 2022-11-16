@@ -62,7 +62,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
         {
             if (filterFirstColumn == "FName")
             {
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && (c.FirstName.ToLower().StartsWith(filterFirstValue) || c.LastName.ToLower().StartsWith(filterSecondValue));
+                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
