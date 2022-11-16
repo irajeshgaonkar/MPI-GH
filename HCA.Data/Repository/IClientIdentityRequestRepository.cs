@@ -10,6 +10,8 @@ public interface IClientIdentityRequestRepository : IRepositoryBase<ClientIdenti
     Task<IEnumerable<ClientIdentityRequestEntity>> GetRequests(string requestId, int batchNumber);
 
     Task UpdateStatus(List<int> ids, string? status, string? message, string? mpiLinkId, string? trackingId = null);
+
+    void MoveDataToHistoryTable(string requestId);
  }
 
 
