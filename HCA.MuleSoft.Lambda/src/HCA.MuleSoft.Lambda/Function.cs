@@ -6,7 +6,6 @@ using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
 using HCA.Data;
-using HCA.Data.Repository;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
@@ -83,7 +82,6 @@ public class Function
         if(sqsMessage.MessageType == MessageType.GenerateOutput)
         {
             await GenerateOutputFile(serviceProvider, sqsMessage);
-            MoveDataToOuptFile(serviceProvider, sqsMessage);
             return;
         }
     }
@@ -102,22 +100,6 @@ public class Function
         }
 
         await outputFileWriter.WriteFile(requestData.RequestId);
-    }
-
-    private void MoveDataToOuptFile(ServiceProvider serviceProvider, SqsMessage request)
-    {
-        var logger = serviceProvider.GetRequiredService<IAppLogger>();
-        logger.LogInformation($"started moving data to history table");
-        var clientIdentityRequestRepository = serviceProvider.GetRequiredService<IClientIdentityRequestRepository>();
-        var requestData = SerializationExtensions.DeSerializeWithoutCasing<OuputFileGenerationMessage>(request.Payload);
-
-        if (requestData == null)
-        {
-            logger.LogInformation($"request data is null for {request.MessageType}");
-            return;
-        }
-
-        clientIdentityRequestRepository.MoveDataToHistoryTable(requestData.RequestId);
     }
 
     private async Task ProcessBatchRequest(ServiceProvider serviceProvider, SqsMessage request)
