@@ -17,13 +17,13 @@ public class HcaMpiNotification
     /// <summary>
     /// Source System Name
     /// </summary>
-    [DynamoDBHashKey(DynamoDbNotificationColumnNames.SourceSystemName)]
+    [DynamoDBProperty(DynamoDbNotificationColumnNames.SourceSystemName)]
     public string SourceSystemName { get; set; }
 
     /// <summary>
     /// Link Id
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.LinkId)]
+    [DynamoDBHashKey(DynamoDbNotificationColumnNames.LinkId)]
     public string LinkId { get; set; }
 
     /// <summary>

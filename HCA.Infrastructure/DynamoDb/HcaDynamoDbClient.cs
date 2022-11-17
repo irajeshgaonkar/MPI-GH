@@ -36,9 +36,9 @@ namespace HCA.Infrastructure.DynamoDb
             return result;
         }
 
-        public async Task<List<Dictionary<string, AttributeValue>>> QueryAsync(QueryRequest queryRequest)
+        public async Task<List<Dictionary<string, AttributeValue>>> ScanAsync(ScanRequest scanRequest)
         {
-            var searchResult = await _dynamoDBClient.QueryAsync(queryRequest);
+            var searchResult = await _dynamoDBClient.ScanAsync(scanRequest);
             return searchResult.Items;
         }
     }

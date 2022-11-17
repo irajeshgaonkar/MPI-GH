@@ -37,43 +37,38 @@ public class NotificationsController : ControllerBase
     /// <summary>
     /// Fetches the Dashboard data based on the filter condition
     /// </summary>
-    /// <param name="sourceName">Source system Name</param>
-    /// <param name="filter">Filter Condition</param>
-    /// <param name="pagNumber">current page number</param>
-    /// <param name="recordsPerPage">Records per page</param>
     /// <returns>Paginated collection of Notification <see cref="String"/></returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status200OK, "List of notifications", typeof(IEnumerable<NotificationDto>))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized)]
     [SwaggerResponse(StatusCodes.Status403Forbidden)]
     [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-    //[HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-    [HttpGet("get/{sourceName}")]
-    public async Task<IActionResult> GetDashboardData([FromRoute] string sourceName, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string? filter = "")
+    [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+    [HttpGet()]
+    public async Task<IActionResult> GetAllNotifications()
     {
-        string linkId = null;
-        string sourceId = null;
-        string trackingId = null;
-        
-        if (!string.IsNullOrEmpty(filter))
-        {
-            var filterItems = filter.Split("AND");
-            foreach(var item in filterItems)
-            {
-                var itemParts = item.Split("EQ");
-                if (itemParts.Length < 2) continue;
-                var key = itemParts[0].Trim();
-                var value = itemParts[1].Trim();
-
-                if (key == "linkId") linkId = value;
-                if (key == "sourceId") sourceId = value;
-                if (key == "trackingId") trackingId = value;
-            }
-        }
-
-        var result = await _notificationService.GetNotifications(sourceName, linkId, sourceId, trackingId, pagNumber, recordsPerPage);
+        var result = await _notificationService.GetNotifications();
         var returnValue = GetDtos(result);
         return Ok(returnValue);
     }
+
+    /// <summary>
+    /// Fetches the Dashboard data based on the filter condition
+    /// </summary>
+    /// <param name="linkId">Filter Condition</param>
+    /// <returns>Paginated collection of Notification <see cref="String"/></returns>
+    [SwaggerResponse(StatusCodes.Status200OK, "List of notifications", typeof(IEnumerable<NotificationDto>))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+    [SwaggerResponse(StatusCodes.Status403Forbidden)]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+    [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+    [HttpGet("{linkId}")]
+    public async Task<IActionResult> GetNotifications([FromRoute] string linkId)
+    {
+        var result = await _notificationService.GetNotifications(linkId);
+        var returnValue = GetDtos(result);
+        return Ok(returnValue);
+    }
+
 
     private IEnumerable<NotificationDto> GetDtos(IEnumerable<HcaMpiNotification> notifications)
     {

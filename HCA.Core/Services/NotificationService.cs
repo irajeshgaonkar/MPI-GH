@@ -13,18 +13,47 @@ public class NotificationService : INotificationService
         _hcaDynamoDbClient = new HcaDynamoDbClient();
     }
 
-    public async Task<IEnumerable<HcaMpiNotification>> GetNotifications(string sourceName, string? linkId, string? sourceId, string? trackingId, int pageNumber = 0, int pageSize = 20)
+    public async Task<IEnumerable<HcaMpiNotification>> GetNotifications(string linkId)
     {
         var returnValue = new List<HcaMpiNotification>();
-        var query = BuildQueryRequest(sourceName, linkId, sourceId, trackingId, pageSize, pageNumber);
-        var result = await _hcaDynamoDbClient.QueryAsync(query);
+        //var query = BuildQueryRequest(sourceName, linkId, sourceId, trackingId, pageSize, pageNumber);
+        var result = await _hcaDynamoDbClient.Query<HcaMpiNotification>(linkId);
 
-        if (result.Count < pageSize * pageNumber) return returnValue;
+        //if (result.Count < pageSize * pageNumber) return returnValue;
         
-        for(int i = pageSize * pageNumber;i < result.Count && i <  pageSize * (pageNumber + 1); i++)
+        //for(int i = pageSize * pageNumber;i < result.Count && i <  pageSize * (pageNumber + 1); i++)
+        //{
+        //    var notification = new HcaMpiNotification();
+        //    foreach(var attribute in result[i])
+        //    {
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.LinkId) notification.LinkId = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.TrackingId) notification.TrackingId = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.TimeStamp) notification.TimeStamp = DateTime.Parse(attribute.Value.S);
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.SourceSystemName) notification.SourceSystemName = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.SourceSystemId) notification.SourceSystemId = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.Operation) notification.Operation = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.Request) notification.Request = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.Response) notification.Response = attribute.Value.S;
+        //        if (attribute.Key == DynamoDbNotificationColumnNames.PreviousLinkId) notification.PreviousLinkId = attribute.Value.S;
+        //    }
+
+        //    returnValue.Add(notification);
+        //}
+
+        return result;
+    }
+
+    public async Task<IEnumerable<HcaMpiNotification>> GetNotifications()
+    {
+        var returnValue = new List<HcaMpiNotification>();
+        var query = new ScanRequest(DynamoDbTableNames.Notification);
+        var result = await _hcaDynamoDbClient.ScanAsync(query);
+
+
+        for (int i =0; i < result.Count && i < result.Count; i++)
         {
             var notification = new HcaMpiNotification();
-            foreach(var attribute in result[i])
+            foreach (var attribute in result[i])
             {
                 if (attribute.Key == DynamoDbNotificationColumnNames.LinkId) notification.LinkId = attribute.Value.S;
                 if (attribute.Key == DynamoDbNotificationColumnNames.TrackingId) notification.TrackingId = attribute.Value.S;
@@ -43,32 +72,37 @@ public class NotificationService : INotificationService
         return returnValue;
     }
 
-    private QueryRequest BuildQueryRequest(string sourceName, string? linkId, string? sourceId, string? trackingId, int pageSize, int pageNumber)
+    private ScanRequest BuildQueryRequest(string? sourceName, string? linkId, string? sourceId, string? trackingId, int pageSize, int pageNumber)
     {
-        var request = new QueryRequest(DynamoDbTableNames.Notification)
+        var request = new ScanRequest(DynamoDbTableNames.Notification);
+
+        if(sourceName != null)
         {
-            KeyConditionExpression = $"{DynamoDbNotificationColumnNames.SourceSystemName} = :sourceName",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+            request.FilterExpression = $"{DynamoDbNotificationColumnNames.SourceSystemName} = :sourceName";
+            request.ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
-                {  ":sourceName",  new AttributeValue { S = sourceName.ToLower() } }
-            },
+                {  ":sourceName",  new AttributeValue { S = sourceName } }
+            };
         };
 
         if (linkId != null)
         {
-            request.KeyConditionExpression += $" and {DynamoDbNotificationColumnNames.LinkId} = :linkId";
+            if (!string.IsNullOrEmpty(request.FilterExpression)) request.FilterExpression = " and ";
+            request.FilterExpression += $"{DynamoDbNotificationColumnNames.LinkId} = :linkId";
             request.ExpressionAttributeValues.Add(":linkId", new AttributeValue { S = linkId });
         }
 
         if (sourceId != null)
         {
-            request.KeyConditionExpression += $" and {DynamoDbNotificationColumnNames.SourceSystemId} = :sourceId";
+            if (!string.IsNullOrEmpty(request.FilterExpression)) request.FilterExpression = " and ";
+            request.FilterExpression += $"{DynamoDbNotificationColumnNames.SourceSystemId} = :sourceId";
             request.ExpressionAttributeValues.Add(":sourceId", new AttributeValue { S = sourceId });
         }
 
         if (trackingId != null)
         {
-            request.KeyConditionExpression += $" and {DynamoDbNotificationColumnNames.TrackingId} = :trackingId";
+            if (!string.IsNullOrEmpty(request.FilterExpression)) request.FilterExpression = " and ";
+            request.FilterExpression += $"{DynamoDbNotificationColumnNames.TrackingId} = :trackingId";
             request.ExpressionAttributeValues.Add(":trackingId", new AttributeValue { S = trackingId });
         }
 
