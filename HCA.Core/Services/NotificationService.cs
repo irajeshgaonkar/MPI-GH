@@ -43,10 +43,17 @@ public class NotificationService : INotificationService
         return result;
     }
 
-    public async Task<IEnumerable<HcaMpiNotification>> GetNotifications()
+    public async Task<IEnumerable<HcaMpiNotification>> GetAllNotifications(string? sourceId = null)
     {
         var returnValue = new List<HcaMpiNotification>();
         var query = new ScanRequest(DynamoDbTableNames.Notification);
+        
+        if (!string.IsNullOrWhiteSpace(sourceId))
+        {
+            query.FilterExpression += $"{DynamoDbNotificationColumnNames.SourceSystemId} = :sourceId";
+            query.ExpressionAttributeValues.Add(":sourceId", new AttributeValue { S = sourceId });
+        }
+
         var result = await _hcaDynamoDbClient.ScanAsync(query);
 
 

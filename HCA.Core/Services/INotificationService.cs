@@ -5,6 +5,6 @@ namespace HCA.Core.Services;
 public interface INotificationService
 {
     Task<IEnumerable<HcaMpiNotification>> GetNotifications(string linkId);
-    Task<IEnumerable<HcaMpiNotification>> GetNotifications();
+    Task<IEnumerable<HcaMpiNotification>> GetAllNotifications(string? sourceId = null);
 }
 

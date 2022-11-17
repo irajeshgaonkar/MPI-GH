@@ -44,9 +44,9 @@ public class NotificationsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError)]
     [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
     [HttpGet()]
-    public async Task<IActionResult> GetAllNotifications()
+    public async Task<IActionResult> GetAllNotifications([FromQuery] string? sourceSystemId = null)
     {
-        var result = await _notificationService.GetNotifications();
+        var result = await _notificationService.GetAllNotifications(sourceSystemId);
         var returnValue = GetDtos(result);
         return Ok(returnValue);
     }
@@ -83,8 +83,8 @@ public class NotificationsController : ControllerBase
             notificationDto.TrackingId = notification.TrackingId;
             notificationDto.TimeStamp = notification.TimeStamp;
             notificationDto.Operation = notification.Operation;
-            notificationDto.Request = SerializationExtensions.DeSerialize<dynamic>(notification.Request) ?? new { };
-            notificationDto.Response = SerializationExtensions.DeSerialize<dynamic>(notification.Response) ?? new { };
+            notificationDto.Request = notification.Request == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Request);
+            notificationDto.Response = notification.Response == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Response);
             notificationDto.PreviousLinkId = notification.PreviousLinkId;
 
             result.Add(notificationDto);
