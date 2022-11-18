@@ -44,29 +44,32 @@ public class NotificationsController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError)]
     [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
     [HttpGet()]
-    public async Task<IActionResult> GetAllNotifications([FromQuery] string? sourceSystemId = null)
+    public async Task<IActionResult> GetAllNotifications([FromQuery] string? filter = null, [FromQuery] int? pageSize = null, [FromQuery] string? startKey = null)
     {
-        var result = await _notificationService.GetAllNotifications(sourceSystemId);
-        var returnValue = GetDtos(result);
-        return Ok(returnValue);
-    }
+        var notificationFilter = new NotificationFilter();
 
-    /// <summary>
-    /// Fetches the Dashboard data based on the filter condition
-    /// </summary>
-    /// <param name="linkId">Filter Condition</param>
-    /// <returns>Paginated collection of Notification <see cref="String"/></returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "List of notifications", typeof(IEnumerable<NotificationDto>))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized)]
-    [SwaggerResponse(StatusCodes.Status403Forbidden)]
-    [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-    [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-    [HttpGet("{linkId}")]
-    public async Task<IActionResult> GetNotifications([FromRoute] string linkId)
-    {
-        var result = await _notificationService.GetNotifications(linkId);
-        var returnValue = GetDtos(result);
-        return Ok(returnValue);
+        if(filter != null)
+        {
+            var filterValues = filter.Split("AND");
+
+            foreach(var filterValue in filterValues)
+            {
+                var filterValueSplit = filterValue.Split("EQ", StringSplitOptions.RemoveEmptyEntries);
+                if (filterValueSplit.Length < 2) continue;
+                var key  = filterValueSplit[0];
+                var value = filterValueSplit[1];
+
+                if (key.ToLower() == "sourceName".ToLower()) notificationFilter.SourceName = value;
+                if (key.ToLower() == "linkId".ToLower()) notificationFilter.LinkId = value;
+                if (key.ToLower() == "sourceId".ToLower()) notificationFilter.SourceId = value;
+                if (key.ToLower() == "operation".ToLower()) notificationFilter.OperationType = value;
+                if (key.ToLower() == "trackingId".ToLower()) notificationFilter.TrackingId = value;
+            }
+        }
+
+        var result = await _notificationService.GetAllNotifications(notificationFilter, pageSize, startKey);
+        var returnValue = GetDtos(result.Item1);
+        return Ok(new { items = returnValue, lastKey = result.Item2 });
     }
 
 

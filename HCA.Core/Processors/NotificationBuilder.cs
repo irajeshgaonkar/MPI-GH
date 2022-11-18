@@ -17,7 +17,7 @@ namespace HCA.Core.Processors
         {
             return new HcaMpiNotification()
             {
-                LinkId = response?.Content.LinkId ?? "Link Id not Generated",
+                LinkId = response?.Content?.LinkId ?? "Link Id not Generated",
                 TrackingId = request.TrackingId,
                 TimeStamp = DateTime.Now,
                 SourceSystemName = request.Content.First().SourceSystemName,
@@ -33,7 +33,7 @@ namespace HCA.Core.Processors
         {
             return new HcaMpiNotification()
             {
-                LinkId = response?.Content.LinkId ?? "Link Id not Generated",
+                LinkId = response?.Content?.LinkId ?? "Link Id not Generated",
                 TrackingId = request.TrackingId,
                 TimeStamp = DateTime.Now,
                 SourceSystemName = request.Content.Source.Name,
@@ -49,7 +49,7 @@ namespace HCA.Core.Processors
         {
             return new HcaMpiNotification()
             {
-                LinkId = response?.Content.UnlinkedId ?? "Un Link Id not Generated",
+                LinkId = response?.Content?.UnlinkedId ?? "Un Link Id not Generated",
                 TrackingId = request.TrackingId,
                 TimeStamp = DateTime.Now,
                 SourceSystemName = request.Content.Source.Name,
@@ -65,7 +65,7 @@ namespace HCA.Core.Processors
         {
             return new HcaMpiNotification()
             {
-                LinkId = response?.Content.LinkId ?? "Merge Id not Generated",
+                LinkId = response?.Content?.LinkId ?? "Merge Id not Generated",
                 TrackingId = request.TrackingId,
                 TimeStamp = DateTime.Now,
                 SourceSystemName = request.Content.ToRetireSource.Name,
@@ -81,7 +81,7 @@ namespace HCA.Core.Processors
         {
             return new HcaMpiNotification()
             {
-                LinkId = response?.Content.UnmergedId ?? "Un Merge Id not Generated",
+                LinkId = response?.Content?.UnmergedId ?? "Un Merge Id not Generated",
                 TrackingId = request.TrackingId,
                 TimeStamp = DateTime.Now,
                 SourceSystemName = request.Content.UnmergeSource.Name,

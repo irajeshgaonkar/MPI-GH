@@ -3,6 +3,7 @@ using HCA.Core.Processors;
 using HCA.Data.Repository;
 using HCA.Infrastructure.DynamoDb;
 using HCA.Infrastructure.Exceptions;
+using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.Request;
@@ -57,13 +58,11 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     private async Task<BaseResponse> PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
-        var notificationsUpdated = false;
 
         try
         {
             var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
             await UpdatePostIdentitiesNotification(postIdentityRequest, response);
-            notificationsUpdated = true;
 
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
@@ -72,18 +71,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 return response;
             }
 
-            throw new HcaBadRequestException("Error processing the request");
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
-            if (!notificationsUpdated)
-                await UpdatePostIdentitiesNotification(postIdentityRequest, null);
-            throw;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            if (!notificationsUpdated)
-                await UpdatePostIdentitiesNotification(postIdentityRequest, null);
+            await UpdatePostIdentitiesNotification(postIdentityRequest, null);
             throw;
         }
     }
@@ -94,7 +87,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var linkingSources = linkIdentitiesRequest.Content;
         var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
         var sourceIdentity = await _clientIdentityRepository.GetBySource(linkingSources.Source.Name, linkingSources.Source.Id);
-        var notificationsUpdated = false;
 
         try
         {
@@ -109,7 +101,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
             var response = await _muleSoftRequestExecuter.Execute<LinkClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, response, sourceIdentity.MpiLinkId);
-            notificationsUpdated = true;
 
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
@@ -117,18 +108,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 return response;
             }
 
-            throw new HcaBadRequestException("Error processing the request");
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
-            if (!notificationsUpdated)
-                await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, null, sourceIdentity?.MpiLinkId ?? "");
-            throw;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            if (!notificationsUpdated)
-                await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, null, sourceIdentity?.MpiLinkId ?? "");
+            await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, null, sourceIdentity?.MpiLinkId ?? "");
             throw;
         }
     }
@@ -140,7 +125,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var unLinkingSources = unLinkClientIdentityRequest.Content;
         var unlinkFromIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.UnlinkFromSource.Name, unLinkingSources.UnlinkFromSource.Id);
         var sourceIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.Source.Name, unLinkingSources.Source.Id);
-        var notificationsUpdated = false;
 
         try
         {
@@ -152,7 +136,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
             var response = await _muleSoftRequestExecuter.Execute<UnLinkClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, response, sourceIdentity.MpiLinkId);
-            notificationsUpdated = true;
 
             if (null != response && response.Success && null != response.Content?.UnlinkedId)
             {
@@ -160,18 +143,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 return response;
             }
 
-            throw new HcaBadRequestException("Error processing the request");
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
-            if (!notificationsUpdated)
-                await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, null, sourceIdentity?.MpiLinkId ?? "");
-            throw;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            if (!notificationsUpdated)
-                await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, null, sourceIdentity?.MpiLinkId ?? "");
+            await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, null, sourceIdentity?.MpiLinkId ?? "");
             throw;
         }
     }
@@ -182,7 +159,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var mergingSources = mergeClientIdentityRequest.Content;
         var toSurviveIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToSurviveSource.Name, mergingSources.ToSurviveSource.Id);
         var toRetireIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToRetireSource.Name, mergingSources.ToRetireSource.Id);
-        var notificationsUpdated = false;
 
         try
         {
@@ -193,7 +169,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 throw new HcaBadRequestException("To retire source not found");
             var response = await _muleSoftRequestExecuter.Execute<MergeClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, response, toRetireIdentity.MpiLinkId);
-            notificationsUpdated = true;
 
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
@@ -201,18 +176,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 return response;
             }
 
-            throw new HcaBadRequestException("Error processing the request");
-        }
-        catch (HcaBadRequestException e)
-        {
-            if (!notificationsUpdated)
-                await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, null, toRetireIdentity?.MpiLinkId ?? "");
-            throw;
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaMuleSoftException e)
         {
-            if (!notificationsUpdated)
-                await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, null, toRetireIdentity?.MpiLinkId ?? "");
+            await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, null, toRetireIdentity?.MpiLinkId ?? "");
             throw;
         }
     }
