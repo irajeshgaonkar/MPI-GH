@@ -60,15 +60,24 @@ public class OutputFileWriter : IOutputFileWriter
 
     public async Task TransferFileToSftp(string inputFileName, string fileName)
     {
-        var path = _sftpFileTransferRepository.GetSingle(t => t.FileName == inputFileName)?.Path;
-        
-        if(path == null)
+        try
         {
-            _logger.LogInformation($"Cannot transfer file to sftp, path is null for inputFile {inputFileName}");
-        }
+            var path = _sftpFileTransferRepository.GetSingle(t => t.FileName == inputFileName)?.Path;
 
-        var outputPath = $"{path}/{_sftpOptions.DestinationFolder}/{fileName}";
-        await _s3ToSftpFileTransferClient.TransferFile(_s3Options.OutputBucketName, fileName, outputPath);
+            if (path == null)
+            {
+                _logger.LogInformation($"Cannot transfer file to sftp, path is null for inputFile {inputFileName}");
+                return;
+            }
+
+            var outputPath = $"{path}/{_sftpOptions.DestinationFolder}/{fileName}";
+            await _s3ToSftpFileTransferClient.TransferFile(_s3Options.OutputBucketName, fileName, outputPath);
+        }
+        catch(Exception e)
+        {
+            _logger.LogError(e);
+            _logger.LogInformation($"Error transfering the file {inputFileName}");
+        }
     }
 }
 
