@@ -79,4 +79,28 @@ public static class ClientIdentityDtoMapper
 
         return dtos;
     }
+
+    public static IEnumerable<ClientIdentityDto> MapToReportDto(IEnumerable<ClientIdentityModel> models)
+    {
+        var result = new List<ClientIdentityDto>();
+
+        foreach (var model in models)
+        {
+            var clientIdentity = new ClientIdentityDto()
+            {
+                Id = model.Id,
+                MPILinkId = model.MpiLinkId ?? "",
+                SourceName = model.SourceSystemName,
+                SourceSystemId = model.SourceSystemId,
+                FirstName = model.FirstName,
+                MiddleName = model.MiddleName ?? "",
+                LastName = model.LastName,
+                Gender = model.Gender
+            };
+
+            result.Add(clientIdentity);
+        }
+
+        return result;
+    }
 }

@@ -25,7 +25,6 @@
     <None Remove="Mapper\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Dto\" />
     <Folder Include="Mapper\" />
   </ItemGroup>
   <ItemGroup>

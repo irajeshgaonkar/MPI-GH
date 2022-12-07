@@ -20,4 +20,6 @@ public interface IClientIdentityRepository : IRepositoryBase<ClientIdentityEntit
     Task<int?> GetIdBySource(string sourceSystemName, string sourceSystemId);
 
     Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity);
+
+    Task<(int, Dictionary<string, IEnumerable<ClientIdentityEntity>>)> GetClientIdentityGroupedByLinkId(string linkId, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 }

@@ -126,38 +126,40 @@ public class ClientIdentityMapper
     {
         var addresses = new List<ClientIdentityAddress>();
 
-        foreach (var clientIdentyAddress in entity.Addresses)
+        if (entity.Addresses != null)
         {
-            var address = new ClientIdentityAddress()
+            foreach (var clientIdentyAddress in entity.Addresses)
             {
-                AddressType = clientIdentyAddress.AddressType ?? "",
-                AddressLine1 = clientIdentyAddress.AddressLine1,
-                AddressLine2 = clientIdentyAddress.AddressLine2,
-                AddressLine3 = clientIdentyAddress.AddressLine3,
-                City = clientIdentyAddress.City,
-                State = clientIdentyAddress.State,
-                ZipCode = clientIdentyAddress.ZipCode,
-                ZipFour = clientIdentyAddress.ZipFour
-            };
-
-            var communications = new List<ClientIdentityCommunication>();
-            foreach (var addressCommunication in clientIdentyAddress.AddressCommunications)
-            {
-                var clientIdentyCommunication = addressCommunication.Communication;
-
-                var communication = new ClientIdentityCommunication()
+                var address = new ClientIdentityAddress()
                 {
-                    PhoneType = clientIdentyCommunication.PhoneType ?? "",
-                    PhoneNumber = clientIdentyCommunication.PhoneNumber ?? "",
-                    EmailType = clientIdentyCommunication.EmailType ?? "",
-                    EmailAddress = clientIdentyCommunication.EmailAddress ?? ""
+                    AddressType = clientIdentyAddress.AddressType ?? "",
+                    AddressLine1 = clientIdentyAddress.AddressLine1,
+                    AddressLine2 = clientIdentyAddress.AddressLine2,
+                    AddressLine3 = clientIdentyAddress.AddressLine3,
+                    City = clientIdentyAddress.City,
+                    State = clientIdentyAddress.State,
+                    ZipCode = clientIdentyAddress.ZipCode,
+                    ZipFour = clientIdentyAddress.ZipFour
                 };
-                communications.Add(communication);
-            }
-            address.Communications = communications;
-            addresses.Add(address);
-        }
 
+                var communications = new List<ClientIdentityCommunication>();
+                foreach (var addressCommunication in clientIdentyAddress.AddressCommunications)
+                {
+                    var clientIdentyCommunication = addressCommunication.Communication;
+
+                    var communication = new ClientIdentityCommunication()
+                    {
+                        PhoneType = clientIdentyCommunication.PhoneType ?? "",
+                        PhoneNumber = clientIdentyCommunication.PhoneNumber ?? "",
+                        EmailType = clientIdentyCommunication.EmailType ?? "",
+                        EmailAddress = clientIdentyCommunication.EmailAddress ?? ""
+                    };
+                    communications.Add(communication);
+                }
+                address.Communications = communications;
+                addresses.Add(address);
+            }
+        }
         var result = new ClientIdentityModel();
         result.Id = entity.Id;
         result.MpiLinkId = entity.MpiLinkId!;

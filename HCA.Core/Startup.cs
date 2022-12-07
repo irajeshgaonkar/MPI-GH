@@ -39,6 +39,7 @@ public static class Startup
             .AddScoped<INotificationService, NotificationService>()
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
+            .AddScoped<IReportsService, ReportService>()
             .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
 
         return services.AddProcessors();
