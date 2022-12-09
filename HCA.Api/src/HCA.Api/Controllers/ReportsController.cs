@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using System.Security.Claims;
 
 namespace HCA.Api.Controllers
 {
@@ -96,6 +97,10 @@ namespace HCA.Api.Controllers
         [HttpGet("userActionsReports")]
         public async Task<IActionResult> GetUserActionsReport([FromQuery] string userNameFilter = "", [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string orderBy = "")
         {
+            var user = HttpContext.User;
+            var name = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = user.IsInRole(Roles.Admin);
+            if (!isAdmin) userNameFilter = name ?? "";
             var (count, records) = await _reportsService.GetUserRequests(userNameFilter, pagNumber, recordsPerPage, orderBy);
             var userActions = UserRequestDtoMapper.GetDto(records);
 

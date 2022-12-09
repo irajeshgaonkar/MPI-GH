@@ -77,6 +77,11 @@ public class ClientIdentityService : IClientIdentityService
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
             return await LinkIdentities(userRequestEntity, linkingSources);
         }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
         catch (HcaMuleSoftException e)
         {
             UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
@@ -99,6 +104,11 @@ public class ClientIdentityService : IClientIdentityService
 
             //await RemoveUserModifyRecords(currentUser, unLinkingSources.UnlinkFromSource, unLinkingSources.Source);
             return await UnLinkIdentities(userRequestEntity, unLinkingSources);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
         }
         catch (HcaMuleSoftException e)
         {
@@ -123,6 +133,11 @@ public class ClientIdentityService : IClientIdentityService
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
             return await MergeIdentities(userRequestEntity, mergingSources);
         }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
         catch (HcaMuleSoftException e)
         {
             UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
@@ -145,6 +160,11 @@ public class ClientIdentityService : IClientIdentityService
 
             //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
             return await UnMergeIdentities(userRequestEntity, unMergingSources);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
         }
         catch (HcaMuleSoftException e)
         {
@@ -275,7 +295,7 @@ public class ClientIdentityService : IClientIdentityService
             NotificationOptions = null == notificationOptions ? string.Empty : SerializationExtensions.Serialize(notificationOptions),
             RequestDateTime = DateTime.Now,
             ProcessStartTime = DateTime.Now,
-            Status = RequestStatus.NotStarted.GetStringValue(),
+            Status = RequestStatus.Processing.GetStringValue(),
             Message = string.Empty,
             RetryCount = 0
         };
