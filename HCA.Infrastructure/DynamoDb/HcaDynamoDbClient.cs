@@ -25,7 +25,7 @@ namespace HCA.Infrastructure.DynamoDb
 
         public async Task<T> CreateItem<T>(T item)
         {
-            await _dbContex.SaveAsync(item);
+            //await _dbContex.SaveAsync(item);
             return item;
         }
 

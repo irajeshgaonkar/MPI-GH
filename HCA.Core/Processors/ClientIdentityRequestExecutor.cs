@@ -262,80 +262,80 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
     private async Task UpdatePostIdentitiesNotification(PostClientIdentityRequest request, PostClientIdentityResponse? response)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildPostIdentityNotification(request, response);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildPostIdentityNotification(request, response);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private async Task UpdateLinkIdentitiesNotification(LinkClientIdentityRequest request, LinkClientIdentityResponse? response, string mpiLInkId)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildLinkIdentityNotification(request, response, mpiLInkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildLinkIdentityNotification(request, response, mpiLInkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private async Task UpdateUnLinkIdentitiesNotification(UnLinkClientIdentityRequest request, UnLinkClientIdentityResponse? response, string previousLinkId)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildUnLinkIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildUnLinkIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private async Task UpdateMergeIdentitiesNotification(MergeClientIdentityRequest request, MergeClientIdentityResponse? response, string previousLinkId)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildMergeIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildMergeIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private async Task UpdateUnMergeIdentitiesNotification(UnMergeClientIdentityRequest request, UnMergeClientIdentityResponse? response, string previousLinkId)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildUnMergeIdentityNotification(request, response, previousLinkId);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildUnMergeIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private async Task UpdateDemographicSearchNotification(DemographicSearchClientIdentityRequest request, DemographicSearchClientIdentityResponse response)
     {
-        try
-        {
-            var notification = _notificationBuilder.BuildDemographicSearchNotification(request, response);
-            await _dynamoDbClient.CreateItem(notification);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e);
-        }
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildDemographicSearchNotification(request, response);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
     }
 
     private T Cast<T>(BaseRequest request) where T : BaseRequest
