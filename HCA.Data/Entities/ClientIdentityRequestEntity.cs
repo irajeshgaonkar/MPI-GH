@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace HCA.Data.Entities;
 
@@ -257,5 +258,8 @@ public class ClientIdentityRequestEntity : BaseEntity
     [Column("retry_count")]
     [Required]
     public int RetryCount { get; set; }
+
+    [Column("custom_json")]
+    public string?  CustomJson { get; set; }
 }
 
