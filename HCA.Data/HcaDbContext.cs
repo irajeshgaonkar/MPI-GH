@@ -53,6 +53,8 @@ public class HcaDbContext : DbContext
 
     public DbSet<SftpFileTransferEntity> SftpFileTransfers { get; set; }
 
+    public DbSet<ServiceAccountEntity> ServiceAccounts { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

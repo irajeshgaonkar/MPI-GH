@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using HCA.Core.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -29,19 +30,29 @@ public class SourceSystemValidator : ISourceSystemValidator
 {
     private readonly ISessionService _sessionService;
 
-    public SourceSystemValidator(ISessionService sessionService)
+    private readonly IServiceAccountService _serviceAccountService;
+
+    public SourceSystemValidator(IServiceAccountService serviceAccountService, ISessionService sessionService)
     {
         _sessionService = sessionService;
+        _serviceAccountService = serviceAccountService;
     }
 
     public async Task<bool> ValidateSourceSystem(HttpContext context, IEnumerable<string> sourceSystems)
     {
-        var sourceSystemName = await _sessionService.GetSourceSystemName(context);
+        var appId = await _sessionService.GetAppId(context);
 
-        if (string.IsNullOrWhiteSpace(sourceSystemName))
+        if (string.IsNullOrWhiteSpace(appId))
             return true;
 
-        foreach(var sourceSystem in sourceSystems)
+        var serviceAccount = await _serviceAccountService.GetServiceAccount(appId);
+
+        if (serviceAccount == null)
+            return false;
+
+        var sourceSystemName = serviceAccount.SourceSystemName;
+
+        foreach (var sourceSystem in sourceSystems)
         {
             if (sourceSystemName.ToLower() != sourceSystem.ToLower())
                 return false;
@@ -53,7 +64,7 @@ public class SourceSystemValidator : ISourceSystemValidator
 
 public interface ISessionService
 {
-    Task<string> GetSourceSystemName(HttpContext context);
+    Task<string> GetAppId(HttpContext context);
 }
 
 public class SessionService : ISessionService
@@ -63,7 +74,7 @@ public class SessionService : ISessionService
 
     }
 
-    public async Task<string> GetSourceSystemName(HttpContext context)
+    public async Task<string> GetAppId(HttpContext context)
     {
         var user = context.User;
         var authorizationHeader = context.Request.Headers["Authorization"].ToString();

@@ -39,7 +39,8 @@ public static class Startup
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
             .AddScoped<IReportsService, ReportService>()
-            .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
+            .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>()
+            .AddScoped<IServiceAccountService, ServiceAccountService>(); 
 
         return services.AddProcessors();
     }
@@ -64,7 +65,7 @@ public static class Startup
             .AddScoped<IFileClientIdentityMapper, FileClientIdentityMapper>()
             .AddScoped<IFileRequestMapper, FileRequestMapper>()
             .AddScoped<IUserRequestMapper, UserRequestMapper>()
-            .AddScoped<IServiceAccountMapper, UserRequestMapper>()
+            .AddScoped<IServiceAccountMapper, ServiceAccountMapper>()
             .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
     }
 
