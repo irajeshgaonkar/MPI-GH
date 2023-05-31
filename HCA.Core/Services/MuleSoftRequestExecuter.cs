@@ -162,9 +162,9 @@ namespace HCA.Core.Services
         {
             var searchRequest = Cast<DemographicQueryClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDemographicQueryRequest(searchRequest);
-            var muleSoftResponse = await _muleSoftRepository.DemographicSearch(muleSoftRequest);
+            var muleSoftResponse = await _muleSoftRepository.DemographicQuery(muleSoftRequest);
             var response = CreateResponse<DemographicQueryClientIdentityResponse>(muleSoftResponse);
-            response.Content = muleSoftResponse.Content.SearchResults;
+            response.Content = muleSoftResponse.Content;
             return response;
         }
 

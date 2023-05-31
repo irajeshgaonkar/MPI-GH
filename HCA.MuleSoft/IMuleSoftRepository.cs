@@ -17,6 +17,13 @@ public interface IMuleSoftRepository
     Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
     /// <summary>
+    /// MuleSoft demographic search api
+    /// </summary>
+    /// <param name="request">Demograph search request <see cref="PostIdentityRequest"/></param>
+    /// <returns>demographc serach response <see cref="DemoGraphicQueryResponse"/></returns>
+    Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request);
+
+    /// <summary>
     /// MuleSoft link identities api call
     /// </summary>
     /// <param name="request">Link identities request <see cref="LinkIdentitiesRequest"/></param>

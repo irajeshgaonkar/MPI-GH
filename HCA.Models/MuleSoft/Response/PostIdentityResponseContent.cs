@@ -40,6 +40,11 @@ public class PostIdentityResponseContent
 /// </summary>
 public class DemographicQueryResponseContent
 {
+    public DemographicQueryResponseContent()
+    {
+
+    }
+
     /// <summary>
     /// <see cref="PostIdentityResponseContent"/>
     /// </summary>
