@@ -18,4 +18,6 @@ public interface IClientIdentityService
     Task<dynamic?> UnMergeIdentities(UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<dynamic?> DemographicSearch(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+
+    Task<dynamic?> DemographicQuery(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 }

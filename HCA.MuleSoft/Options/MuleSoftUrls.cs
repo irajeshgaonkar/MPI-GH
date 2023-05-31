@@ -17,5 +17,7 @@ public static class  MuleSoftUrls
     public const string UnMergeIdentitie = "unMergeIdentities";
 
     public const string DemographicSearch = "demographicsSearch";
+
+    public const string DemographicQuery = "demographicsQuery";
 }
 

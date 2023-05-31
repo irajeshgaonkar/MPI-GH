@@ -10,61 +10,61 @@ namespace HCA.Models.DynamoDb;
 /// <summary>
 /// MPI Notifications
 /// </summary>
-[DynamoDBTable(DynamoDbTableNames.Notification)]
+//[DynamoDBTable(DynamoDbTableNames.Notification)]
 public class HcaMpiNotification
 {
 
     /// <summary>
     /// Source System Name
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.SourceSystemName)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.SourceSystemName)]
     public string SourceSystemName { get; set; }
 
     /// <summary>
     /// Link Id
     /// </summary>
-    [DynamoDBHashKey(DynamoDbNotificationColumnNames.LinkId)]
+    //[DynamoDBHashKey(DynamoDbNotificationColumnNames.LinkId)]
     public string LinkId { get; set; }
 
     /// <summary>
     /// Tracking Id
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.TrackingId)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.TrackingId)]
     public string TrackingId { get; set; }
 
     /// <summary>
     /// Source System Name
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.TimeStamp)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.TimeStamp)]
     public DateTime TimeStamp { get; set; }
 
     /// <summary>
     /// Source System Id
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.SourceSystemId)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.SourceSystemId)]
     public string SourceSystemId { get; set; }
 
     /// <summary>
     /// Operation
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.Operation)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.Operation)]
     public string Operation { get; set; }
 
     /// <summary>
     /// Request Json Object
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.Request)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.Request)]
     public string Request { get; set; }
 
     /// <summary>
     /// Response Json Object
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.Response)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.Response)]
     public string Response { get; set; }
 
     /// <summary>
     /// Message
     /// </summary>
-    [DynamoDBProperty(DynamoDbNotificationColumnNames.PreviousLinkId)]
+    //[DynamoDBProperty(DynamoDbNotificationColumnNames.PreviousLinkId)]
     public string PreviousLinkId { get; set; }
 }

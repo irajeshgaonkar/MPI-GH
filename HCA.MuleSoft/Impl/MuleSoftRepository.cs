@@ -58,6 +58,9 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request)
         => await Execute<DemoGraphicSearchResponse>(MuleSoftUrls.DemographicSearch, request);
 
+    public async Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request)
+       => await Execute<DemoGraphicQueryResponse>(MuleSoftUrls.DemographicSearch, request);
+
     ///<inheritdoc />
     public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request)
         => await Execute<LinkIdentitiesResponse>(MuleSoftUrls.LinkIdntities, request);

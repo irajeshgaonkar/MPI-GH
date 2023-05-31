@@ -49,13 +49,31 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         return new PostIdentityRequest(request.TrackingId, content);
     }
 
+    public PostIdentityRequest BuildDemographicQueryRequest(DemographicQueryClientIdentityRequest request)
+    {
+        var content = BuildPostIdentityContent(request);
+        return new PostIdentityRequest(request.TrackingId, content);
+    }
+
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);
         return new(identity);
     }
 
+    private PostIdentityRequestContent BuildPostIdentityContent(DemographicQueryClientIdentityRequest request)
+    {
+        var identity = BuildIdentity(request);
+        return new(identity);
+    }
+
     private Identity BuildIdentity(DemographicSearchClientIdentityRequest demographicSearchRequest)
+    {
+        var request = demographicSearchRequest.Content;
+        return request;
+    }
+
+    private Identity BuildIdentity(DemographicQueryClientIdentityRequest demographicSearchRequest)
     {
         var request = demographicSearchRequest.Content;
         return request;

@@ -50,4 +50,11 @@ public interface IMuleSoftRequestBuilder
     /// <param name="request">Demographic search request <see cref="DemographicSearchClientIdentityRequest"/></param>
     /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
     PostIdentityRequest BuildDemographicSearchRequest(DemographicSearchClientIdentityRequest request);
+
+    /// <summary>
+    /// Demographic query request builder
+    /// </summary>
+    /// <param name="request">Demographic search request <see cref="DemographicQueryClientIdentityRequest"/></param>
+    /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
+    PostIdentityRequest BuildDemographicQueryRequest(DemographicQueryClientIdentityRequest request);
 }

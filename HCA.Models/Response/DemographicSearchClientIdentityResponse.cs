@@ -12,3 +12,14 @@ public class DemographicSearchClientIdentityResponse : BaseResponse
 
     public IList<Identity> Result { get; set; }
 }
+
+
+public class DemographicQueryClientIdentityResponse : BaseResponse
+{
+    /// <summary>
+    /// collection of search results <see cref="PostIdentityResponseContent"/>
+    /// </summary>
+    public List<PostIdentityResponseContent> Content { get; set; }
+
+    public IList<Identity> Result { get; set; }
+}

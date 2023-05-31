@@ -195,6 +195,28 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
+    public async Task<dynamic?> DemographicQuery(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var userRequestEntity = CreateUserRequest(filter, ApiCallType.VEDemographicQuery, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEDemographicQuery, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DemographicQuery(userRequestEntity, filter);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+            throw;
+        }
+    }
+
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
@@ -219,6 +241,19 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response?.Content;
+    }
+
+    private async Task<PostIdentityResponseContent?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var demographicSearhRequest = new DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = filter
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content?.FirstOrDefault();
     }
 
     private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)

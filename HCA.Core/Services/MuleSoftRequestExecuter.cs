@@ -91,7 +91,8 @@ namespace HCA.Core.Services
                 [ ApiCallType.VEUnLink ] = UnLinkIdentities,
                 [ ApiCallType.VEMerge ] = MergeIdentities,
                 [ ApiCallType.VEUnMerge ] = UnMergeIdentities,
-                [ ApiCallType.VEDemographicSearch ] = DemographicSearch
+                [ ApiCallType.VEDemographicSearch ] = DemographicSearch,
+                [ApiCallType.VEDemographicQuery] = DemographicQuery
             };
 
             return requestExecuters;
@@ -153,6 +154,16 @@ namespace HCA.Core.Services
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDemographicSearchRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DemographicSearch(muleSoftRequest);
             var response = CreateResponse<DemographicSearchClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content.SearchResults;
+            return response;
+        }
+
+        private async Task<BaseResponse> DemographicQuery(BaseRequest request)
+        {
+            var searchRequest = Cast<DemographicQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDemographicQueryRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.DemographicSearch(muleSoftRequest);
+            var response = CreateResponse<DemographicQueryClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content.SearchResults;
             return response;
         }

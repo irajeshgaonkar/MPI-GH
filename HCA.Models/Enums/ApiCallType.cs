@@ -24,5 +24,8 @@ public enum ApiCallType
     VEDelete,
 
     [StringValue("VE Demographic Search")]
-    VEDemographicSearch
+    VEDemographicSearch,
+
+    [StringValue("VE Demographic Query")]
+    VEDemographicQuery
 }

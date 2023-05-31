@@ -22,9 +22,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         _clientIdentityRepository = clientIdentityRepository;
         _muleSoftRequestExecuter = muleSoftRequestExecuter;
         requestExecuters = BuildRequestExecutors();
-        _notificationBuilder = new NotificationBuilder();
-        _dynamoDbClient = new HcaDynamoDbClient();
-        _logger = logger;
+        //_notificationBuilder = new NotificationBuilder();
+        //_dynamoDbClient = new HcaDynamoDbClient();
+        //_logger = logger;
     }
 
     public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater requestStatusUpdater) where T : BaseResponse
@@ -46,6 +46,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEMerge] = MergeIdentities,
             [ApiCallType.VEUnMerge] = UnMergeIdentities,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
+            [ApiCallType.VEDemographicQuery] = DemographicQuery
         };
 
         return requestExecuters;
@@ -251,6 +252,39 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         {
             if (!notificationsUpdated)
                 await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DemographicQueryClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _muleSoftRequestExecuter.Execute<DemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
             throw;
         }
     }

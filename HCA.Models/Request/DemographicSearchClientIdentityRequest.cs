@@ -11,3 +11,13 @@ public class DemographicSearchClientIdentityRequest : BaseRequest
 
     public Identity Content { get; set; }
 }
+
+
+public class DemographicQueryClientIdentityRequest : BaseRequest
+{
+    public DemographicQueryClientIdentityRequest(string trackingId) : base(ApiCallType.VEDemographicQuery, trackingId)
+    {
+    }
+
+    public Identity Content { get; set; }
+}

@@ -103,16 +103,16 @@ namespace HCA.Api.Controllers
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
         /// <returns></returns>
-        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(PagenatedCollection<ClientIdentityDto>))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(ClientIdentityDto))]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [HttpPost("GetdemographicSearch")]
-        public async Task<IActionResult> GetDemographicSearch([FromBody] Identity filter, [FromQuery] string? processingOptions = null)
+        [HttpPost("DemographiQuery")]
+        public async Task<IActionResult> DemographiQuery([FromBody] Identity filter, [FromQuery] string? processingOptions = null)
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var searchResult = await _clientIdentityService.DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var searchResult = await _clientIdentityService.DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
