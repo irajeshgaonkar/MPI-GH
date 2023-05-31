@@ -1,12 +1,15 @@
 ﻿using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
+using HCA.Models.Request;
 using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
 
 public interface IClientIdentityService
 {
+    Task<dynamic?> PostIdentities(IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+
     Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 
     Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);

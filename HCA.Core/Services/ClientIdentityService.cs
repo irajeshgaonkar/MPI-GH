@@ -61,6 +61,34 @@ public class ClientIdentityService : IClientIdentityService
         return (count, models);
     }
 
+    public async Task<dynamic?> PostIdentities(IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEPost.GetStringValue()}-{identities.First().SourceSystemName}-{identities.First().SourceSystemName}";
+        var userRequestEntity = CreateUserRequest(identities, ApiCallType.VELink, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
+            return await PostIdentities(userRequestEntity, identities);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
     public async Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{linkingSources.Source.GetTrackingId(linkingSources.LinkToSource)}";
@@ -215,6 +243,19 @@ public class ClientIdentityService : IClientIdentityService
             UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
             throw;
         }
+    }
+
+    private async Task<PostIdentityResponseContent?> PostIdentities(UserRequestEntity userRequestEntity, IEnumerable<ClientIdentityRequest> identities)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var linkIdentityRequest = new PostClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = identities.ToList()
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
     }
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)

@@ -10,6 +10,7 @@ using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
+using HCA.Models.Request;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -116,6 +117,27 @@ namespace HCA.Api.Controllers
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
+
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(ClientIdentityDto))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [HttpPost("post")]
+        public async Task<IActionResult> PostIdentity([FromBody] IEnumerable<ClientIdentityRequest> filter, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var searchResult = await _clientIdentityService.PostIdentities(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
+        }
+
         /// <summary>
         /// Links the 2 client identities
         /// </summary>
