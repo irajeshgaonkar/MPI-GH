@@ -47,6 +47,7 @@ public class HcaDbContext : DbContext
     public DbSet<UserModifyRecordsEntity> UserModifyRecords { get; set; }
 
     public DbSet<SftpFileTransferEntity> SftpFileTransfers { get; set; }
+    public DbSet<CustomDataMappingEntity> FileResponses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
