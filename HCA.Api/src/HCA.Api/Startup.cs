@@ -71,7 +71,12 @@ public class Startup
         });
 
         services.AddCors();
+
         services.AddHca(Configuration);
+
+        services
+                .AddScoped<ISessionService, SessionService>()
+                .AddScoped<ISourceSystemValidator, SourceSystemValidator>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline

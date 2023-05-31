@@ -19,7 +19,6 @@ using System.Net;
 
 namespace HCA.Api.Controllers
 {
-
     /// <summary>
     /// Provides methods for operations on client identities
     /// </summary>
@@ -32,14 +31,18 @@ namespace HCA.Api.Controllers
 
         private readonly IClientIdentityService _clientIdentityService;
 
+        private readonly ISourceSystemValidator _sourceSystemValidator;
+
+
         /// <summary>
         /// <see cref="IdentitiesController"/>
         /// </summary>
         /// <param name="clientIdentityService">Client identity service <see cref="IClientIdentityService"/></param>
         /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
-        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger)
+        public IdentitiesController(IClientIdentityService clientIdentityService, ISourceSystemValidator sourceSystemValidator, IAppLogger appLogger)
         {
             _clientIdentityService = clientIdentityService;
+            _sourceSystemValidator = sourceSystemValidator;
             _logger = appLogger;
         }
 
@@ -124,16 +127,22 @@ namespace HCA.Api.Controllers
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
         /// <returns></returns>
-        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(ClientIdentityDto))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Post client identity response", typeof(ClientIdentityDto))]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [HttpPost("post")]
         public async Task<IActionResult> PostIdentity([FromBody] IEnumerable<ClientIdentityRequest> filter, [FromQuery] string? processingOptions = null)
-        {
+       {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var searchResult = await _clientIdentityService.PostIdentities(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
+
+            var sourceSystemNames = filter.Select(c => c.SourceSystemName).ToList();
+            var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
+
+            if (!isValid) return BadRequest("Cannot update data for the provided source system");
+
+            var searchResult = await _clientIdentityService.PostIdentities(filter, HttpContext.GetCurrentUser() ?? String.Empty, processType, notificationOptions);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
