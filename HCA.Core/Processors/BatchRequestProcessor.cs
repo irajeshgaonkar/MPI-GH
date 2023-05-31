@@ -73,10 +73,14 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
     private async Task ProcessPostIdentityRequest(BatchProcessMessage batchRequest)
     {
-        int maxDegreeOfParallelism = 1;
+        //int maxDegreeOfParallelism = 1;
         var groupedRequests = GetGroupedRequests(batchRequest);
         if (groupedRequests == null) return;
-        await groupedRequests.ParallelForEachAsync((requests) => ProcessPostIdentityRequests(requests), maxDegreeOfParallelism);
+        //await groupedRequests.ParallelForEachAsync((requests) => ProcessPostIdentityRequests(requests), maxDegreeOfParallelism);
+        foreach(var groupedRequest in groupedRequests)
+        {
+            await ProcessPostIdentityRequests(groupedRequest);
+        }
     }
 
     private async Task ProcessPostIdentityRequests(IEnumerable<ClientIdentityRequest> requests)

@@ -22,5 +22,16 @@ public static class UserRequestDtoMapper
             Message = userRequest.Message
         };
     }
+
+    public static IEnumerable<UserRequestDto> GetDto(IEnumerable<UserRequest> userRequests)
+    {
+        var result = new List<UserRequestDto>();
+
+        foreach(var request in userRequests)
+        {
+            result.Add(GetDto(request));    
+        }
+        return result;
+    }
 }
 

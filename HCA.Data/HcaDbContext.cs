@@ -3,6 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HCA.Data;
 
+public class IntReturn
+{
+    public int Value { get; set; }
+}
+
 public class HcaDbContext : DbContext
 {
     private readonly string _conntectionString;
@@ -90,6 +95,8 @@ public class HcaDbContext : DbContext
            .HasOne(ac => ac.Communication)
            .WithMany(c => c.AddressCommunications)
            .HasForeignKey(ac => ac.ClientIdentityCommunicationId);
+
+        modelBuilder.Entity<IntReturn>().HasNoKey();
 
         base.OnModelCreating(modelBuilder);
     }

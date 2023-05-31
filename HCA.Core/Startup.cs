@@ -38,6 +38,7 @@ public static class Startup
             .AddScoped<IClientIdentityService, ClientIdentityService>()
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
+            .AddScoped<IReportsService, ReportService>()
             .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
 
         return services.AddProcessors();

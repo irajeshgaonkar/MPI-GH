@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Data.SqlClient;
+using System.Linq.Expressions;
 using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
 using HCA.Infrastructure.Extensions;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
+using Npgsql;
 
 namespace HCA.Data.Repository;
 
@@ -16,6 +18,92 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
     public ClientIdentityRepository(HcaDbContext dbContext) : base(dbContext)
     {
         _hcaDbContext = dbContext;
+    }
+
+
+    public Task<(int, Dictionary<string, IEnumerable<ClientIdentityEntity>>)> GetClientIdentityGroupedByLinkId(string? linkId, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
+    {
+
+        var skip = pageNumber * recordsPerPage;
+        var result = new Dictionary<string, IEnumerable<ClientIdentityEntity>>();
+        Expression<Func<ClientIdentityEntity, bool>> searchQuery = (c) => c.IsActive == true;
+        List<ClientIdentityEntity> clientIdentities = null;
+        int count = 0;
+
+
+        if (!string.IsNullOrWhiteSpace(linkId))
+        {
+            linkId += "%";
+            NpgsqlParameter parameterS = new NpgsqlParameter(":mpi_link_id", linkId);
+            NpgsqlParameter parameterD = new NpgsqlParameter(":limit", recordsPerPage);
+            NpgsqlParameter parameterP = new NpgsqlParameter(":offset", skip);
+            clientIdentities = _hcaDbContext.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
+WHERE mpi_link_id IN
+(
+    SELECT mpi_link_id
+    FROM client_identity
+    WHERE mpi_link_id like :mpi_link_id
+    GROUP BY mpi_link_id
+    HAVING COUNT(*) > 1
+    ORDER BY mpi_link_id
+    limit :limit
+    offset :offset
+)
+ORDER BY mpi_link_id; ", parameterS, parameterD, parameterP)
+                .ToList();
+
+            count = _hcaDbContext.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value FROM client_identity
+WHERE mpi_link_id IN
+(
+	SELECT mpi_link_id
+    FROM client_identity
+    WHERE mpi_link_id like :mpi_link_id
+    GROUP BY mpi_link_id
+    HAVING COUNT(*) > 1
+)", parameterS)
+                .AsEnumerable()
+                .First().Value;
+
+        }
+        else
+        {
+
+            NpgsqlParameter parameterD1 = new NpgsqlParameter(":limit", recordsPerPage);
+            NpgsqlParameter parameterP1 = new NpgsqlParameter(":offset", skip);
+            clientIdentities = _hcaDbContext.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
+WHERE mpi_link_id IN
+(
+    SELECT mpi_link_id
+    FROM client_identity
+    GROUP BY mpi_link_id
+    HAVING COUNT(*) > 1
+    ORDER BY mpi_link_id
+    limit :limit
+    offset :offset
+)
+ORDER BY mpi_link_id; ", parameterD1, parameterP1)
+                .ToList();
+
+            count = _hcaDbContext.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value  FROM client_identity
+WHERE mpi_link_id IN
+(
+	SELECT mpi_link_id
+    FROM client_identity
+    GROUP BY mpi_link_id
+    HAVING COUNT(*) > 1
+)")
+                .AsEnumerable()
+            .First().Value;
+        }
+
+        var clientIdentitiesGroup = clientIdentities.GroupBy(c => c.MpiLinkId);
+
+        foreach(var group in clientIdentitiesGroup)
+        {
+            result.Add(group.Key, group.ToList());
+        }
+
+        return Task.FromResult((count, result));
     }
 
     public async Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(Dictionary<string, string> searchFilter, List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
@@ -62,7 +150,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
         {
             if (filterFirstColumn == "FName")
             {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && (c.FirstName.ToLower().StartsWith(filterFirstValue) || c.FirstName.ToLower().StartsWith(filterSecondValue));
+                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
                 if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);

@@ -46,17 +46,22 @@ namespace HCA.Core.Services
                         _appLogger.LogInformation($"Retrying request {request.TrackingId}, iteration{i}");
 
                     var response = await requestExecuters[request.ApiCallType](request);
-                    if (response.Success) return response as T;
+                    return response as T;
+                    //if (response.Success) return response as T;
 
-                    if (HasErrors(response))
-                    {
-                        var errorMessage = response.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-                        await statusUpdater.UpdateStatus(request, RequestStatus.Failed, $"{errorMessage}");
-                        throw new HcaMuleSoftException(errorMessage);
-                    }
+                    //if (HasErrors(response))
+                    //{
+                    //    var errorMessage = response.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+                    //    await statusUpdater.UpdateStatus(request, RequestStatus.Failed, $"{errorMessage}");
+                    //    throw new HcaMuleSoftException(errorMessage);
+                    //}
 
-                    await Task.Delay(_delayCaculator.Calculate(i + 1));
+                    //await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
+                //catch(HcaMuleSoftException e)
+                //{
+                //    throw;
+                //}
                 catch (HcaHttpException e)
                 {
                     _appLogger.LogInformation($"Retrying for the exception HcaHttpException {e.StatusCode}");
@@ -69,7 +74,7 @@ namespace HCA.Core.Services
                 {
                     _appLogger.LogInformation($"Retrying for the exception Exception");
                     _appLogger.LogError(e);
-                    exception = e.ToString();
+                    exception = e.Message;
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
             }
