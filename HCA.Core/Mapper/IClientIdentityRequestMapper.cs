@@ -24,3 +24,8 @@ public interface IFileRequestMapper : IMapper<FileRequestEntity, FileRequest>
 {
 
 }
+
+public interface IServiceAccountMapper : IMapper<ServiceAccountEntity, ServiceAccount>
+{
+
+}
