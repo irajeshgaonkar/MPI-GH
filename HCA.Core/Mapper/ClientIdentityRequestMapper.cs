@@ -215,3 +215,54 @@ public class FileClientIdentityMapper : IFileClientIdentityMapper
         return entities;
     }
 }
+public class ServiceAccountMapper : IServiceAccountMapper
+{
+    private readonly IMapper _mapper;
+
+    /// <summary>
+    /// <see cref="ServiceAccountMapper"/>
+    /// </summary>
+    /// <param name="mapper">Auto mapper</param>
+    public ServiceAccountMapper(IMapper mapper)
+    {
+        _mapper = mapper;
+    }
+
+    /// <inheritdoc/>
+    public ServiceAccount MapToModel(ServiceAccountEntity entity)
+    {
+        return _mapper.Map<ServiceAccount>(entity);
+    }
+
+    /// <inheritdoc/>
+    public ServiceAccountEntity MapToEntity(ServiceAccount model)
+    {
+        return _mapper.Map<ServiceAccountEntity>(model);
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<ServiceAccount> MapToModelCollection(IEnumerable<ServiceAccountEntity> entities)
+    {
+        var collection = new List<ServiceAccount>();
+
+        foreach (var entity in entities)
+        {
+            collection.Add(MapToModel(entity));
+        }
+
+        return collection;
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<ServiceAccountEntity> MapToEntityCollection(IEnumerable<ServiceAccount> models)
+    {
+        var entities = new List<ServiceAccountEntity>();
+
+        foreach (var model in models)
+        {
+            entities.Add(MapToEntity(model));
+        }
+
+        return entities;
+    }
+}

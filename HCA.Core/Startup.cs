@@ -64,6 +64,7 @@ public static class Startup
             .AddScoped<IFileClientIdentityMapper, FileClientIdentityMapper>()
             .AddScoped<IFileRequestMapper, FileRequestMapper>()
             .AddScoped<IUserRequestMapper, UserRequestMapper>()
+            .AddScoped<IServiceAccountMapper, UserRequestMapper>()
             .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
     }
 
