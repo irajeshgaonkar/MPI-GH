@@ -10,7 +10,7 @@ namespace HCA.Core.Services
 {
     public interface ICustomDataMappingService
     {
-        Task<CustomDataMapping?> GetCustomDataMapping(int id);
+        Task<CustomDataMapping?> GetCustomDataMapping( string sourceSystemName);
         Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping fileResponse);
         Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappings();
         Task<CustomDataMapping?> UpdateCustomDataMapping(CustomDataMapping fileResponse);

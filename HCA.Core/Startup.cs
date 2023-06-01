@@ -39,7 +39,7 @@ public static class Startup
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
             .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>()
-            .AddScoped<ICustomDataMappingService, CustomDataMappingService>();
+            .AddScoped<ICustomDataMappingService, CustomDataMappingService>()
             .AddScoped<IReportsService, ReportService>()
             .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
 

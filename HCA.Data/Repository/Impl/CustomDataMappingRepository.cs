@@ -23,9 +23,9 @@ namespace HCA.Data.Repository.Impl
             return await Task.FromResult(fileResponse);
         }
 
-        public async Task<CustomDataMappingEntity?> GetCustomDataMapping(int id)
+        public async Task<CustomDataMappingEntity?> GetCustomDataMapping(string sourceSystemName)
         {
-            var request = await GetSingleAsync(f => f.Id == id);
+            var request = await GetSingleAsync(f => f.SourceSystemName == sourceSystemName);
             return await Task.FromResult(request);
         }
 

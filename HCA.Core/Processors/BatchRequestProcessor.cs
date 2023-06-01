@@ -25,12 +25,17 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
     private readonly ISqsPublisher _sqsPublisher;
     private readonly IOutputFileWriter _outputFileWriter;
+    private readonly ICustomDataMappingRepository _customDataMappingRepository;
 
 
     public BatchRequestProcessor(IAppLogger logger,
         IClientIdentityRequestRepository clientIdentityRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IRequestProcessLogRepository requestProcessLogRepository,IOutputFileWriter outputFileWriter, ISqsPublisher sqsPublisher)
+        IRequestProcessLogRepository requestProcessLogRepository,
+        IOutputFileWriter outputFileWriter,
+        ISqsPublisher sqsPublisher,
+         ICustomDataMappingRepository customDataMappingRepository
+        )
     {
         _logger = logger;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
@@ -38,6 +43,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         _requestProcessLogRepository = requestProcessLogRepository;
         _sqsPublisher = sqsPublisher;
         _outputFileWriter = outputFileWriter;
+        _customDataMappingRepository = customDataMappingRepository;
     }
 
     public async Task ProcessRequest(BatchProcessMessage batchRequest)
@@ -95,6 +101,8 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
         if (!requests.Any())
             return;
+        var request = requests.Take(1);
+        var customDataMapping = await _customDataMappingRepository.GetCustomDataMapping("WAHCA.Providerone");
 
         await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
 

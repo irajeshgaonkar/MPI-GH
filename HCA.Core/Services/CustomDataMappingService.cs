@@ -38,13 +38,13 @@ namespace HCA.Core.Services
             return fileResponseData;
         }
 
-        public async Task<CustomDataMapping?> GetCustomDataMapping(int id)
+        public async Task<CustomDataMapping?> GetCustomDataMapping(string sourceSystemName)
         {
-            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMapping for Id {id}");
-            var fileResponseEntity = await _customDataMappingRepository.GetCustomDataMapping(id);
+            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
+            var fileResponseEntity = await _customDataMappingRepository.GetCustomDataMapping(sourceSystemName);
             if (fileResponseEntity == null) return null;
             var fileResponse = _customDataMappingMapper.MapToModel(fileResponseEntity);
-            _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetCustomDataMapping for Id {id}");
+            _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
             return fileResponse;
         }
 

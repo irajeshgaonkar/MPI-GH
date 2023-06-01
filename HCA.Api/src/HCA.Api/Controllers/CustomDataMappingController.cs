@@ -30,10 +30,10 @@ namespace HCA.Api.Controllers
         //[HcaAuthorize(Roles.ReadOnly)]
         [HttpGet("GetCustomDataMapping/{id}")]
         [SwaggerResponse(StatusCodes.Status200OK, "CustomDataMapping Details", typeof(CustomDataMappingDto))]
-        public async Task<IActionResult> GetCustomDataMapping([FromRoute] int id)
+        public async Task<IActionResult> GetCustomDataMapping([FromRoute] string sourceSystemName)
         {
-            _appLogger.LogInformation($"Started Processing CustomDataMappingController::GetCustomDataMapping by Id:{id}");
-            var result = await _customDataMappingService.GetCustomDataMapping(id);
+            _appLogger.LogInformation($"Started Processing CustomDataMappingController::GetCustomDataMapping by Id:{sourceSystemName}");
+            var result = await _customDataMappingService.GetCustomDataMapping(sourceSystemName);
             if (null == result) return NoContent();
             var fileResponseDto = CustomDataMappingDtoMapper.GetDto(result);
             return Ok(fileResponseDto);

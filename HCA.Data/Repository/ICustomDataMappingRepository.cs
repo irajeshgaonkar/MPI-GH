@@ -11,7 +11,7 @@ namespace HCA.Data.Repository
     public interface ICustomDataMappingRepository : IRepositoryBase<CustomDataMappingEntity>
     {
         Task<IEnumerable<CustomDataMappingEntity?>> GetCustomDataMappings();
-        Task<CustomDataMappingEntity?> GetCustomDataMapping(int id);
+        Task<CustomDataMappingEntity?> GetCustomDataMapping(string sourceSystemName);
         Task<dynamic?> AddCustomDataMapping(CustomDataMappingEntity customData);
         Task<dynamic?> UpdateCustomDataMapping(CustomDataMappingEntity customData);
         Task<dynamic?> RemoveCustomDataMapping(int id);
