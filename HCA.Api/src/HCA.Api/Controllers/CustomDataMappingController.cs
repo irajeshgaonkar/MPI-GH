@@ -28,15 +28,15 @@ namespace HCA.Api.Controllers
         }
 
         //[HcaAuthorize(Roles.ReadOnly)]
-        [HttpGet("GetCustomDataMapping/{id}")]
+        [HttpGet("GetCustomDataMappingBySourceSystems/{sourceSystemName}")]
         [SwaggerResponse(StatusCodes.Status200OK, "CustomDataMapping Details", typeof(CustomDataMappingDto))]
-        public async Task<IActionResult> GetCustomDataMapping([FromRoute] string sourceSystemName)
+        public async Task<IActionResult> GetCustomDataMappingBySourceSystem([FromRoute] string sourceSystemName)
         {
             _appLogger.LogInformation($"Started Processing CustomDataMappingController::GetCustomDataMapping by Id:{sourceSystemName}");
-            //var result = await _customDataMappingService.GetCustomDataMapping(sourceSystemName);
-            //if (null == result) return NoContent();
-            //var fileResponseDto = CustomDataMappingDtoMapper.GetDto(result);
-            return Ok(1);
+            var result = await _customDataMappingService.GetCustomDataMappingBySourceSystem(sourceSystemName);
+            if (null == result) return NoContent();
+            var customDataMappingsDto = CustomDataMappingDtoMapper.GetListDto(result);
+            return Ok(customDataMappingsDto);
         }
 
         //[HcaAuthorize(Roles.ReadOnly)]
@@ -47,8 +47,8 @@ namespace HCA.Api.Controllers
             _appLogger.LogInformation($"Started Processing CustomDataMappingController::GetCustomDataMappings for all records:{new DateTime()}");
             var result = await _customDataMappingService.GetCustomDataMappings();
             if (null == result) return NoContent();
-            var fileResponseDto = CustomDataMappingDtoMapper.GetListDto(result);
-            return Ok(fileResponseDto);
+            var customDataMappingsDto = CustomDataMappingDtoMapper.GetListDto(result);
+            return Ok(customDataMappingsDto);
         }
 
         //[HcaAuthorize(Roles.ReadOnly)]
@@ -57,20 +57,20 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> AddCustomDataMapping([FromBody] CustomDataMappingDto fileResponseDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var fileResponse = CustomDataMappingDtoMapper.MapDtoToEntity(fileResponseDto);
-            var result = await _customDataMappingService.AddCustomDataMapping(fileResponse);
+            var CustomDataMappingModel = CustomDataMappingDtoMapper.MapDtoToEntity(fileResponseDto);
+            var result = await _customDataMappingService.AddCustomDataMapping(CustomDataMappingModel);
             if (null == result) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
         //[HcaAuthorize(Roles.ReadOnly)]
-        [HttpPut("UpdateResponse")]
+        [HttpPut("UpdateCustomDataMapping")]
         [SwaggerResponse(StatusCodes.Status200OK, "Updated CustomDataMapping", typeof(CustomDataMappingDto))]
         public async Task<IActionResult> UpdateCustomDataMapping([FromBody] CustomDataMappingDto fileResponseDto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var fileResponse = CustomDataMappingDtoMapper.MapDtoToEntity(fileResponseDto);
-            var result = await _customDataMappingService.UpdateCustomDataMapping(fileResponse);
+            var CustomDataMappingModel = CustomDataMappingDtoMapper.MapDtoToEntity(fileResponseDto);
+            var result = await _customDataMappingService.UpdateCustomDataMapping(CustomDataMappingModel);
             if (null == result) return BadRequest("Invalid Input");
             return Ok(result);
         }

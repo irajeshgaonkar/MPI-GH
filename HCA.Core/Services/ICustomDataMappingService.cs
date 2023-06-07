@@ -11,8 +11,8 @@ namespace HCA.Core.Services
     public interface ICustomDataMappingService
     {
         Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappingBySourceSystem(string sourceSystemName);
-        Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping fileResponse);
         Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappings();
+        Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping fileResponse);
         Task<CustomDataMapping?> UpdateCustomDataMapping(CustomDataMapping fileResponse);
         Task RemoveCustomDataMapping(int id);
     }

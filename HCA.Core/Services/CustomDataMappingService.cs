@@ -38,10 +38,9 @@ namespace HCA.Core.Services
 
         public async Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappingBySourceSystem(string sourceSystemName)
         {
-            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
+            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMappingBySourceSystem for sourceSystemName {sourceSystemName}");
             var customDataMappingEntities = await _customDataMappingRepository.GetCustomDataMappingBySourceSystem(sourceSystemName);
-            if (customDataMappingEntities == null) 
-                return null;
+            if (customDataMappingEntities == null) return null;
             var customDataMappings = _customDataMappingMapper.MapToModelCollection(customDataMappingEntities);
             _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
             return customDataMappings;
@@ -49,35 +48,32 @@ namespace HCA.Core.Services
 
         public async Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappings()
         {
-
-            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMappings for Id {new DateTime()}");
-            var fileResponseEntity = await _customDataMappingRepository.GetAllAsync();
-            if (fileResponseEntity == null) return null;
-            var fileResponse = _customDataMappingMapper.MapToModelCollection(fileResponseEntity);
-            _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetById for Id {new DateTime()}");
-            return fileResponse;
+            _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMappings At DateTime {new DateTime()}");
+            var CustomDataMappingEntity = await _customDataMappingRepository.GetAllAsync();
+            if (CustomDataMappingEntity == null) return null;
+            var CustomDataMappingModel = _customDataMappingMapper.MapToModelCollection(CustomDataMappingEntity);
+            _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetAll At DateTime {new DateTime()}");
+            return CustomDataMappingModel;
         }
 
         public async Task RemoveCustomDataMapping(int id)
         {
-            //var entity = await _customDataMappingRepository.GetSingleAsync(m => m.Id == id);
+            var entity = await _customDataMappingRepository.GetSingleAsync(m => m.Id == id);
 
-            //if (entity != null)
-            //{
-            //    _customDataMappingRepository.Delete(entity);
-            //}
-            //return null;
+            if (entity != null)
+            {
+                _customDataMappingRepository.Delete(entity);
+            }
         }
 
         public async Task<CustomDataMapping?> UpdateCustomDataMapping(CustomDataMapping fileResponse)
         {
-            //_appLogger.LogInformation($"Started processing CustomDataMappingService::Update CustomDataMapping {fileResponse}");
-            //var fileResponseEntity = _customDataMappingMapper.MapToEntity(fileResponse);
-            //var fileResponseModel = await _customDataMappingRepository.UpdateCustomDataMapping(fileResponseEntity);
-            //var fileResponseData = _customDataMappingMapper.MapToModel(fileResponseModel);
-            //if (fileResponseData == null) return null;
-            //return fileResponseData;
-            return null;
+            _appLogger.LogInformation($"Started processing CustomDataMappingService::Update CustomDataMapping {fileResponse}");
+            var customDataMappingModel = _customDataMappingMapper.MapToEntity(fileResponse);
+            var customDataMappingEntity = _customDataMappingRepository.Update(customDataMappingModel);
+            var UpdateCustomDataMappingModel = _customDataMappingMapper.MapToModel(customDataMappingEntity);
+            if (UpdateCustomDataMappingModel == null) return null;
+            return UpdateCustomDataMappingModel;
         }
     }
 }
