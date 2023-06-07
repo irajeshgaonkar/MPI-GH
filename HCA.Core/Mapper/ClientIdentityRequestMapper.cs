@@ -261,7 +261,7 @@ public class CustomDataMappingMapper : ICustomDataMappingMapper
         return collection;
     }
 }
-}
+
 public class ServiceAccountMapper : IServiceAccountMapper
 {
     private readonly IMapper _mapper;
