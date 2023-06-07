@@ -7,6 +7,8 @@ using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.Request;
 using HCA.Models.Response;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HCA.Core.Services;
 
@@ -14,13 +16,17 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 {
     private readonly IClientIdentityRepository _clientIdentityRepository;
     private readonly IMuleSoftRequestExecuter _muleSoftRequestExecuter;
+    private readonly ICustomDataMappingRepository _customDataMappingRepository;
     private readonly IDictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>> requestExecuters;
 
     public ClientIdentityRequestExecutor(IClientIdentityRepository clientIdentityRepository,
-        IMuleSoftRequestExecuter muleSoftRequestExecuter, IAppLogger logger)
+        IMuleSoftRequestExecuter muleSoftRequestExecuter,
+         ICustomDataMappingRepository customDataMappingRepository, IAppLogger logger)
     {
         _clientIdentityRepository = clientIdentityRepository;
         _muleSoftRequestExecuter = muleSoftRequestExecuter;
+
+        _customDataMappingRepository = customDataMappingRepository;
         requestExecuters = BuildRequestExecutors();
         //_notificationBuilder = new NotificationBuilder();
         //_dynamoDbClient = new HcaDynamoDbClient();
@@ -52,12 +58,91 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         return requestExecuters;
     }
 
+    private string[] GetJsonHierarch(string path)
+    {
+        return path.Split(".");
+    }
+
+    private JObject GetJObject(string jsonString)
+    {
+        // Convert to JObject
+        JObject jsonObject = JObject.Parse(jsonString);
+
+        // Create nested objects based on the dot notation
+        foreach (var property in jsonObject.Properties().ToList())
+        {
+            var nestedProperties = property.Name.Split('$');
+            var nestedObject = new JObject();
+            JObject currentObject = jsonObject;
+
+            for (int i = 0; i < nestedProperties.Length - 1; i++)
+            {
+                var nestedProperty = nestedProperties[i];
+                if (currentObject.Property(nestedProperty) == null)
+                {
+                    var newObject = new JObject();
+                    currentObject.Add(nestedProperty, newObject);
+                    currentObject = newObject;
+                }
+                else
+                {
+                    currentObject = (JObject)currentObject[nestedProperty];
+                }
+            }
+
+            property.Remove();
+            currentObject.Add(nestedProperties[^1], property.Value);
+        }
+
+        return jsonObject;
+    }
+
     private async Task<BaseResponse> PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
 
         try
         {
+            var sourceSystemName = postIdentityRequest.Content.First().SourceSystemName;
+            var customDataMappings = await _customDataMappingRepository.GetCustomDataMappingBySourceSystem(sourceSystemName);
+
+            foreach(var item in postIdentityRequest.Content)
+            {
+                if (item == null)
+                    continue;
+
+                var customJsonData = item.CustomJson;
+                if (customJsonData == null)
+                    continue;
+
+                var customData = JsonConvert.DeserializeObject<Dictionary<string, object>>(customJsonData);
+                if (customData == null)
+                    continue;
+
+                var parsedCustomJson = new Dictionary<string, object>();
+                var muleSoftRequestJson = new List<JObject>();
+
+                foreach (var customDataMapping in customDataMappings.OrderBy(c => c.InputIndex))
+                {
+                    var key = customDataMapping.InputIndex.ToString();
+
+                    if (customData.ContainsKey(key))
+                    {
+                        parsedCustomJson.Add(customDataMapping.InputColumnName, customData[key]);
+                        muleSoftRequestJson.Add(GetJObject("{" + $"'{customDataMapping.VeratoRequestPath}': '{customData[key]}'" + "}"));
+                    }
+                }
+
+                var result = new JObject();
+
+                foreach(var j in muleSoftRequestJson)
+                {
+                    result.Merge(j);
+                }
+
+                item.CustomJson = result.ToString();
+            }
+
             var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
             await UpdatePostIdentitiesNotification(postIdentityRequest, response);
 

@@ -33,10 +33,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> GetCustomDataMapping([FromRoute] string sourceSystemName)
         {
             _appLogger.LogInformation($"Started Processing CustomDataMappingController::GetCustomDataMapping by Id:{sourceSystemName}");
-            var result = await _customDataMappingService.GetCustomDataMapping(sourceSystemName);
-            if (null == result) return NoContent();
-            var fileResponseDto = CustomDataMappingDtoMapper.GetDto(result);
-            return Ok(fileResponseDto);
+            //var result = await _customDataMappingService.GetCustomDataMapping(sourceSystemName);
+            //if (null == result) return NoContent();
+            //var fileResponseDto = CustomDataMappingDtoMapper.GetDto(result);
+            return Ok(1);
         }
 
         //[HcaAuthorize(Roles.ReadOnly)]

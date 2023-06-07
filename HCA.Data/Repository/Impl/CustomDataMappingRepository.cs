@@ -17,33 +17,10 @@ namespace HCA.Data.Repository.Impl
         {
         }
 
-        public async Task<dynamic?> AddCustomDataMapping(CustomDataMappingEntity fileResponse)
+        public async Task<IEnumerable<CustomDataMappingEntity?>> GetCustomDataMappingBySourceSystem(string sourceSystemName)
         {
-            Add(fileResponse);
-            return await Task.FromResult(fileResponse);
-        }
-
-        public async Task<CustomDataMappingEntity?> GetCustomDataMapping(string sourceSystemName)
-        {
-            var request = await GetSingleAsync(f => f.SourceSystemName == sourceSystemName);
-            return await Task.FromResult(request);
-        }
-
-        public async Task<IEnumerable<CustomDataMappingEntity?>> GetCustomDataMappings()
-        {
-            var request = await GetAllAsync();
-            return await Task.FromResult(request);
-        }
-
-        public Task<dynamic?> RemoveCustomDataMapping(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<dynamic?> UpdateCustomDataMapping(CustomDataMappingEntity fileResponse)
-        {
-            Update(fileResponse);
-            return await Task.FromResult(fileResponse);
+            var request = await GetAllAsync(f => f.SourceSystemName == sourceSystemName);
+            return request;
         }
     }
 }

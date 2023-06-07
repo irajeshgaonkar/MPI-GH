@@ -115,8 +115,9 @@ async Task ProcessBatchRequest(ServiceProvider serviceProvider)
     var _clientIdentityRequestRepository = serviceProvider.GetRequiredService<IClientIdentityRequestRepository>();
     var _clientIdentityRequestMapper = serviceProvider.GetRequiredService<IClientIdentityRequestMapper>();
 
-    var requestEntities = await _clientIdentityRequestRepository.GetRequests("d8d51c8c-2f8b-ba05-0077-7e8d346c2e8c", 1);
-    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
+    var requestEntities = await _clientIdentityRequestRepository.GetRequests("b7993e9c-39bf-99c6-91b3-def1e7894a0f", 1);
+    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities)
+                    .Where(c => c.SourceSystemId == "9274720068WA");
     //if (null == requests || requests.Count() == 0) break;
 
     var batchProcessMessage = new BatchProcessMessage()

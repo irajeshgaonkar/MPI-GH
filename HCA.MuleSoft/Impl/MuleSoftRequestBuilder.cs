@@ -2,6 +2,8 @@
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.Request;
 using HCA.MuleSoft.Extensions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HCA.MuleSoft;
 
@@ -16,26 +18,26 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     public PostIdentityRequest BuildPostIdentityRequest(PostClientIdentityRequest request)
     {
         var content = BuildPostIdentityContent(request.Content);
-        return new (request.TrackingId, content);
+        return new(request.TrackingId, content);
     }
 
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     public LinkIdentitiesRequest BuildLinkIdentitisRequest(LinkClientIdentityRequest request)
-     => new (request.TrackingId, request.Content);
+     => new(request.TrackingId, request.Content);
 
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     public UnLinkIdentitiesRequest BuildUnLinkIdentitiesRequest(UnLinkClientIdentityRequest request)
-        => new (request.TrackingId, request.Content);
+        => new(request.TrackingId, request.Content);
 
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
     public MergeIdentitiesRequest BuildMergeIdentitiesRequest(MergeClientIdentityRequest request)
-        => new (request.TrackingId, request.Content);
+        => new(request.TrackingId, request.Content);
 
     /// <summary>
     /// <inheritdoc/>
@@ -58,13 +60,13 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);
-        return new(identity);
+        return new(JsonConvert.SerializeObject(identity));
     }
 
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicQueryClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);
-        return new(identity);
+        return new(JsonConvert.SerializeObject(identity));
     }
 
     private Identity BuildIdentity(DemographicSearchClientIdentityRequest demographicSearchRequest)
@@ -82,7 +84,36 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     private PostIdentityRequestContent BuildPostIdentityContent(IEnumerable<ClientIdentityRequest> clientIdentities)
     {
         var identity = BuildIdentity(clientIdentities);
-        return new(identity);
+        var identityJObject = JObject.FromObject(identity);
+        JArray jsonArray = new JArray();
+
+        JObject mergedObject = new JObject();
+
+        foreach (var clientIdentity in clientIdentities)
+        {
+            if (clientIdentity.CustomJson == null)
+                continue;
+
+            var jsonObject = JObject.Parse(clientIdentity.CustomJson);
+
+
+            foreach (JProperty property in jsonObject.Properties())
+            {
+                string propertyName = property.Name;
+
+                if (mergedObject[propertyName] == null)
+                {
+                    mergedObject.Add(propertyName, new JArray());
+                }
+
+                (mergedObject[propertyName] as JArray).Add(property.Value);
+            }
+        }
+
+        identityJObject.Merge(mergedObject);
+        var jsonData = identityJObject.ToString();
+
+        return new(identityJObject.ToString());
     }
 
     private Identity BuildIdentity(IEnumerable<ClientIdentityRequest> clientIdentities)

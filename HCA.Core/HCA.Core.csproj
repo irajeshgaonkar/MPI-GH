@@ -36,5 +36,6 @@
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
     <PackageReference Include="Amazon.S3" Version="0.24.0" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.9.23" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

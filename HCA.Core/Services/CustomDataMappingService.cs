@@ -31,27 +31,27 @@ namespace HCA.Core.Services
         public async Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping customData)
         {
             _appLogger.LogInformation($"Started processing CustomDataMappingService::Add CustomDataMapping {customData}");
-            var fileResponseEntity = _customDataMappingMapper.MapToEntity(customData);
-            var fileResponseModel = await _customDataMappingRepository.AddCustomDataMapping(fileResponseEntity);
-           var fileResponseData = _customDataMappingMapper.MapToModel(fileResponseModel);
-            if (fileResponseData == null) return null;
-            return fileResponseData;
+            var customDataMappingEntity = _customDataMappingMapper.MapToEntity(customData);
+            _customDataMappingRepository.AddAsync(customDataMappingEntity);
+            return await Task.FromResult(customData);
         }
 
-        public async Task<CustomDataMapping?> GetCustomDataMapping(string sourceSystemName)
+        public async Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappingBySourceSystem(string sourceSystemName)
         {
             _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
-            var fileResponseEntity = await _customDataMappingRepository.GetCustomDataMapping(sourceSystemName);
-            if (fileResponseEntity == null) return null;
-            var fileResponse = _customDataMappingMapper.MapToModel(fileResponseEntity);
+            var customDataMappingEntities = await _customDataMappingRepository.GetCustomDataMappingBySourceSystem(sourceSystemName);
+            if (customDataMappingEntities == null) 
+                return null;
+            var customDataMappings = _customDataMappingMapper.MapToModelCollection(customDataMappingEntities);
             _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetCustomDataMapping for Id {sourceSystemName}");
-            return fileResponse;
+            return customDataMappings;
         }
 
         public async Task<IEnumerable<CustomDataMapping?>> GetCustomDataMappings()
         {
+
             _appLogger.LogInformation($"Started processing CustomDataMappingService::GetCustomDataMappings for Id {new DateTime()}");
-            var fileResponseEntity = await _customDataMappingRepository.GetCustomDataMappings();
+            var fileResponseEntity = await _customDataMappingRepository.GetAllAsync();
             if (fileResponseEntity == null) return null;
             var fileResponse = _customDataMappingMapper.MapToModelCollection(fileResponseEntity);
             _appLogger.LogInformation($"Completed processing CustomDataMappingService::GetById for Id {new DateTime()}");
@@ -60,22 +60,24 @@ namespace HCA.Core.Services
 
         public async Task RemoveCustomDataMapping(int id)
         {
-            var entity = await _customDataMappingRepository.GetSingleAsync(m => m.Id == id);
+            //var entity = await _customDataMappingRepository.GetSingleAsync(m => m.Id == id);
 
-            if (entity != null)
-            {
-                _customDataMappingRepository.Delete(entity);
-            }
+            //if (entity != null)
+            //{
+            //    _customDataMappingRepository.Delete(entity);
+            //}
+            //return null;
         }
 
         public async Task<CustomDataMapping?> UpdateCustomDataMapping(CustomDataMapping fileResponse)
         {
-            _appLogger.LogInformation($"Started processing CustomDataMappingService::Update CustomDataMapping {fileResponse}");
-            var fileResponseEntity = _customDataMappingMapper.MapToEntity(fileResponse);
-            var fileResponseModel = await _customDataMappingRepository.UpdateCustomDataMapping(fileResponseEntity);
-            var fileResponseData = _customDataMappingMapper.MapToModel(fileResponseModel);
-            if (fileResponseData == null) return null;
-            return fileResponseData;
+            //_appLogger.LogInformation($"Started processing CustomDataMappingService::Update CustomDataMapping {fileResponse}");
+            //var fileResponseEntity = _customDataMappingMapper.MapToEntity(fileResponse);
+            //var fileResponseModel = await _customDataMappingRepository.UpdateCustomDataMapping(fileResponseEntity);
+            //var fileResponseData = _customDataMappingMapper.MapToModel(fileResponseModel);
+            //if (fileResponseData == null) return null;
+            //return fileResponseData;
+            return null;
         }
     }
 }
