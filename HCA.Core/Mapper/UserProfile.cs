@@ -19,6 +19,8 @@ namespace HCA.Core.Mapper
             CreateMap<FileRequestEntity, FileRequest>();
             CreateMap<ClientIdentityRequestEntity, FileClientIdentity>();
             CreateMap<FileClientIdentity, ClientIdentityRequestEntity>();
+            CreateMap<CustomDataMapping, CustomDataMappingEntity>();
+            CreateMap<CustomDataMappingEntity, CustomDataMapping>();
             CreateMap<ServiceAccountEntity, ServiceAccount>();
             CreateMap<ServiceAccount, ServiceAccountEntity>();
         }

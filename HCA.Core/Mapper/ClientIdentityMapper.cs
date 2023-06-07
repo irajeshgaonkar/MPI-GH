@@ -42,6 +42,7 @@ public class ClientIdentityMapper
         result.CreatedDate = DateTime.Now;
         result.UpdatedBy = "Batch File";
         result.UpdatedDate = DateTime.Now;
+        result.CustomJson = request.CustomJson;
 
         var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
         

@@ -66,7 +66,7 @@ namespace HCA.Api.Controllers
             
             foreach (var record in records)
             {
-                result.Add(record.Key, ClientIdentityDtoMapper.MapToReportDto(record.Value));
+                //result.Add(record.Key, ClientIdentityDtoMapper.MapToReportDto(record.Value));
             }
 
 

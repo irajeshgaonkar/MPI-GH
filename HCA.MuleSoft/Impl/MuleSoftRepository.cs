@@ -81,15 +81,16 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request)
         => await Execute<PostIdentityResponse>(MuleSoftUrls.PostIdentities, request);
 
-    private async Task<T> Execute<T>(string requestUrl, MuleSoftRequest request)
+
+    private async Task<T> Execute<T>(string requestUrl, MuleSoftRequest? request)
     {
         var sw = new Stopwatch();
-        _appLogger.LogInformation($"started processing mulesoft request {request.TrackingId}");
+        _appLogger.LogInformation($"started processing mulesoft request {request?.TrackingId}");
         var httpRequestMessage = await GetHttpRequestMessage(requestUrl, request);
         sw.Start();
         var httpesponse = await _httpAdapter.SendAsync(httpRequestMessage);
         sw.Stop();
-        _appLogger.LogInformation($"completed processing mulesoft request {request.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
+        _appLogger.LogInformation($"completed processing mulesoft request {request?.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
         var response = await httpesponse.Deserialize<T>();
 
         if (null == response)
@@ -136,14 +137,16 @@ public class MuleSoftRepository : IMuleSoftRepository
         }
     }
 
-    private async Task<HttpRequestMessage> GetHttpRequestMessage(string requestUrl, MuleSoftRequest request)
+    private async Task<HttpRequestMessage> GetHttpRequestMessage(string requestUrl, MuleSoftRequest? request)
     {
         if (null == request) throw new ArgumentNullException("GetHttpContent request is null");
         if (!IsAuthenticated) await Authenticate();
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, GetFullUri(requestUrl));
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token.AccessToken);
+        
         var jsonString = SerializationExtensions.Serialize(request);
+        
         httpRequest.Content = new StringContent(jsonString, Encoding.UTF8, ContentType.ApplicationJson);
         return httpRequest;
     }

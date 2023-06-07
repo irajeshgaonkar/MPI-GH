@@ -30,7 +30,10 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     public BatchRequestProcessor(IAppLogger logger,
         IClientIdentityRequestRepository clientIdentityRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IRequestProcessLogRepository requestProcessLogRepository,IOutputFileWriter outputFileWriter, ISqsPublisher sqsPublisher)
+        IRequestProcessLogRepository requestProcessLogRepository,
+        IOutputFileWriter outputFileWriter,
+        ISqsPublisher sqsPublisher
+        )
     {
         _logger = logger;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;

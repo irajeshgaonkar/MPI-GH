@@ -25,6 +25,11 @@ public interface IFileRequestMapper : IMapper<FileRequestEntity, FileRequest>
 
 }
 
+public interface ICustomDataMappingMapper : IMapper<CustomDataMappingEntity, CustomDataMapping>
+{
+
+}
+
 public interface IServiceAccountMapper : IMapper<ServiceAccountEntity, ServiceAccount>
 {
 
