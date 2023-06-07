@@ -5,11 +5,11 @@
 /// </summary>
 public class PostIdentityRequestContent
 {
-    public PostIdentityRequestContent(string identityJson)
+    public PostIdentityRequestContent(Identity identity)
     {
 
         ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
-        IdentityJson = identityJson;
+        Identity = identity;
     }
 
     /// <summary>
@@ -21,6 +21,6 @@ public class PostIdentityRequestContent
     /// <summary>
     /// Identity request object
     /// </summary>
-    public string IdentityJson { get; set; }
+    public Identity Identity { get; set; }
 }
 

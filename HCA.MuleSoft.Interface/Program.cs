@@ -50,6 +50,7 @@ await ProcessBatchRequest(serviceProvider);
 //await SftpFileTransfer(serviceProvider, configuration);
 
 //await PublishOuputFileGenerationMessage(serviceProvider, configuration, "276f22a0-0351-aa26-c5f7-8c2aac64014c");
+//await GenerateOutput(serviceProvider, configuration, "90337ca4-ad61-d645-b360-53ce332c96a6");
 
 Console.ReadLine();
 
@@ -103,6 +104,34 @@ async Task SftpFileTransfer(ServiceProvider serviceProvider, IConfiguration conf
 
     await sqsPublisher.PublishMessage(sqsMessage);
 }
+async Task GenerateOutput(ServiceProvider serviceProvider, IConfiguration configuration, string requestId)
+{
+    var sqsPublisher = serviceProvider.GetRequiredService<ISqsPublisher>();
+    var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
+    var sqsMessage = new SqsMessage()
+    {
+        MessageType = MessageType.GenerateOutput,
+        Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
+    };
+    await GenerateOutputFile(serviceProvider, sqsMessage);
+}
+
+
+ async Task GenerateOutputFile(ServiceProvider serviceProvider, SqsMessage request)
+{
+    var logger = serviceProvider.GetRequiredService<IAppLogger>();
+    logger.LogInformation($"started processing request {request.MessageType}");
+    var outputFileWriter = serviceProvider.GetRequiredService<IOutputFileWriter>();
+    var requestData = SerializationExtensions.DeSerializeWithoutCasing<OuputFileGenerationMessage>(request.Payload);
+
+    if (requestData == null)
+    {
+        logger.LogInformation($"request data is null for {request.MessageType}");
+        return;
+    }
+
+    await outputFileWriter.WriteFile(requestData.RequestId);
+}
 
 async Task ProcessBatchRequest(ServiceProvider serviceProvider)
 {
@@ -116,8 +145,7 @@ async Task ProcessBatchRequest(ServiceProvider serviceProvider)
     var _clientIdentityRequestMapper = serviceProvider.GetRequiredService<IClientIdentityRequestMapper>();
 
     var requestEntities = await _clientIdentityRequestRepository.GetRequests("b7993e9c-39bf-99c6-91b3-def1e7894a0f", 1);
-    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities)
-                    .Where(c => c.SourceSystemId == "9274720068WA");
+    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities).Take(1);
     //if (null == requests || requests.Count() == 0) break;
 
     var batchProcessMessage = new BatchProcessMessage()

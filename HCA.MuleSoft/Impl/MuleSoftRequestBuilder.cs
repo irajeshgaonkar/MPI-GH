@@ -60,13 +60,13 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);
-        return new(JsonConvert.SerializeObject(identity));
+        return new(identity);
     }
 
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicQueryClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);
-        return new(JsonConvert.SerializeObject(identity));
+        return new(identity);
     }
 
     private Identity BuildIdentity(DemographicSearchClientIdentityRequest demographicSearchRequest)
@@ -113,7 +113,7 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         identityJObject.Merge(mergedObject);
         var jsonData = identityJObject.ToString();
 
-        return new(identityJObject.ToString());
+        return new(identity);
     }
 
     private Identity BuildIdentity(IEnumerable<ClientIdentityRequest> clientIdentities)
