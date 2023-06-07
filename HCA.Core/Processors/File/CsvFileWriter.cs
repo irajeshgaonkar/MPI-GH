@@ -1,14 +1,19 @@
-﻿using HCA.Data.Entities;
+﻿using HCA.Core.Services;
+using HCA.Data.Entities;
 using HCA.Data.Repository;
+using Newtonsoft.Json;
+
 namespace HCA.Core.Processors.File;
 
 public class CsvFileWriter : IFileWriter
 {
     private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
+    private readonly ICustomDataMappingService _customDataMappingService;
 
-    public CsvFileWriter(IClientIdentityRequestRepository clientIdentityRequestRepository)
+    public CsvFileWriter(IClientIdentityRequestRepository clientIdentityRequestRepository, ICustomDataMappingService customDataMappingService)
     {
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
+        _customDataMappingService = customDataMappingService;
     }
 
     public async Task<MemoryStream> WriteFile(FileRequestEntity fileRequest)
@@ -20,7 +25,7 @@ public class CsvFileWriter : IFileWriter
 
         var headerLine = GetCsvHeader(fileRequest);
         writer.WriteLine(headerLine);
-        var lines = GetRequestLines(requests);
+        var lines = await GetRequestLines(requests);
 
         foreach (var line in lines)
         {
@@ -47,9 +52,13 @@ public class CsvFileWriter : IFileWriter
         return line;
     }
 
-    public List<string> GetRequestLines(IEnumerable<ClientIdentityRequestEntity> requests)
+    public async Task<List<string>> GetRequestLines(IEnumerable<ClientIdentityRequestEntity> requests)
     {
         var lines = new List<string>();
+        // get source systme name from requests
+        // get custom mapping using ssn
+        var requestData = requests.FirstOrDefault();
+        var customDataMappings = (await _customDataMappingService.GetCustomDataMappingBySourceSystem(requestData.SourceSystemName))?.OrderBy(c => c.OutputIndex).ToList();
 
         foreach (var request in requests)
         {
@@ -60,6 +69,23 @@ public class CsvFileWriter : IFileWriter
             line += $"{ProcessFieldForWriting(request.ZipFour)},{ProcessFieldForWriting(request.PhoneType)},{ProcessFieldForWriting(request.PhoneNumber)},";
             line += $"{ProcessFieldForWriting(request.EmailType)},{ProcessFieldForWriting(request.EmailAddress)},{ProcessFieldForWriting(request.ProtectedPopulationFlag)},";
             line += $"{ProcessFieldForWriting(request.ProtectedPopulationType)}";
+            
+            if (request.CustomJson != null && customDataMappings != null && customDataMappings.Count > 0)
+            {
+                var customData = JsonConvert.DeserializeObject<Dictionary<string, object>>(request.CustomJson);
+                if (customData != null)
+                {
+                    foreach(var customMapping in customDataMappings)
+                    {
+                        var key = customMapping.InputIndex.ToString();
+                        if (customData.ContainsKey(key))
+                        {
+                            line += $",{ProcessFieldForWriting(customData[key]?.ToString())}";
+                        }
+                    }
+                }
+            }
+
             lines.Add(line);
         }
 

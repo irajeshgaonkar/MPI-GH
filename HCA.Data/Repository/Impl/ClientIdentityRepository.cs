@@ -305,6 +305,7 @@ WHERE mpi_link_id IN
         identity.SourceSystemUpdated = entity.SourceSystemUpdated;
         identity.UpdatedBy = entity.UpdatedBy;
         identity.UpdatedDate = entity.UpdatedDate;
+        identity.CustomJson = entity.CustomJson;
 
         foreach (var address in entity.Addresses)
         {

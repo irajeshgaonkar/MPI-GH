@@ -177,6 +177,13 @@ public class ClientIdentityEntity : BaseEntity
     [Column("updated_date")]
     public DateTime? UpdatedDate { get; set; }
 
+
+    /// <summary>
+    /// CustomJson
+    /// </summary>
+    [Column("custom_json")]
+    public string? CustomJson { get; set; }
+
     /// <summary>
     /// Client Address Details
     /// </summary>
