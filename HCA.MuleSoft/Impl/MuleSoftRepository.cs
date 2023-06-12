@@ -4,6 +4,8 @@ using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
@@ -144,9 +146,7 @@ public class MuleSoftRepository : IMuleSoftRepository
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, GetFullUri(requestUrl));
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token.AccessToken);
-        
         var jsonString = SerializationExtensions.Serialize(request);
-        
         httpRequest.Content = new StringContent(jsonString, Encoding.UTF8, ContentType.ApplicationJson);
         return httpRequest;
     }

@@ -5,7 +5,7 @@
 /// </summary>
 public class PostIdentityRequestContent
 {
-    public PostIdentityRequestContent(Identity identity)
+    public PostIdentityRequestContent(dynamic identity)
     {
 
         ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
@@ -21,6 +21,6 @@ public class PostIdentityRequestContent
     /// <summary>
     /// Identity request object
     /// </summary>
-    public Identity Identity { get; set; }
+    public dynamic Identity { get; set; }
 }
 

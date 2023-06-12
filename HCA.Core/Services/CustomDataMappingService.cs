@@ -1,9 +1,11 @@
 ﻿using HCA.Core.Mapper;
 using HCA.Data.Entities;
 using HCA.Data.Repository;
+using HCA.Infrastructure.JObjectHelper;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.Request;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,12 +22,15 @@ namespace HCA.Core.Services
 
         private readonly ICustomDataMappingMapper _customDataMappingMapper;
 
+        private readonly IJObjectCreator _iJObjectCreator;
+
         public CustomDataMappingService(ICustomDataMappingRepository customDataMappingRepository, IAppLogger appLogger,
-            ICustomDataMappingMapper customDataMappingMapper)
+            ICustomDataMappingMapper customDataMappingMapper, IJObjectCreator iJObjectCreator)
         {
             _customDataMappingRepository = customDataMappingRepository;
             _appLogger = appLogger;
             _customDataMappingMapper = customDataMappingMapper;
+            _iJObjectCreator = iJObjectCreator;
         }
 
         public async Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping customData)
@@ -74,6 +79,26 @@ namespace HCA.Core.Services
             var UpdateCustomDataMappingModel = _customDataMappingMapper.MapToModel(customDataMappingEntity);
             if (UpdateCustomDataMappingModel == null) return null;
             return UpdateCustomDataMappingModel;
+        }
+
+        public JObject MapCustomJson(IEnumerable<CustomDataMapping?> customDataMappings, Dictionary<string, object> customData)
+        {
+            var result = new JObject();
+
+            foreach (var customDataMapping in customDataMappings.OrderBy(c => c.InputIndex))
+            {
+                if(customDataMapping == null) continue;
+
+                var key = customDataMapping.InputIndex.ToString();
+
+                if (customData.ContainsKey(key))
+                {
+                    //parsedCustomJson.Add(customDataMapping.InputColumnName, customData[key]);
+                    result.Merge(_iJObjectCreator.GetJObject("{" + $"'{customDataMapping.VeratoRequestPath}': '{customData[key]}'" + "}"));
+                }
+            }
+
+            return result;
         }
     }
 }

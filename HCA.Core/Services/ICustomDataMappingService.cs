@@ -1,5 +1,6 @@
 ﻿using HCA.Data.Entities;
 using HCA.Models.Request;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,7 @@ namespace HCA.Core.Services
         Task<CustomDataMapping?> AddCustomDataMapping(CustomDataMapping fileResponse);
         Task<CustomDataMapping?> UpdateCustomDataMapping(CustomDataMapping fileResponse);
         Task RemoveCustomDataMapping(int id);
+
+        JObject MapCustomJson(IEnumerable<CustomDataMapping?> customDataMappings, Dictionary<string, object> customData);
     }
 }

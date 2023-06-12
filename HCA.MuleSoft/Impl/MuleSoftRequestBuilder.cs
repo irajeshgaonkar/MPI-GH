@@ -1,4 +1,5 @@
-﻿using HCA.Models.MuleSoft;
+﻿using HCA.Infrastructure.Extensions;
+using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.Request;
 using HCA.MuleSoft.Extensions;
@@ -96,7 +97,6 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
 
             var jsonObject = JObject.Parse(clientIdentity.CustomJson);
 
-
             foreach (JProperty property in jsonObject.Properties())
             {
                 string propertyName = property.Name;
@@ -111,9 +111,52 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         }
 
         identityJObject.Merge(mergedObject);
-        var jsonData = identityJObject.ToString();
+        identityJObject = ConvertPropertyNames(identityJObject);
+        var objectData = identityJObject.ToString();
+        var result = SerializationExtensions.DeSerialize<dynamic>(objectData);
+        return new(result);
+    }
 
-        return new(identity);
+    private static JObject ConvertPropertyNames(JObject inputObject)
+    {
+        JObject convertedObject = new JObject();
+
+        foreach (var property in inputObject.Properties())
+        {
+            string oldName = property.Name;
+            string newName = ConvertPropertyName(oldName);
+            JToken value = property.Value;
+
+            if (value.Type == JTokenType.Object)
+            {
+                value = ConvertPropertyNames((JObject)value); // Recursively convert nested objects
+            }
+            else if (value.Type == JTokenType.Array)
+            {
+                var array = new JArray();
+                foreach (var item in value)
+                {
+                    if (item.Type == JTokenType.Object)
+                    {
+                        array.Add(ConvertPropertyNames((JObject)item)); // Recursively convert objects in array
+                    }
+                    else
+                    {
+                        array.Add(item);
+                    }
+                }
+                value = array;
+            }
+
+            convertedObject.Add(newName, value);
+        }
+
+        return convertedObject;
+    }
+
+    private static string ConvertPropertyName(string oldName)
+    {
+        return oldName.Substring(0, 1).ToLower() + oldName.Substring(1);
     }
 
     private Identity BuildIdentity(IEnumerable<ClientIdentityRequest> clientIdentities)

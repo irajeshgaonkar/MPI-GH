@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using HCA.Infrastructure.sftp;
 using HCA.Infrastructure.Sftp;
 using HCA.Infrastructure.S3;
+using HCA.Infrastructure.JObjectHelper;
 
 namespace HCA.Infrastructure
 {
@@ -38,6 +39,7 @@ namespace HCA.Infrastructure
             services.AddScoped<IS3ToSftpFileTransferClient, S3ToSftpFileTransferClient>();
             services.AddScoped<IHcaSftpClient, HcaSftpClient>();
             services.AddScoped<IHcaS3Client, HcaS3Client>();
+            services.AddScoped<IJObjectCreator,JObjectCreator>();
             return services;
         }
 
