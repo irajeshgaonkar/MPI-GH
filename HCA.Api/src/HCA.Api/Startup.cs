@@ -1,4 +1,5 @@
-﻿using HCA.Api.Filters;
+﻿using HCA.Api.Constants;
+using HCA.Api.Filters;
 using HCA.Api.Middleware;
 using HCA.Api.Options;
 using HCA.Core;
@@ -47,10 +48,10 @@ public class Startup
             });
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
             {
-                Name = "Authorization",
+                Name = RequestHeaders.Authorization,
                 Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
+                Scheme = RequestHeaders.Bearer,
+                BearerFormat = RequestHeaders.JWT,
                 In = ParameterLocation.Header,
                 Description = "JWT Authorization header using the Bearer scheme."
             });
@@ -62,7 +63,7 @@ public class Startup
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
+                            Id = RequestHeaders.Bearer
                         }
                     },
                     new string[] {}
@@ -74,9 +75,10 @@ public class Startup
 
         services.AddHca(Configuration);
 
-        services
-                .AddScoped<ISessionService, SessionService>()
-                .AddScoped<ISourceSystemValidator, SourceSystemValidator>();
+        //?Todo: !Refactor
+        //services
+        //        .AddScoped<ISessionService, SessionService>()
+        //        .AddScoped<ISourceSystemValidator, SourceSystemValidator>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
@@ -95,21 +97,24 @@ public class Startup
             .AllowAnyHeader();
         });
 
-        //if (env.IsDevelopment())
-        //{
+        if (env.IsDevelopment())
+        {
+            
+        }
+        
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseHttpsRedirection();
-        //}
-
         app.UseRouting();
         app.UseAuthorization();
+        app.UseJwtMiddleware(() => Configuration.GetSection("SecurityOptions").Get<SecurityOptions>());
+
+        //Todo: ;write use source system middleware
 
 
         app.UseEndpoints(endpoints =>
         {
-            var securityOptions = Configuration.GetSection("SecurityOptions").Get<SecurityOptions>();
-            app.UseMiddleware<JwtMiddleware>(securityOptions);
+           
             endpoints.MapControllers();
             endpoints.MapGet("/", async context =>
             {

@@ -1,9 +1,10 @@
-﻿using HCA.Core.Services;
+﻿using HCA.Api.Constants;
+using HCA.Core.Services;
+using HCA.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Principal;
 
 namespace HCA.Api.Filters;
 
@@ -77,7 +78,7 @@ public class SessionService : ISessionService
     public async Task<string> GetAppId(HttpContext context)
     {
         var user = context.User;
-        var authorizationHeader = context.Request.Headers["Authorization"].ToString();
+        var authorizationHeader = context.Request.Headers[RequestHeaders.Authorization].ToString();
         if (string.IsNullOrEmpty(authorizationHeader))
         {
             return await Task.FromResult(string.Empty);
@@ -109,6 +110,26 @@ public class SessionService : ISessionService
     }
 }
 
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public class SourceSystemAuthorizeAttribute : Attribute, IAuthorizationFilter
+{
+    public async void OnAuthorization(AuthorizationFilterContext context)
+    {
+       // this code moved to HttpContextExtensions GetRequestbody
+
+            //var requestData = SerializationExtensions.DeSerializeWithoutCasing<dynamic>(requestBody);
+
+        //foreach (var item in requestData)
+        //{
+        //    Console.WriteLine(item);
+        //}
+        //sourceSystemNames.Add(sourceSystemName);
+
+        // get all the source system names
+    }
+}
+
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
 {
@@ -119,10 +140,10 @@ public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
         _roles = roles;
     }
 
-    public void OnAuthorization(AuthorizationFilterContext context)
+    public async void OnAuthorization(AuthorizationFilterContext context)
     {
         var user = context.HttpContext.User;
-        var authorizationHeader = context.HttpContext.Request.Headers["Authorization"].ToString();
+        var authorizationHeader = context.HttpContext.Request.Headers[RequestHeaders.Authorization].ToString();
 
         if (string.IsNullOrEmpty(authorizationHeader))
         {
