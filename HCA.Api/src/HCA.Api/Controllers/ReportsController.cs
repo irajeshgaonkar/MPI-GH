@@ -63,10 +63,10 @@ namespace HCA.Api.Controllers
             var (count, records) = await _reportsService.GetClientIdentityGroupedByLinkId(linkId, pagNumber, recordsPerPage, orderBy);
 
             var result = new Dictionary<string, IEnumerable<ClientIdentityDto>>();
-            
+            var showSensitiveData = HttpContext.CanShowSensitiveData();
             foreach (var record in records)
             {
-                //result.Add(record.Key, ClientIdentityDtoMapper.MapToReportDto(record.Value));
+                result.Add(record.Key, ClientIdentityDtoMapper.GetReportsDto(record.Value, showSensitiveData));
             }
 
 

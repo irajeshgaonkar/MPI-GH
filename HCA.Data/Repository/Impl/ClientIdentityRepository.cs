@@ -98,7 +98,7 @@ WHERE mpi_link_id IN
 
         var clientIdentitiesGroup = clientIdentities.GroupBy(c => c.MpiLinkId);
 
-        foreach(var group in clientIdentitiesGroup)
+        foreach (var group in clientIdentitiesGroup)
         {
             result.Add(group.Key, group.ToList());
         }
