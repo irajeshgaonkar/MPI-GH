@@ -39,9 +39,7 @@ namespace HCA.Api.Controllers
         /// </summary>
         /// <param name="clientIdentityService">Client identity service <see cref="IClientIdentityService"/></param>
         /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
-        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger
-            //,ISourceSystemValidator sourceSystemValidator
-            )
+        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger)
         {
             _clientIdentityService = clientIdentityService;
             //_sourceSystemValidator = sourceSystemValidator;

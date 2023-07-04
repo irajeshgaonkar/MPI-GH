@@ -5,6 +5,7 @@ using HCA.Models.Request;
 using HCA.MuleSoft.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using HCA.Infrastructure.JObjectHelper;
 
 namespace HCA.MuleSoft;
 
@@ -88,75 +89,13 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         var identityJObject = JObject.FromObject(identity);
         JArray jsonArray = new JArray();
 
-        JObject mergedObject = new JObject();
-
-        foreach (var clientIdentity in clientIdentities)
-        {
-            if (clientIdentity.CustomJson == null)
-                continue;
-
-            var jsonObject = JObject.Parse(clientIdentity.CustomJson);
-
-            foreach (JProperty property in jsonObject.Properties())
-            {
-                string propertyName = property.Name;
-
-                if (mergedObject[propertyName] == null)
-                {
-                    mergedObject.Add(propertyName, new JArray());
-                }
-
-                (mergedObject[propertyName] as JArray).Add(property.Value);
-            }
-        }
+        var mergedObject = MuleSoftHelper.MergedObjects(clientIdentities);
 
         identityJObject.Merge(mergedObject);
-        identityJObject = ConvertPropertyNames(identityJObject);
+        identityJObject = MuleSoftHelper.ConvertPropertyNames(identityJObject);
         var objectData = identityJObject.ToString();
         var result = SerializationExtensions.DeSerialize<dynamic>(objectData);
         return new(result);
-    }
-
-    private static JObject ConvertPropertyNames(JObject inputObject)
-    {
-        JObject convertedObject = new JObject();
-
-        foreach (var property in inputObject.Properties())
-        {
-            string oldName = property.Name;
-            string newName = ConvertPropertyName(oldName);
-            JToken value = property.Value;
-
-            if (value.Type == JTokenType.Object)
-            {
-                value = ConvertPropertyNames((JObject)value); // Recursively convert nested objects
-            }
-            else if (value.Type == JTokenType.Array)
-            {
-                var array = new JArray();
-                foreach (var item in value)
-                {
-                    if (item.Type == JTokenType.Object)
-                    {
-                        array.Add(ConvertPropertyNames((JObject)item)); // Recursively convert objects in array
-                    }
-                    else
-                    {
-                        array.Add(item);
-                    }
-                }
-                value = array;
-            }
-
-            convertedObject.Add(newName, value);
-        }
-
-        return convertedObject;
-    }
-
-    private static string ConvertPropertyName(string oldName)
-    {
-        return oldName.Substring(0, 1).ToLower() + oldName.Substring(1);
     }
 
     private Identity BuildIdentity(IEnumerable<ClientIdentityRequest> clientIdentities)

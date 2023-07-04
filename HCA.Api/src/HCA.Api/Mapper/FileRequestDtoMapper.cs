@@ -79,8 +79,35 @@ public static class ClientIdentityDtoMapper
 
         return dtos;
     }
-}
 
+    public static IList<ClientIdentityDto> GetReportsDto(IEnumerable<ClientIdentityModel> models, bool showSensitiveData)
+    {
+        var dtos = new List<ClientIdentityDto>();
+
+        foreach (var model in models)
+        {
+            var clientIdentityDto = new ClientIdentityDto()
+            {
+                Id = model.Id,
+                MPILinkId = model.MpiLinkId ?? "",
+                SourceName = model.SourceSystemName,
+                SourceSystemId = model.SourceSystemId,
+                SourceSystemLastUpdate = model.SourceSystemUpdated,
+                FirstName = model.FirstName,
+                MiddleName = model.MiddleName ?? "",
+                LastName = model.LastName ?? "",
+                Suffix = model.NameSuffix ?? "",
+                BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
+                Gender = model.Gender ?? "",
+                SSN = showSensitiveData ? model.SSN ?? "" : "*****",
+                ProtectecPopulationFlag = model.ProtectedPopulationFlag,
+                ProtectedPopulationType = model.ProtectedPopulationType ?? ""
+            };
+            dtos.Add(clientIdentityDto);
+        }
+        return dtos;
+    }
+}
 public static class CustomDataMappingDtoMapper
 {
     public static CustomDataMappingDto GetDto(CustomDataMapping customData)
