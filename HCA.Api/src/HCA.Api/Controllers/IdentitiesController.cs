@@ -31,7 +31,7 @@ namespace HCA.Api.Controllers
 
         private readonly IClientIdentityService _clientIdentityService;
 
-        private readonly ISourceSystemValidator _sourceSystemValidator;
+        //private readonly ISourceSystemValidator _sourceSystemValidator;
 
 
         /// <summary>
@@ -39,10 +39,12 @@ namespace HCA.Api.Controllers
         /// </summary>
         /// <param name="clientIdentityService">Client identity service <see cref="IClientIdentityService"/></param>
         /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
-        public IdentitiesController(IClientIdentityService clientIdentityService, ISourceSystemValidator sourceSystemValidator, IAppLogger appLogger)
+        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger
+            //,ISourceSystemValidator sourceSystemValidator
+            )
         {
             _clientIdentityService = clientIdentityService;
-            _sourceSystemValidator = sourceSystemValidator;
+            //_sourceSystemValidator = sourceSystemValidator;
             _logger = appLogger;
         }
 
@@ -138,9 +140,9 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
 
             var sourceSystemNames = filter.Select(c => c.SourceSystemName).ToList();
-            var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
+            //var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
 
-            if (!isValid) return BadRequest("Cannot update data for the provided source system");
+            //if (!isValid) return BadRequest("Cannot update data for the provided source system");
 
             var searchResult = await _clientIdentityService.PostIdentities(filter, HttpContext.GetCurrentUser() ?? String.Empty, processType, notificationOptions);
             if (searchResult == null) return NoContent();

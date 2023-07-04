@@ -84,20 +84,23 @@ namespace HCA.Core.Services
         public JObject MapCustomJson(IEnumerable<CustomDataMapping?> customDataMappings, Dictionary<string, object> customData)
         {
             var result = new JObject();
-
-            foreach (var customDataMapping in customDataMappings.OrderBy(c => c.InputIndex))
+            foreach (var item in customData)
             {
-                if(customDataMapping == null) continue;
+                var data = item.Key;
 
-                var key = customDataMapping.InputIndex.ToString();
-
-                if (customData.ContainsKey(key))
+                foreach (var customDataMapping in customDataMappings.OrderBy(c => c.InputIndex))
                 {
-                    //parsedCustomJson.Add(customDataMapping.InputColumnName, customData[key]);
-                    result.Merge(_iJObjectCreator.GetJObject("{" + $"'{customDataMapping.VeratoRequestPath}': '{customData[key]}'" + "}"));
+                    if (customDataMapping == null) continue;
+    
+                var key = data != "0" ? customDataMapping.InputColumnName.ToString() : customDataMapping.InputIndex.ToString();
+
+                    if (customData.ContainsKey(key))
+                    {
+                        //parsedCustomJson.Add(customDataMapping.InputColumnName, customData[key]);
+                        result.Merge(_iJObjectCreator.GetJObject("{" + $"'{customDataMapping.VeratoRequestPath}': '{customData[key]}'" + "}"));
+                    }
                 }
             }
-
             return result;
         }
     }
