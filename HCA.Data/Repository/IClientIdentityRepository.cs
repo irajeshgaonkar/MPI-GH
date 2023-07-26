@@ -24,4 +24,6 @@ public interface IClientIdentityRepository : IRepositoryBase<ClientIdentityEntit
     Task<(int, Dictionary<string, IEnumerable<ClientIdentityEntity>>)> GetClientIdentityGroupedByLinkId(string linkId, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 
     Task DeleteMpiLinkId(string mpiLinkId);
+
+    void DeleteClientIdentity(ClientIdentityEntity clientIdentityEntity);
 }

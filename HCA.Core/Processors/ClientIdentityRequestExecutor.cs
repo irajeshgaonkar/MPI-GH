@@ -213,19 +213,17 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
             var response = await _muleSoftRequestExecuter.Execute<DeleteClientIdentityResponse>(request, requestStatusUpdater);
 
-            if (null != response && response.Success && null != response.Content?.LinkIdsDeleted)
+            if (null != response && response.Success && null != response.Content)
             {
-                var deletedLinkId = response.Content.LinkIdsDeleted.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                var deletedLinkId = response.Content.LinkIdsDeleted?.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
                 if (deletedLinkId != null)
                 {
-                    toDeleteIdentity.IsDelete = true;
-                    _clientIdentityRepository.Delete(toDeleteIdentity);
+                    _clientIdentityRepository.DeleteClientIdentity(toDeleteIdentity);
                 }
-                var modifiedLinkId = response.Content.LinkIdsModified.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                var modifiedLinkId = response.Content.LinkIdsModified?.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
                 if (modifiedLinkId != null)
                 {
-                    toDeleteIdentity.IsDelete = true;
-                    _clientIdentityRepository.Delete(toDeleteIdentity);
+                    _clientIdentityRepository.DeleteClientIdentity(toDeleteIdentity);
                 }
 
                 return response;

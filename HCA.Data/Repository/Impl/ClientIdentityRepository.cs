@@ -363,6 +363,23 @@ WHERE mpi_link_id IN
         Update(clientIdentityEntity);
     }
 
+    public void DeleteClientIdentity(ClientIdentityEntity clientIdentityEntity)
+    {
+        clientIdentityEntity.IsDelete = true;
+        clientIdentityEntity.IsActive = false;
+        foreach (var address in clientIdentityEntity.Addresses)
+        {
+            address.IsDelete = true;
+            address.IsActive = false;
+        }
+        foreach (var communicaiton in clientIdentityEntity.Communications)
+        {
+            communicaiton.IsDelete = true;
+            communicaiton.IsActive = false;
+        }
+        Update(clientIdentityEntity);
+    }
+
     public async Task<int?> GetIdBySource(string sourceSystemName, string sourceSystemId)
     {
         var identity = await GetSingleAsync(SourceSystemFilter(sourceSystemName, sourceSystemId));
