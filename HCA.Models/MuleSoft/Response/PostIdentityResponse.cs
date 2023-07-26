@@ -12,4 +12,13 @@ public class PostIdentityResponse : MuleSoftResponse
 }
 
 
+public class DeleteIdentityResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// Post Identity response content <see cref="DeleteIdentityResponse"/>
+    /// </summary>
+    public DeleteIdentityResponseContent Content { get; set; }
+}
+
+
 

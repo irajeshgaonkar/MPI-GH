@@ -223,9 +223,23 @@ WHERE mpi_link_id IN
         UpdateMpiLinkId(clientIdenty, newMpiLinkId);
     }
 
+    public async Task DeleteMpiLinkId(string mpiLinkId)
+    {
+        var clientIdenty = await GetByMpiLinkId(mpiLinkId);
+        if (null == clientIdenty) return;
+        clientIdenty.IsDelete = true;
+        Update(clientIdenty);
+    }
+
     public async Task<ClientIdentityEntity?> GetBySource(string sourceSystemName, string sourceSystemId)
     {
         var identity = await GetSingleAsync(SourceSystemFilter(sourceSystemName, sourceSystemId), ClientIdentitiesInclude);
+        return identity;
+    }
+
+    public async Task<ClientIdentityEntity?> GetByMpiLinkId(string mpiLinkId)
+    {
+        var identity = await GetSingleAsync(c => c.MpiLinkId == mpiLinkId, ClientIdentitiesInclude);
         return identity;
     }
 

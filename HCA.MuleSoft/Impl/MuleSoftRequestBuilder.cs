@@ -32,6 +32,12 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
+    public DeleteIdentyRequest BuildDeleteIdentityRequest(DeleteClientIdentityRequest request)
+     => new(request.TrackingId, new DeleteIdentyRequestContent(request.Content));
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
     public UnLinkIdentitiesRequest BuildUnLinkIdentitiesRequest(UnLinkClientIdentityRequest request)
         => new(request.TrackingId, request.Content);
 

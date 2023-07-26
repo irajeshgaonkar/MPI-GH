@@ -23,6 +23,9 @@ public interface IMuleSoftRequestBuilder
     /// <returns>return Link identities request for mulesoft <see cref="LinkIdentitiesRequest"></returns>
     LinkIdentitiesRequest BuildLinkIdentitisRequest(LinkClientIdentityRequest request);
 
+
+    DeleteIdentyRequest BuildDeleteIdentityRequest(DeleteClientIdentityRequest request);
+
     /// <summary>
     /// Un Link identities request builder
     /// </summary>

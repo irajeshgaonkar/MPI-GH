@@ -38,6 +38,22 @@ public class PostIdentityResponseContent
 /// <summary>
 /// Post identity response content
 /// </summary>
+public class DeleteIdentityResponseContent
+{
+    public DeleteIdentityResponseContent(List<string> linkIdsModified, List<string> linkIdsDeleted)
+    {
+        LinkIdsModified = linkIdsModified;
+        LinkIdsDeleted = linkIdsDeleted;
+    }
+
+    public List<string> LinkIdsModified { get; set; }
+
+    public List<string> LinkIdsDeleted { get; set; }
+}
+
+/// <summary>
+/// Post identity response content
+/// </summary>
 public class DemographicQueryResponseContent
 {
     public DemographicQueryResponseContent()

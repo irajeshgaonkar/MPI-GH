@@ -92,7 +92,8 @@ namespace HCA.Core.Services
                 [ ApiCallType.VEMerge ] = MergeIdentities,
                 [ ApiCallType.VEUnMerge ] = UnMergeIdentities,
                 [ ApiCallType.VEDemographicSearch ] = DemographicSearch,
-                [ApiCallType.VEDemographicQuery] = DemographicQuery
+                [ApiCallType.VEDemographicQuery] = DemographicQuery,
+                [ApiCallType.VEDelete] = DeleteIdentity
             };
 
             return requestExecuters;
@@ -114,6 +115,16 @@ namespace HCA.Core.Services
             var muleSoftRequest = _muleSoftRequestBuilder.BuildUnLinkIdentitiesRequest(unLinkClientIdentityRequest);
             var muleSoftResponse = await _muleSoftRepository.UnLinkIdentities(muleSoftRequest);
             var response = CreateResponse<UnLinkClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DeleteIdentity(BaseRequest request)
+        {
+            var deleteIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDeleteIdentityRequest(deleteIdentityRequest);
+            var muleSoftResponse = await _muleSoftRepository.DeleteIdentity(muleSoftRequest);
+            var response = CreateResponse<DeleteClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

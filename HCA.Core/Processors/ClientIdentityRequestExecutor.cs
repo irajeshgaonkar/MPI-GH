@@ -50,6 +50,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEUnLink] = UnLinkIdentities,
             [ApiCallType.VEMerge] = MergeIdentities,
             [ApiCallType.VEUnMerge] = UnMergeIdentities,
+            [ApiCallType.VEDelete] = DeleteIdentity,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
             [ApiCallType.VEDemographicQuery] = DemographicQuery
         };
@@ -195,6 +196,46 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         catch (HcaMuleSoftException e)
         {
             await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, null, toRetireIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var deleteClientIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
+        var deleteSource = deleteClientIdentityRequest.Content;
+        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.Name, deleteSource.Id);
+
+        try
+        {
+            if (null == toDeleteIdentity)
+                throw new HcaBadRequestException("Delete source not found");
+
+            var response = await _muleSoftRequestExecuter.Execute<DeleteClientIdentityResponse>(request, requestStatusUpdater);
+
+            if (null != response && response.Success && null != response.Content?.LinkIdsDeleted)
+            {
+                var deletedLinkId = response.Content.LinkIdsDeleted.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                if (deletedLinkId != null)
+                {
+                    toDeleteIdentity.IsDelete = true;
+                    _clientIdentityRepository.Delete(toDeleteIdentity);
+                }
+                var modifiedLinkId = response.Content.LinkIdsModified.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                if (modifiedLinkId != null)
+                {
+                    toDeleteIdentity.IsDelete = true;
+                    _clientIdentityRepository.Delete(toDeleteIdentity);
+                }
+
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaMuleSoftException e)
+        {
             throw;
         }
     }

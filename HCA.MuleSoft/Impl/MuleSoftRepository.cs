@@ -71,6 +71,9 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<UnLinkIdentitiesResponse> UnLinkIdentities(UnLinkIdentitiesRequest request)
         => await Execute<UnLinkIdentitiesResponse>(MuleSoftUrls.UnLinkIdentities, request);
 
+    public async Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request)
+        => await Execute<DeleteIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
+
     ///<inheritdoc />
     public async Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest request)
         => await Execute<MergeIdentitiesResponse>(MuleSoftUrls.MergeIdentities, request);
