@@ -144,7 +144,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
             var linkIdsDeleted = response.Content.LinkIdsDeleted.Aggregate(string.Empty, (s1, s2) => $"{s1} {s2}");
             await Update(requests, trackingId, RequestStatus.Success, "", linkIdsDeleted);
         }
-        catch (HcaMuleSoftException e)
+        catch (Exception e)
         {
             await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
         }
@@ -182,7 +182,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
             await Update(requests, trackingId, RequestStatus.Success, "", response.Content.LinkId);
         }
-        catch (HcaMuleSoftException e)
+        catch (Exception e)
         {
             await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
         }

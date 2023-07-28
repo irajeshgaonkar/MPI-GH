@@ -237,6 +237,12 @@ WHERE mpi_link_id IN
         return identity;
     }
 
+    public async Task<ClientIdentityEntity?> GetBySourceAll(string sourceSystemName, string sourceSystemId)
+    {
+        var identity = await GetSingleAsync(SourceSystemFilterAll(sourceSystemName, sourceSystemId), ClientIdentitiesInclude);
+        return identity;
+    }
+
     public async Task<ClientIdentityEntity?> GetByMpiLinkId(string mpiLinkId)
     {
         var identity = await GetSingleAsync(c => c.MpiLinkId == mpiLinkId, ClientIdentitiesInclude);
@@ -296,9 +302,12 @@ WHERE mpi_link_id IN
     private Expression<Func<ClientIdentityEntity, bool>> SourceSystemFilter(string sourceSystemName, string sourceSystemId)
         => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId && c.IsActive == true;
 
+    private Expression<Func<ClientIdentityEntity, bool>> SourceSystemFilterAll(string sourceSystemName, string sourceSystemId)
+        => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId;
+
     public async Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity)
     {
-        var identity = await GetBySource(entity.SourceSystemName, entity.SourceSystemId);
+        var identity = await GetBySourceAll(entity.SourceSystemName, entity.SourceSystemId);
 
         if (identity == null)
         {
@@ -320,6 +329,8 @@ WHERE mpi_link_id IN
         identity.UpdatedBy = entity.UpdatedBy;
         identity.UpdatedDate = entity.UpdatedDate;
         identity.CustomJson = entity.CustomJson;
+        identity.IsActive = true;
+        identity.IsDelete = false;
 
         foreach (var address in entity.Addresses)
         {
@@ -332,6 +343,9 @@ WHERE mpi_link_id IN
             }
             else
             {
+
+                matchingAddress.IsActive = true;
+                matchingAddress.IsDelete = false;
                 foreach (var ac in address.AddressCommunications)
                 {
                     var communication = matchingAddress.AddressCommunications.FirstOrDefault(mac => mac.Communication.EmailType == ac.Communication.EmailType && mac.Communication.PhoneType == ac.Communication.PhoneType
@@ -346,6 +360,11 @@ WHERE mpi_link_id IN
                         };
 
                         matchingAddress.AddressCommunications.Add(addressCommunication);
+                    }
+                    else
+                    {
+                        communication.IsActive = true;
+                        communication.IsDelete = false;
                     }
                 }
             }
