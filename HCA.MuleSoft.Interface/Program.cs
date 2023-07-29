@@ -144,8 +144,8 @@ async Task ProcessBatchRequest(ServiceProvider serviceProvider)
     var _clientIdentityRequestRepository = serviceProvider.GetRequiredService<IClientIdentityRequestRepository>();
     var _clientIdentityRequestMapper = serviceProvider.GetRequiredService<IClientIdentityRequestMapper>();
 
-    var requestEntities = await _clientIdentityRequestRepository.GetRequests("249567c2-fe6b-bc7b-7697-43915333beaf", 1);
-    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities).Skip(4).Take(1);
+    var requestEntities = await _clientIdentityRequestRepository.GetRequests("8334eb94-ed37-2183-b8f7-2428f2632bae", 1);
+    var requests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities).Take(1);
     //if (null == requests || requests.Count() == 0) break;
 
     var batchProcessMessage = new BatchProcessMessage()

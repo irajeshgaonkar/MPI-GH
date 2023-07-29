@@ -67,13 +67,13 @@ public class BatchRequestProcessor : IBatchRequestProcessor
                 await ProcessPostIdentityRequest(batchRequest);
                 _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
             }
-            
 
-            //if (requestId != null && IsFileRequestComplete(requestId))
-            //{
-            //    _logger.LogInformation($"Completed Processing all the requests requestId: {requestId}");
-            //    await PublishOuputFileGenerationMessage(requestId);
-            //}
+
+            if (requestId != null && IsFileRequestComplete(requestId))
+            {
+                _logger.LogInformation($"Completed Processing all the requests requestId: {requestId}");
+                await PublishOuputFileGenerationMessage(requestId);
+            }
         }
         catch(Exception e)
         {
