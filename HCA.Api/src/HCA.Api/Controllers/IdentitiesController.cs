@@ -112,8 +112,8 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [HttpPost("DemographiQuery")]
-        public async Task<IActionResult> DemographiQuery([FromBody] Identity filter, [FromQuery] string? processingOptions = null)
+        [HttpPost("DemographicQuery")]
+        public async Task<IActionResult> DemographicQuery([FromBody] Identity filter, [FromQuery] string? processingOptions = null)
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);

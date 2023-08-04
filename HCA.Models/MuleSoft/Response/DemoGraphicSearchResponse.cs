@@ -18,7 +18,7 @@ public class DemoGraphicSearchResponse: MuleSoftResponse
 public class DemoGraphicQueryResponse : MuleSoftResponse
 {
     /// <summary>
-    /// Demogrpahic search content <see cref="DemographicSearchContent"/>
+    /// Demogrpahic search content <see cref="DemographicQueryResponseContent"/>
     /// </summary>
     public DemographicQueryResponseContent Content { get; set; }
 }
