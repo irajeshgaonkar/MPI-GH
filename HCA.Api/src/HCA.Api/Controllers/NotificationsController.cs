@@ -24,7 +24,7 @@ public class NotificationsController : ControllerBase
     private readonly INotificationService _notificationService;
 
     /// <summary>
-    /// <see cref="NotificationController"/>
+    /// <see cref="NotificationsController"/>
     /// </summary>
     /// <param name="notificationService">Client identity service <see cref="INotificationService"/></param>
     /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
