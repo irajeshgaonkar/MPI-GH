@@ -24,6 +24,8 @@ $projectsToLambdas = @{
 #     exit 1
 # }
 
+dotnet publish -f net6.0 -c Release
+
 $region = aws configure get region
 Write-Output "Deploying MPI AWS Lambdas to $region"
 
@@ -33,6 +35,8 @@ catch {
     exit 1
 }
 
+
+
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
     $zipName = "Release\$lambda.zip"
@@ -40,7 +44,9 @@ foreach ($project in $projectsToLambdas.Keys) {
         Write-Verbose "removing old $lambda zip"
         Remove-Item $zipName -verbose
     }
-    msbuild "$project\src\$project\$project.csproj" -p:DeployOnBuild=true -p:PublishProfile="$project\src\$project\Properties\PublishProfiles\release.pubxml"
+
+    $publishFolder = "$project\src\$project\bin\Release\net6.0\publish"
+    Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
 }
 
 # $zipName = "$lambda\archive.zip";
