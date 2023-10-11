@@ -1,4 +1,7 @@
 # deploy.ps1
+
+# TODO: param for switching deployment target?
+
 # Param([string]$arg1)
 # if(!$arg1){
 #     $scriptName = Split-Path -leaf $PSCommandpath
@@ -6,6 +9,7 @@
 #     exit 1
 # }
 
+# list of VS projects and corresponding lambda names
 $projectsToLambdas = @{
     "HCA.Api"                        = "mpi-frontend-api-lambda" ;
     "HCA.Batch.SQS.Publisher.Lambda" = "mpi-batch-processing-sqs";
@@ -13,21 +17,7 @@ $projectsToLambdas = @{
     "HCA.Sftp.Lambda"                = "mpi-sftp";
 }
 
-# $lambda = $arg1.Trim().Trim('/\.')
-# Write-Debug "Lambda is: '$lambda'"
-# if ( !(Test-Path "$lambda\") ) {
-#     Write-Warning "Folder $lambda does not exist"
-#     exit 1
-# }
-# if ( !(Test-Path "$lambda\*.py") ) {
-#     Write-Warning "There are no python files in folder $lambda"
-#     exit 1
-# }
-
 dotnet publish -f net6.0 -c Release
-
-$region = aws configure get region
-Write-Output "Deploying MPI AWS Lambdas to $region"
 
 try { Get-Command aws > $null }
 catch {
@@ -35,7 +25,8 @@ catch {
     exit 1
 }
 
-
+$region = aws configure get region
+Write-Output "Deploying MPI AWS Lambdas to $region"
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
@@ -46,31 +37,23 @@ foreach ($project in $projectsToLambdas.Keys) {
     }
 
     $publishFolder = "$project\src\$project\bin\Release\net6.0\publish"
+    # todo make parallel (see experimental branch)
     Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
 }
 
-# $zipName = "$lambda\archive.zip";
-# if (Test-Path $zipName) {
-#     Write-Verbose "removing old zip"
-#     Remove-Item $zipName -verbose
-# }
-
-# Write-Verbose "creating a new zip file"
-# # Only zips python files, and no subdirectories
-# Compress-Archive -Path "$lambda\*.py" -DestinationPath $zipName
-
-
-# Write-Verbose "Uploading $lambda to $region"
-
-# aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish >.\upload.log
-# if ( $?) {
-
-#     Write-Output "!! Upload successful !!"    
-# }
-# else {
-
-#     Write-Output "Upload failed"
-#     Write-Output "If the error was a 400, check that there are no slashes in your lambda name"
-#     Write-Output "Lambda name = $lambda"
-#     exit 1
+# todo: upload
+# At this time, cannot upload to correct environment - coordinating with Taylor Church
+# foreach ($project in $projectsToLambdas.Keys) {
+#     $lambda = $projectsToLambdas[$project]
+#     Write-Verbose "Uploading $lambda to $region"
+#     # aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish >".\upload_$lambda.log"
+#     if ( $?) {
+#         Write-Output "!! $lambda Upload successful !!"    
+#     }
+#     else {
+#         Write-Output "Upload failed"
+#         Write-Output "If the error was a 400, check that there are no slashes in your lambda name"
+#         Write-Output "Lambda name = $lambda"
+#         exit 1
+#     }   
 # }
