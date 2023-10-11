@@ -19,14 +19,15 @@ $projectsToLambdas = @{
 
 dotnet publish -f net6.0 -c Release
 
-try { Get-Command aws > $null }
-catch {
-    Write-Warning "You need aws-cli to deploy this lambda. Google 'aws-cli install'"
-    exit 1
-}
+# TODO: put aws check back in once uploading is supported
+# try { Get-Command aws > $null }
+# catch {
+#     Write-Warning "You need aws-cli to deploy this lambda. Google 'aws-cli install'"
+#     exit 1
+# }
 
-$region = aws configure get region
-Write-Output "Deploying MPI AWS Lambdas to $region"
+# $region = aws configure get region
+# Write-Output "Deploying MPI AWS Lambdas to $region"
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
@@ -39,6 +40,7 @@ foreach ($project in $projectsToLambdas.Keys) {
     $publishFolder = "$project\src\$project\bin\Release\net6.0\publish"
     # todo make parallel (see experimental branch)
     Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
+    Write-Verbose "Zipped $project to $zipName"
 }
 
 # todo: upload
