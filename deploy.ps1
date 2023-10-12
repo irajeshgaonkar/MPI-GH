@@ -1,4 +1,13 @@
 # deploy.ps1
+<#
+Note: Your User\.aws\credentials file must have a functioning profile for the target environment:
+[MPI-Dev]
+[MPI-Test]
+[MPI-Prod]
+
+Ensure that the profiles target the correct environments. Even without profiles, this script will still publish and zip for you to \Release, which is useful.
+The script DOES NOT update appsettings.json (yet).
+#>
 
 [CmdletBinding()]
 Param(
