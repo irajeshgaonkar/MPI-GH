@@ -1,13 +1,12 @@
 # deploy.ps1
 
-# TODO: param for switching deployment target?
-
-# Param([string]$arg1)
-# if(!$arg1){
-#     $scriptName = Split-Path -leaf $PSCommandpath
-#     Write-Warning "Usage : $scriptName lambdaName"
-#     exit 1
-# }
+[CmdletBinding()]
+Param(
+    # Environment that the lambda will be updated to: Dev, Test or Prod
+    [Parameter(Mandatory, Position = 0, HelpMessage = "Enter environment: Dev|Test|Prod")]
+    [ValidateSet("Dev", "Test", "Prod")]
+    [String]$Environment
+)
 
 # list of VS projects and corresponding lambda names
 $projectsToLambdas = @{
@@ -17,17 +16,25 @@ $projectsToLambdas = @{
     "HCA.Sftp.Lambda"                = "mpi-sftp";
 }
 
+# TODO: more thorough testing before using in prod
+$environmentToProfile = @{
+    "Dev"  = "MPI-Dev"
+    "Test" = "MPI-Test"
+    "Prod" = "TODO:MPI-Prod"
+}
+
+# TODO: Pull in appsettings.json dynamically
+
 dotnet publish -f net6.0 -c Release
 
-# TODO: put aws check back in once uploading is supported
-# try { Get-Command aws > $null }
-# catch {
-#     Write-Warning "You need aws-cli to deploy this lambda. Google 'aws-cli install'"
-#     exit 1
-# }
+try { Get-Command aws > $null }
+catch {
+    Write-Warning "You need aws-cli to deploy this lambda. Google 'aws-cli install'"
+    exit 1
+}
 
-# $region = aws configure get region
-# Write-Output "Deploying MPI AWS Lambdas to $region"
+$region = aws configure get region
+Write-Output "Deploying MPI AWS Lambdas to ${region}:$Environment"
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
@@ -43,19 +50,17 @@ foreach ($project in $projectsToLambdas.Keys) {
     Write-Verbose "Zipped $project to $zipName"
 }
 
-# todo: upload
-# At this time, cannot upload to correct environment - coordinating with Taylor Church
-# foreach ($project in $projectsToLambdas.Keys) {
-#     $lambda = $projectsToLambdas[$project]
-#     Write-Verbose "Uploading $lambda to $region"
-#     # aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish >".\upload_$lambda.log"
-#     if ( $?) {
-#         Write-Output "!! $lambda Upload successful !!"    
-#     }
-#     else {
-#         Write-Output "Upload failed"
-#         Write-Output "If the error was a 400, check that there are no slashes in your lambda name"
-#         Write-Output "Lambda name = $lambda"
-#         exit 1
-#     }   
-# }
+foreach ($project in $projectsToLambdas.Keys) {
+    $lambda = $projectsToLambdas[$project]
+    Write-Verbose "Uploading $lambda to ${region}:$Environment"
+    $awsProfile = $environmentToProfile[$Environment]
+    $zipName = "Release\$lambda.zip"
+    aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish --profile $awsProfile >".\Release\upload_$lambda.log"
+    if ( $?) {
+        Write-Output "!! $lambda Upload successful !!"    
+    }
+    else {
+        Write-Output "Upload failed"
+        exit 1
+    }   
+}
