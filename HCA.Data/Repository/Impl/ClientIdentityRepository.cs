@@ -27,7 +27,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
         var skip = pageNumber * recordsPerPage;
         var result = new Dictionary<string, IEnumerable<ClientIdentityEntity>>();
         Expression<Func<ClientIdentityEntity, bool>> searchQuery = (c) => c.IsActive == true;
-        List<ClientIdentityEntity> clientIdentities = null;
+        List<ClientIdentityEntity>? clientIdentities = null;
         int count = 0;
 
 
@@ -252,7 +252,7 @@ WHERE mpi_link_id IN
     private Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>>? OrderBy(string orderByStr)
     {
         if (orderByStr == null) return null;
-        Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>> orderBy = null;
+        Func<IQueryable<ClientIdentityEntity>, IOrderedQueryable<ClientIdentityEntity>>? orderBy = null;
 
         var orderByParts = orderByStr.Split(" ");
         string columnName = orderByParts[0].Trim();

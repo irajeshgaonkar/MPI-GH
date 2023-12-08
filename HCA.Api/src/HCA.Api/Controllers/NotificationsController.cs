@@ -24,7 +24,7 @@ public class NotificationsController : ControllerBase
     private readonly INotificationService _notificationService;
 
     /// <summary>
-    /// <see cref="NotificationController"/>
+    /// <see cref="NotificationsController"/>
     /// </summary>
     /// <param name="notificationService">Client identity service <see cref="INotificationService"/></param>
     /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
@@ -86,8 +86,8 @@ public class NotificationsController : ControllerBase
             notificationDto.TrackingId = notification.TrackingId;
             notificationDto.TimeStamp = notification.TimeStamp;
             notificationDto.Operation = notification.Operation;
-            notificationDto.Request = notification.Request == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Request);
-            notificationDto.Response = notification.Response == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Response);
+            notificationDto.Request = notification.Request == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Request)!;
+            notificationDto.Response = notification.Response == null ? new { } : SerializationExtensions.DeSerialize<dynamic>(notification.Response)!;
             notificationDto.PreviousLinkId = notification.PreviousLinkId;
 
             result.Add(notificationDto);

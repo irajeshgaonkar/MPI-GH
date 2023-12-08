@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{53EEBCD8-A6A9-4CBA-9DA3-8BF380021535}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		deploy.ps1 = deploy.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft.Lambda", "HCA.MuleSoft.Lambda\src\HCA.MuleSoft.Lambda\HCA.MuleSoft.Lambda.csproj", "{75F8B490-B235-4A42-BBB6-C6B94FC52658}"

@@ -172,9 +172,9 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Un link client identiities
+        /// Unlink client identiities
         /// </summary>
-        /// <param name="value">Un linking sources <see cref="UnLinkingSourcess"/></param>
+        /// <param name="value">Un linking sources <see cref="UnLinkingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
         /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
