@@ -173,7 +173,7 @@ public class HcaAuthorizeAttribute : Attribute, IAuthorizationFilter
             var jwt = new JwtSecurityTokenHandler().ReadJwtToken(jwtToken);
 
             var clientId = jwt.Claims.FirstOrDefault(c => c.Type == "client_id")?.Value;
-            if(string.IsNullOrWhiteSpace(clientId))
+            if(!string.IsNullOrWhiteSpace(clientId))
             {
                 return;
             }
