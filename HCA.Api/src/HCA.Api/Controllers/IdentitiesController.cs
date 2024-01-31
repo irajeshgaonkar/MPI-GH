@@ -11,11 +11,14 @@ using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
+using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
+using System.Linq;
+using Newtonsoft.Json;
 
 namespace HCA.Api.Controllers
 {
@@ -134,7 +137,7 @@ namespace HCA.Api.Controllers
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [HttpPost("post")]
         public async Task<IActionResult> PostIdentity([FromBody] IEnumerable<ClientIdentityRequest> filter, [FromQuery] string? processingOptions = null)
-       {
+        {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
 
             var sourceSystemNames = filter.Select(c => c.SourceSystemName).ToList();
@@ -265,7 +268,227 @@ namespace HCA.Api.Controllers
             if (filter.SourceSystemId.IsNotEmpty()) searchFilter.Add("SourceId", filter.SourceSystemId);
             return searchFilter;
         }
+
+        #region 'DOH_Related_Code'
+
+
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(DOH_DemographicQueryRequest))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [HttpPost("DOH_demographicQuery")]
+        public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var searchResult = await _clientIdentityService.DemographicQuery(filter.content.identity, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
+        }
+
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="pagNumber"></param>
+        /// <param name="recordsPerPage"></param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<DOH_DemographicQueryRequest>))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [HttpPost("DOH_demographicSearch")]
+        public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var searchResult = await _clientIdentityService.DemographicSearch(filter.content.identity, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
+        }
+
+
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Post client identity response", typeof(DOH_DemographicQueryRequest))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [HttpPost("DOH_post")]
+        public async Task<IActionResult> DOH_PostIdentity([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+
+            //var sourceSystemNames = filter.content.identity.Sources.First().Name;
+            //var sourceSystemNames = filter.Select(c => c.content.identity.Sources.First().Name).ToList();
+            //var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
+
+            //if (!isValid) return BadRequest("Cannot update data for the provided source system");
+            //IEnumerable<ClientIdentityRequest> identity = filter.content.identity;
+
+            //identity = ConverttoIdentityRequest(filter.content.identity);
+
+
+            var searchResult = await _clientIdentityService.PostIdentities(null, HttpContext.GetCurrentUser() ?? String.Empty, processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
+        }
+
+        public IEnumerable<ClientIdentityRequest> ConverttoIdentityRequest(Identity identityRequest)
+            {
+            IEnumerable<ClientIdentityRequest> identity = new List<ClientIdentityRequest>();
+            ClientIdentityRequest CIRequest = new ClientIdentityRequest();
+
+            CIRequest.Id = 0;
+            CIRequest.BatchNumber = 0;
+            CIRequest.RequestId = "";
+            CIRequest.TrackingId = "";
+            CIRequest.MpiLinkId = "";
+            CIRequest.SourceSystemAgency = identityRequest.Sources.First().Id.ToString();
+            CIRequest.SourceSystemName = identityRequest.Sources.First().Name;
+            CIRequest.SourceSystemId = "";
+            CIRequest.SourceSystemUpdated = "";
+            CIRequest.FirstName = identityRequest.Names.First().First;
+            CIRequest.MiddleName = identityRequest.Names.First().Middle;
+            CIRequest.LastName = identityRequest.Names.First().Last; 
+            CIRequest.NameSuffix = identityRequest.Names.First().Suffix; 
+            CIRequest.Ssn    = identityRequest.Ssns.First();
+            CIRequest.Dob     = identityRequest.Genders.First();
+            CIRequest.Gender   = identityRequest.DatesOfBirth.First();
+            CIRequest.AddressType  = "";
+            CIRequest.AddressLine1  = identityRequest.Addresses.First().Line1;
+            CIRequest.AddressLine2   = identityRequest.Addresses.First().Line2;
+            CIRequest.AddressLine3   = "";
+            CIRequest.City= identityRequest.Addresses.First().City;
+            CIRequest.State = identityRequest.Addresses.First().State;
+            CIRequest.ProtectedPopulationFlag = "";
+            CIRequest.ProtectedPopulationType = "";
+            CIRequest.ZipCode = identityRequest.Addresses.First().PostalCode;
+            CIRequest.ZipFour  = "";
+            CIRequest.PhoneType = "";
+            CIRequest.EmailType = "";
+            //CIRequest.CustomJson = JsonConvert.SerializeObject(identityRequest.CreateDate);
+
+            identity.ToList().Add(CIRequest);
+
+            return identity;
+        }
+        /// <summary>
+        /// Links the 2 client identities
+        /// </summary>
+        /// <param name=CIRequest.value">Linking sources <see cref="LinkingSources" /></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Link identities response", typeof(LinkIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpPut(" DOH_link")]
+        public async Task<IActionResult> DOH_Link([FromBody] LinkingSources value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.LinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (null == result) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Unlink client identiities
+        /// </summary>
+        /// <param name="value">Un linking sources <see cref="UnLinkingSources"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Un link identities response", typeof(UnLinkIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpPut("DOH_unlink")]
+        public async Task<IActionResult> DOH_UnLink([FromBody] UnLinkingSources value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.UnLinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Merge client identities
+        /// </summary>
+        /// <param name="value">Merge Sources <see cref="MergingSources"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Merge identities response", typeof(MergeIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpPut("DOH_merge")]
+        public async Task<IActionResult> DOH_Merge([FromBody] MergingSources value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.MergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Un merge client identitiess
+        /// </summary>
+        /// <param name="value">Un merge Sources <see cref="UnMergingSources"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Un Merge identities response", typeof(UnMergeIdentitiesResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpPut("DOH_unmerge")]
+        public async Task<IActionResult> DOH_UnMerge([FromBody] UnMergingSources value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+
+
+
+        #endregion
+
+
+
     }
+
+
+
     /// <summary>
     /// Dashboard filter
     /// </summary>
