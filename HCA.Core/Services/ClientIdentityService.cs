@@ -95,7 +95,7 @@ public class ClientIdentityService : IClientIdentityService
         Identity identity = JsonConvert.DeserializeObject(request.Content.Identity);
 
         var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}";
-        var userRequestEntity = CreateUserRequest<DOH_PostClientIdentityRequest>(request, ApiCallType.VELink, currentUser, trackingId, notificationOptions);
+        var userRequestEntity = CreateUserRequest(request, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
 
         try
         {

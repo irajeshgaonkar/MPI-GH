@@ -46,6 +46,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>>
         {
             [ApiCallType.VEPost] = PostIdentity,
+            [ApiCallType.DOH_VEPost] = DOH_PostIdentity,
             [ApiCallType.VELink] = LinkIdentities,
             [ApiCallType.VEUnLink] = UnLinkIdentities,
             [ApiCallType.VEMerge] = MergeIdentities,
@@ -81,6 +82,46 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
+                var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
+                await _clientIdentityRepository.Upsert(entity);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdatePostIdentitiesNotification(postIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var postIdentityRequest = Cast<DOH_PostClientIdentityRequest>(request);
+
+        try
+        {
+            //var sourceSystemName = postIdentityRequest.Content.First().SourceSystemName;
+            //var customDataMappings = await _customDataMappingService.GetCustomDataMappingBySourceSystem(sourceSystemName);
+
+            //foreach (var item in postIdentityRequest.Content)
+            //{
+            //    if (item?.CustomJson == null)
+            //        continue;
+
+            //    var customData = JsonConvert.DeserializeObject<Dictionary<string, object>>(item.CustomJson) ?? new Dictionary<string, object>();
+            //    item.CustomJson = _customDataMappingService.MapCustomJson(customDataMappings, customData).ToString();
+            //}
+
+            var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
+            await UpdatePostIdentitiesNotification(null, response);
+
+            if (null != response && response.Success && null != response.Content?.LinkId)
+            {
+                //Can we skip this
+                
                 var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
                 await _clientIdentityRepository.Upsert(entity);
                 return response;

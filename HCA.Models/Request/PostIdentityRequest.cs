@@ -24,7 +24,7 @@ public class DeleteClientIdentityRequest : BaseRequest
 
 public class DOH_PostClientIdentityRequest : BaseRequest
 {
-    public DOH_PostClientIdentityRequest(string trackingId) : base(ApiCallType.VEPost, trackingId)
+    public DOH_PostClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEPost, trackingId)
     {
     }
 
