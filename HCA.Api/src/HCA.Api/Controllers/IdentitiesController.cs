@@ -315,36 +315,36 @@ namespace HCA.Api.Controllers
         }
 
 
-        ///// <summary>
-        ///// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
-        ///// </summary>
-        ///// <param name="filter">Filter condition for search</param>
-        ///// <param name="processingOptions"></param>
-        ///// <returns></returns>
-        //[SwaggerResponse(StatusCodes.Status200OK, "Post client identity response", typeof(DOH_DemographicQueryRequest))]
-        //[SwaggerResponse(StatusCodes.Status401Unauthorized)]
-        //[SwaggerResponse(StatusCodes.Status403Forbidden)]
-        //[SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        //[HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        //[HttpPost("DOH_post")]
-        //public async Task<IActionResult> DOH_PostIdentity([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
-        //{
-        //    var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+        /// <summary>
+        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Post client identity response", typeof(DOH_DemographicQueryRequest))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [HttpPost("DOH_post")]
+        public async Task<IActionResult> DOH_PostIdentity([FromBody] DOH_PostClientIdentityRequest request, [FromQuery] string? processingOptions = null)
+        {
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
 
-        //    //var sourceSystemNames = filter.content.identity.Sources.First().Name;
-        //    //var sourceSystemNames = filter.Select(c => c.content.identity.Sources.First().Name).ToList();
-        //    //var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
+            //var sourceSystemNames = filter.content.identity.Sources.First().Name;
+            //var sourceSystemNames = filter.Select(c => c.content.identity.Sources.First().Name).ToList();
+            //var isValid = await _sourceSystemValidator.ValidateSourceSystem(HttpContext, sourceSystemNames);
 
-        //    //if (!isValid) return BadRequest("Cannot update data for the provided source system");
-        //    //IEnumerable<ClientIdentityRequest> identity = filter.content.identity;
+            //if (!isValid) return BadRequest("Cannot update data for the provided source system");
+            //IEnumerable<ClientIdentityRequest> identity = filter.content.identity;
 
-        //    //identity = ConverttoIdentityRequest(filter.content.identity);
+            //identity = ConverttoIdentityRequest(filter.content.identity);
 
 
-        //    var searchResult = await _clientIdentityService.PostIdentities(null, HttpContext.GetCurrentUser() ?? String.Empty, processType, notificationOptions);
-        //    if (searchResult == null) return NoContent();
-        //    return Ok(searchResult);
-        //}
+            var searchResult = await _clientIdentityService.DOH_PostIdentities(request, HttpContext.GetCurrentUser() ?? String.Empty, processType, notificationOptions);
+            if (searchResult == null) return NoContent();
+            return Ok(searchResult);
+        }
 
         //public IEnumerable<ClientIdentityRequest> ConverttoIdentityRequest(Identity identityRequest)
         //    {

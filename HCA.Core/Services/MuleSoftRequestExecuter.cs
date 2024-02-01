@@ -87,6 +87,7 @@ namespace HCA.Core.Services
             var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>>
             {
                 [ ApiCallType.VEPost ] = PostIdentity,
+                [ApiCallType.DOH_VEPost] = DOH_PostIdentity,
                 [ ApiCallType.VELink ] = LinkIdentities,
                 [ ApiCallType.VEUnLink ] = UnLinkIdentities,
                 [ ApiCallType.VEMerge ] = MergeIdentities,
@@ -153,6 +154,17 @@ namespace HCA.Core.Services
         {
             var postidentityRequest = Cast<PostClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildPostIdentityRequest(postidentityRequest);
+            var muleSoftResponse = await _muleSoftRepository.PostIdentity(muleSoftRequest);
+            var response = CreateResponse<PostClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_PostIdentity(BaseRequest request)
+        {
+            var postidentityRequest = Cast<DOH_PostClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_PostIdentityRequest(postidentityRequest);
+
             var muleSoftResponse = await _muleSoftRepository.PostIdentity(muleSoftRequest);
             var response = CreateResponse<PostClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;

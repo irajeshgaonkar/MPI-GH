@@ -9,6 +9,7 @@ namespace HCA.Core.Services;
 public interface IClientIdentityService
 {
     Task<dynamic?> PostIdentities(IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+    Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<(int, IEnumerable<ClientIdentityModel>)> GetAll(string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
 

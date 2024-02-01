@@ -13,6 +13,7 @@ using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using HCA.Models.SQS;
+using Newtonsoft.Json;
 
 namespace HCA.Core.Services;
 
@@ -76,6 +77,36 @@ public class ClientIdentityService : IClientIdentityService
 
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
             return await PostIdentities(userRequestEntity, identities);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        Identity identity = JsonConvert.DeserializeObject(request.Content.Identity);
+
+        var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}";
+        var userRequestEntity = CreateUserRequest<DOH_PostClientIdentityRequest>(request, ApiCallType.VELink, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
+            return await DOH_PostIdentities(userRequestEntity, request);
         }
         catch (HcaBadRequestException e)
         {
@@ -251,6 +282,19 @@ public class ClientIdentityService : IClientIdentityService
         var linkIdentityRequest = new PostClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = identities.ToList()
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response?.Content;
+    }
+
+    private async Task<PostIdentityResponseContent?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = request.Content
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);

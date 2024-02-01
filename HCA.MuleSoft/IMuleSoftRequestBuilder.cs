@@ -16,6 +16,8 @@ public interface IMuleSoftRequestBuilder
     /// <returns>return Post identity request for mulesoft <see cref="PostIdentityRequest"></returns>
     PostIdentityRequest BuildPostIdentityRequest(PostClientIdentityRequest request);
 
+    PostIdentityRequest BuildDOH_PostIdentityRequest(DOH_PostClientIdentityRequest request);
+
     /// <summary>
     /// Link identities request builder
     /// </summary>

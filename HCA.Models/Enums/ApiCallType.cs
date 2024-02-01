@@ -8,6 +8,9 @@ public enum ApiCallType
     [StringValue("VE VEPost")]
     VEPost,
 
+    [StringValue("VE VEPost")]
+    DOH_VEPost,
+
     [StringValue("VE Link")]
     VELink,
 

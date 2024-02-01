@@ -26,6 +26,14 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     /// <summary>
     /// <inheritdoc/>
     /// </summary>
+    public PostIdentityRequest BuildDOH_PostIdentityRequest(DOH_PostClientIdentityRequest request)
+    {
+        return new(request.TrackingId, request.Content);
+    }
+
+    /// <summary>
+    /// <inheritdoc/>
+    /// </summary>
     public LinkIdentitiesRequest BuildLinkIdentitisRequest(LinkClientIdentityRequest request)
      => new(request.TrackingId, request.Content);
 
