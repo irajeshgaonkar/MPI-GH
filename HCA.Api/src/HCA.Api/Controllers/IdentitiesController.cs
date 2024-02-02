@@ -101,7 +101,7 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
-            return Ok(searchResult);
+            return Ok(searchResult).Content;
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
-            return Ok(searchResult);
+            return Ok(searchResult).Content;
         }
 
         /// <summary>
@@ -335,46 +335,6 @@ namespace HCA.Api.Controllers
             var searchResult = await _clientIdentityService.DOH_PostIdentities(request, HttpContext.GetCurrentUser() ?? String.Empty, ProcessType.Sync, null);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
-        }
-
-        public IEnumerable<ClientIdentityRequest> ConverttoIdentityRequest(Identity identityRequest)
-        {
-            IEnumerable<ClientIdentityRequest> identity = new List<ClientIdentityRequest>();
-            ClientIdentityRequest CIRequest = new ClientIdentityRequest();
-
-            CIRequest.Id = 0;
-            CIRequest.BatchNumber = 0;
-            CIRequest.RequestId = "";
-            CIRequest.TrackingId = "";
-            CIRequest.MpiLinkId = "";
-            CIRequest.SourceSystemAgency = identityRequest.Sources.First().Id.ToString();
-            CIRequest.SourceSystemName = identityRequest.Sources.First().Name;
-            CIRequest.SourceSystemId = "";
-            CIRequest.SourceSystemUpdated = "";
-            CIRequest.FirstName = identityRequest.Names.First().First;
-            CIRequest.MiddleName = identityRequest.Names.First().Middle;
-            CIRequest.LastName = identityRequest.Names.First().Last;
-            CIRequest.NameSuffix = identityRequest.Names.First().Suffix;
-            CIRequest.Ssn = identityRequest.Ssns.First();
-            CIRequest.Dob = identityRequest.Genders.First();
-            CIRequest.Gender = identityRequest.DatesOfBirth.First();
-            CIRequest.AddressType = "";
-            CIRequest.AddressLine1 = identityRequest.Addresses.First().Line1;
-            CIRequest.AddressLine2 = identityRequest.Addresses.First().Line2;
-            CIRequest.AddressLine3 = "";
-            CIRequest.City = identityRequest.Addresses.First().City;
-            CIRequest.State = identityRequest.Addresses.First().State;
-            CIRequest.ProtectedPopulationFlag = "";
-            CIRequest.ProtectedPopulationType = "";
-            CIRequest.ZipCode = identityRequest.Addresses.First().PostalCode;
-            CIRequest.ZipFour = "";
-            CIRequest.PhoneType = "";
-            CIRequest.EmailType = "";
-            //CIRequest.CustomJson = JsonConvert.SerializeObject(identityRequest.CreateDate);
-
-            identity.ToList().Add(CIRequest);
-
-            return identity;
         }
         ///// <summary>
         ///// Links the 2 client identities

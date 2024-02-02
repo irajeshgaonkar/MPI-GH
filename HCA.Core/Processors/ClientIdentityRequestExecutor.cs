@@ -121,8 +121,8 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
                 //Can we skip this
-                var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
-                await _clientIdentityRepository.Upsert(entity);
+                //var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
+                //await _clientIdentityRepository.Upsert(entity);
                 return response;
             }
 

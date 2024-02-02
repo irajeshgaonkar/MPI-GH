@@ -317,7 +317,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<List<PostIdentityResponseContent>?> DemographicSearch(UserRequestEntity userRequestEntity, Identity filter)
+    private async Task<dynamic?> DemographicSearch(UserRequestEntity userRequestEntity, Identity filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
@@ -327,10 +327,10 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
-    private async Task<DemographicQueryResponseContent?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
+    private async Task<dynamic?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
@@ -340,7 +340,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
     private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)
