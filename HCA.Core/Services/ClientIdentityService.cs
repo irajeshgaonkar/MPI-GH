@@ -92,7 +92,9 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        Identity identity = JsonConvert.DeserializeObject(request.Content.Identity);
+
+        string strIdentities = request.Content.Identity.ToString();
+        Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
         var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}";
         var userRequestEntity = CreateUserRequest(request, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
@@ -289,7 +291,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<PostIdentityResponseContent?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
+    private async Task<DOH_PostIdentityResponseContent?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
@@ -297,7 +299,7 @@ public class ClientIdentityService : IClientIdentityService
             Content = request.Content
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response?.Content;
     }

@@ -86,6 +86,10 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request)
         => await Execute<PostIdentityResponse>(MuleSoftUrls.PostIdentities, request);
 
+    ///<inheritdoc />
+    public async Task<DOH_PostIdentityResponse> DOH_PostIdentity(PostIdentityRequest request)
+        => await Execute<DOH_PostIdentityResponse>(MuleSoftUrls.PostIdentities, request);
+
 
     private async Task<T> Execute<T>(string requestUrl, MuleSoftRequest? request)
     {

@@ -326,7 +326,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [HttpPost("DOH_post")]
+        [HttpPost("DOH-post")]
         public async Task<IActionResult> DOH_PostIdentity([FromBody] DOH_PostClientIdentityRequest request, [FromQuery] string? processingOptions = null)
         {
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01

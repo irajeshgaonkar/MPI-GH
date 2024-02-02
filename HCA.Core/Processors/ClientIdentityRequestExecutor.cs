@@ -115,13 +115,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             //    item.CustomJson = _customDataMappingService.MapCustomJson(customDataMappings, customData).ToString();
             //}
 
-            var response = await _muleSoftRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
-            await UpdatePostIdentitiesNotification(null, response);
+            var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
+            await UpdatePostIdentitiesNotification(null, null);
 
             if (null != response && response.Success && null != response.Content?.LinkId)
             {
                 //Can we skip this
-                
                 var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
                 await _clientIdentityRepository.Upsert(entity);
                 return response;
@@ -132,7 +131,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
         catch (HcaBadRequestException e)
         {
-            await UpdatePostIdentitiesNotification(postIdentityRequest, null);
+            await UpdatePostIdentitiesNotification(null, null);
             throw;
         }
     }

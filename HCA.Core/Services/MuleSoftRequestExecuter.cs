@@ -165,8 +165,8 @@ namespace HCA.Core.Services
             var postidentityRequest = Cast<DOH_PostClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_PostIdentityRequest(postidentityRequest);
 
-            var muleSoftResponse = await _muleSoftRepository.PostIdentity(muleSoftRequest);
-            var response = CreateResponse<PostClientIdentityResponse>(muleSoftResponse);
+            var muleSoftResponse = await _muleSoftRepository.DOH_PostIdentity(muleSoftRequest);
+            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

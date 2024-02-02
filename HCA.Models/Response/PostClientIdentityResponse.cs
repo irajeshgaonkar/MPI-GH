@@ -10,6 +10,14 @@ public class PostClientIdentityResponse : BaseResponse
     public PostIdentityResponseContent Content { get; set; }
 }
 
+public class DOH_PostClientIdentityResponse : BaseResponse
+{
+    /// <summary>
+    /// Post Identity response content <see cref="PostIdentityResponseContent"/>
+    /// </summary>
+    public DOH_PostIdentityResponseContent Content { get; set; }
+}
+
 public class DeleteClientIdentityResponse : BaseResponse
 {
     /// <summary>

@@ -58,5 +58,7 @@ public interface IMuleSoftRepository
     /// <returns>Post identities response <see cref="PostIdentityResponse"/></returns>
     Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request);
 
+    Task<DOH_PostIdentityResponse> DOH_PostIdentity(PostIdentityRequest request);
+
     Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request);
 }
