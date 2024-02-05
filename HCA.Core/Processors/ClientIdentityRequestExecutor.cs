@@ -54,7 +54,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEDelete] = DeleteIdentity,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
             [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
-            [ApiCallType.VEDemographicQuery] = DemographicSearch,
+            [ApiCallType.VEDemographicQuery] = DemographicQuery,
             [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery
         };
 
@@ -362,11 +362,11 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            var response = await _muleSoftRequestExecuter.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
             await UpdateDemographicSearchNotification(null, null);
             notificationsUpdated = true;
 
-            if (null != response && response.Success && null != response.Content)
+            if (null != response && response.Success)
             {
                 return response;
             }
@@ -427,11 +427,11 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            var response = await _muleSoftRequestExecuter.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
             //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
             notificationsUpdated = true;
 
-            if (null != response && response.Success && null != response.Content)
+            if (null != response && response.Success )
             {
                 return response;
             }

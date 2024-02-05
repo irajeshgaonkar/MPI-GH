@@ -101,7 +101,7 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
-            return Ok(searchResult).Content;
+            return Ok(searchResult);
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
-            return Ok(searchResult).Content;
+            return Ok(searchResult);
         }
 
         /// <summary>
@@ -297,7 +297,6 @@ namespace HCA.Api.Controllers
         /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
-        /// <param name="recordsPerPage"></param>
         /// <param name="processingOptions"></param>
         /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<DOH_DemographicQueryRequest>))]

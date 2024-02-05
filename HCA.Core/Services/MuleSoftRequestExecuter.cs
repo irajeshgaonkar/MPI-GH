@@ -188,8 +188,8 @@ namespace HCA.Core.Services
             var searchRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DOH_DemographicSearch(muleSoftRequest);
-            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
-            response.Content = muleSoftResponse.Content;
+            var response = CreateResponse<DOH_DemographicSearchClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content.SearchResults;
             return response;
         }
 
@@ -208,7 +208,7 @@ namespace HCA.Core.Services
             var searchRequest = Cast<DOH_DemographicQueryClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicQueryRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DOH_DemographicQuery(muleSoftRequest);
-            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
+            var response = CreateResponse<DOH_DemographicQueryClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

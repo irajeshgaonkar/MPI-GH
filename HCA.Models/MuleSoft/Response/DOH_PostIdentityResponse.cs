@@ -1,4 +1,6 @@
-﻿namespace HCA.Models.MuleSoft.Response;
+﻿using HCA.Models.Response;
+
+namespace HCA.Models.MuleSoft.Response;
 
 /// <summary>
 /// Post Identity Response Content
@@ -10,6 +12,7 @@ public class DOH_PostIdentityResponse : MuleSoftResponse
     /// </summary>
     public DOH_PostIdentityResponseContent Content { get; set; }
 }
+
 
 
 

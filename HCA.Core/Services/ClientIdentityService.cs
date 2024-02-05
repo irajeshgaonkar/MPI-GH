@@ -362,7 +362,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<dynamic?> DemographicSearch(UserRequestEntity userRequestEntity, Identity filter)
+    private async Task<List<PostIdentityResponseContent>?> DemographicSearch(UserRequestEntity userRequestEntity, Identity filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
@@ -372,7 +372,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response;
+        return response?.Content;
     }
 
     private async Task<dynamic?> DOH_DemographicSearch(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
@@ -383,12 +383,12 @@ public class ClientIdentityService : IClientIdentityService
             Content = filter.content
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }
 
-    private async Task<dynamic?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
+    private async Task<DemographicQueryResponseContent?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
@@ -398,7 +398,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response;
+        return response?.Content;
     }
 
     private async Task<dynamic?> DOH_DemographicQuery(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
@@ -409,7 +409,7 @@ public class ClientIdentityService : IClientIdentityService
             Content = filter.content
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }

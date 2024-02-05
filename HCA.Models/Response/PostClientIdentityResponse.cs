@@ -18,6 +18,7 @@ public class DOH_PostClientIdentityResponse : BaseResponse
     public DOH_PostIdentityResponseContent Content { get; set; }
 }
 
+
 public class DeleteClientIdentityResponse : BaseResponse
 {
     /// <summary>
