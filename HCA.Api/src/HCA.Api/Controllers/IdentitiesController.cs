@@ -283,7 +283,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [HttpPost("DOH_demographicQuery")]
+        [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
@@ -305,7 +305,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
-        [HttpPost("DOH_demographicSearch")]
+        [HttpPost("DOH-demographicSearch")]
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicQueryRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
