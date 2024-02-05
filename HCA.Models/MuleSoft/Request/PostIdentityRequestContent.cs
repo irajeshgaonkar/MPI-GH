@@ -7,8 +7,16 @@ public class PostIdentityRequestContent
 {
     public PostIdentityRequestContent(dynamic identity)
     {
-
         ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
+        //if (String.IsNullOrEmpty(ResponseIdentityFormatNames[].First()))
+        //{
+        //    ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
+
+        //}
+        //else
+        //{
+        //    ResponseIdentityFormatNames = responseIdentityFormatNames;
+        //}
         Identity = identity;
     }
 

@@ -26,7 +26,6 @@
     <None Remove="Amazon.S3" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Mapper\" />
     <Folder Include="Processors\StatusUpdater\" />
   </ItemGroup>
   <ItemGroup>
