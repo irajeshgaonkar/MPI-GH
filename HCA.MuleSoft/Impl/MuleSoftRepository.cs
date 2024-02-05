@@ -4,6 +4,7 @@ using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using HCA.Models.Response;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
@@ -60,8 +61,15 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request)
         => await Execute<DemoGraphicSearchResponse>(MuleSoftUrls.DemographicSearch, request);
 
+    ///<inheritdoc />
+    public async Task<DOH_PostIdentityResponse> DOH_DemographicSearch(PostIdentityRequest request)
+        => await Execute<DOH_PostIdentityResponse>(MuleSoftUrls.DemographicSearch, request);
+
     public async Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request)
        => await Execute<DemoGraphicQueryResponse>(MuleSoftUrls.DemographicQuery, request);
+
+    public async Task<DOH_PostIdentityResponse> DOH_DemographicQuery(PostIdentityRequest request)
+      => await Execute<DOH_PostIdentityResponse>(MuleSoftUrls.DemographicQuery, request);
 
     ///<inheritdoc />
     public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request)

@@ -288,7 +288,7 @@ namespace HCA.Api.Controllers
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
-            var searchResult = await _clientIdentityService.DemographicQuery(filter.content.identity, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
@@ -297,7 +297,6 @@ namespace HCA.Api.Controllers
         /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
-        /// <param name="pagNumber"></param>
         /// <param name="recordsPerPage"></param>
         /// <param name="processingOptions"></param>
         /// <returns></returns>
@@ -310,7 +309,7 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicQueryRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var searchResult = await _clientIdentityService.DemographicSearch(filter.content.identity, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var searchResult = await _clientIdentityService.DOH_DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }

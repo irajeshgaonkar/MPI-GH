@@ -11,6 +11,7 @@ using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
+using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Newtonsoft.Json;
@@ -278,6 +279,50 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
+    public async Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var userRequestEntity = CreateUserRequest(filter, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEDemographicSearch, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DOH_DemographicSearch(userRequestEntity, filter);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions) //,string responseIdentityFormatNames = "DEFAULT")
+    {
+        var trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var userRequestEntity = CreateUserRequest(filter, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDemographicQuery, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DOH_DemographicQuery(userRequestEntity, filter);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+            throw;
+        }
+    }
+
     private async Task<PostIdentityResponseContent?> PostIdentities(UserRequestEntity userRequestEntity, IEnumerable<ClientIdentityRequest> identities)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
@@ -330,6 +375,19 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
+    private async Task<dynamic?> DOH_DemographicSearch(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var demographicSearhRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = filter.content
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response;
+    }
+
     private async Task<dynamic?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
@@ -339,6 +397,19 @@ public class ClientIdentityService : IClientIdentityService
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response;
+    }
+
+    private async Task<dynamic?> DOH_DemographicQuery(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var demographicSearhRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = filter.content
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }

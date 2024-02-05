@@ -2,6 +2,7 @@
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.Request;
+using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
@@ -24,4 +25,7 @@ public interface IClientIdentityService
     Task<dynamic?> DemographicSearch(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<dynamic?> DemographicQuery(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+    Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+
+    Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 }

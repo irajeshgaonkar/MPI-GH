@@ -67,10 +67,24 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         return new PostIdentityRequest(request.TrackingId, content);
     }
 
+    public PostIdentityRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request)
+    {
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.identity);
+        postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.responseIdentityFormatNames;
+        return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
+    }
+
     public PostIdentityRequest BuildDemographicQueryRequest(DemographicQueryClientIdentityRequest request)
     {
         var content = BuildPostIdentityContent(request);
         return new PostIdentityRequest(request.TrackingId, content);
+    }
+
+    public PostIdentityRequest BuildDOH_DemographicQueryRequest(DOH_DemographicQueryClientIdentityRequest request)
+    {
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.identity);
+        postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.responseIdentityFormatNames;
+        return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
     }
 
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)

@@ -21,7 +21,7 @@ namespace HCA.Models.Request.DOH
     /// </summary>
     public class Content
     {
-        public List<string> responseIdentityFormatNames { get; set; }
+        public string[] responseIdentityFormatNames { get; set; }
         public Identity identity { get; set; }
     }
     

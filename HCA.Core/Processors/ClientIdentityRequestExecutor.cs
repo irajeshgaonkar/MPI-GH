@@ -53,7 +53,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEUnMerge] = UnMergeIdentities,
             [ApiCallType.VEDelete] = DeleteIdentity,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
-            [ApiCallType.VEDemographicQuery] = DemographicQuery
+            [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
+            [ApiCallType.VEDemographicQuery] = DemographicSearch,
+            [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery
         };
 
         return requestExecuters;
@@ -352,6 +354,38 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
     }
 
+    private async Task<BaseResponse> DOH_DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            await UpdateDemographicSearchNotification(null, null);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(null, null);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(null, null);
+            throw;
+        }
+    }
     private async Task<BaseResponse> DemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var demographicSearchClientIdentityRequest = Cast<DemographicQueryClientIdentityRequest>(request);
@@ -361,6 +395,39 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         try
         {
             var response = await _muleSoftRequestExecuter.Execute<DemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_DemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_DemographicQueryClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
             //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
             notificationsUpdated = true;
 

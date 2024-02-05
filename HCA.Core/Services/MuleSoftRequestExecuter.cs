@@ -93,7 +93,9 @@ namespace HCA.Core.Services
                 [ ApiCallType.VEMerge ] = MergeIdentities,
                 [ ApiCallType.VEUnMerge ] = UnMergeIdentities,
                 [ ApiCallType.VEDemographicSearch ] = DemographicSearch,
+                [ ApiCallType.DOH_VEDemographicSearch ] = DOH_DemographicSearch,
                 [ApiCallType.VEDemographicQuery] = DemographicQuery,
+                [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
                 [ApiCallType.VEDelete] = DeleteIdentity
             };
 
@@ -181,12 +183,32 @@ namespace HCA.Core.Services
             return response;
         }
 
+        private async Task<BaseResponse> DOH_DemographicSearch(BaseRequest request)
+        {
+            var searchRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.DOH_DemographicSearch(muleSoftRequest);
+            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
         private async Task<BaseResponse> DemographicQuery(BaseRequest request)
         {
             var searchRequest = Cast<DemographicQueryClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDemographicQueryRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DemographicQuery(muleSoftRequest);
             var response = CreateResponse<DemographicQueryClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_DemographicQuery(BaseRequest request)
+        {
+            var searchRequest = Cast<DOH_DemographicQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicQueryRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.DOH_DemographicQuery(muleSoftRequest);
+            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

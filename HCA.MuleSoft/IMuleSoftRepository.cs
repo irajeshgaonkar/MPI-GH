@@ -1,5 +1,6 @@
 ﻿using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using HCA.Models.Response;
 
 namespace HCA.MuleSoft;
 
@@ -16,12 +17,16 @@ public interface IMuleSoftRepository
     /// <returns>demographc serach response <see cref="DemoGraphicSearchResponse"/></returns>
     Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
+    Task<DOH_PostIdentityResponse> DOH_DemographicSearch(PostIdentityRequest request);
+
     /// <summary>
     /// MuleSoft demographic search api
     /// </summary>
     /// <param name="request">Demograph search request <see cref="PostIdentityRequest"/></param>
     /// <returns>demographc serach response <see cref="DemoGraphicQueryResponse"/></returns>
     Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request);
+
+    Task<DOH_PostIdentityResponse> DOH_DemographicQuery(PostIdentityRequest request);
 
     /// <summary>
     /// MuleSoft link identities api call
