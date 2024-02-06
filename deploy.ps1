@@ -1,5 +1,13 @@
 # deploy.ps1
 <#
+
+Foolproof steps!
+1. Verify branch, code, access tokens in appsettings.json
+2. Check aws CLI access (necessary for upload step)
+3. run .\deploy.ps1 [dev|test|prod]
+4. The script Builds, zips, deploys
+5. If your aws CLI isn't set up correctly, can manually go to [codeDirectory]mpi_api\Release - .zips will be there and can be manually uploaded
+
 Note: Your User\.aws\credentials file must have a functioning profile for the target environment:
 [MPI-Dev]
 [MPI-Test]
@@ -59,6 +67,8 @@ foreach ($project in $projectsToLambdas.Keys) {
     Write-Verbose "Zipped $project to $zipName"
 }
 
+# TODO check aws creds and run HCA_AWS_
+
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
     Write-Verbose "Uploading $lambda to ${region}:$Environment"
@@ -66,7 +76,7 @@ foreach ($project in $projectsToLambdas.Keys) {
     $zipName = "Release\$lambda.zip"
     aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish --profile $awsProfile >".\Release\upload_$lambda.log"
     if ( $?) {
-        Write-Output "!! $lambda Upload successful !!"    
+        Write-Output "!! $lambda Upload successful to $Environment !!"    
     }
     else {
         Write-Output "Upload failed"
