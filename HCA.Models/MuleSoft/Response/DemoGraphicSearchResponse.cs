@@ -31,6 +31,9 @@ public class DemoGraphicQueryResponse : MuleSoftResponse
     public DemographicQueryResponseContent Content { get; set; }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public class DOH_DemoGraphicQueryResponse : MuleSoftResponse
 {
     /// <summary>

@@ -8,10 +8,18 @@ using System.Threading.Tasks;
 
 namespace HCA.Models.Request.DOH
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class DOH_DemographicQueryRequest
     {
-        public int  trackingid { get; set; }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        public int trackingid { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public Content content { get; set; }
 
     }
@@ -21,9 +29,13 @@ namespace HCA.Models.Request.DOH
     /// </summary>
     public class Content
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public string[] responseIdentityFormatNames { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public Identity identity { get; set; }
     }
-    
-  
 }

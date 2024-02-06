@@ -349,12 +349,12 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPut(" DOH_link")]
+        [HttpPut("DOH-link")]
         public async Task<IActionResult> DOH_Link([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.LinkIdentities(value.content.LinkingSources, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var result = await _clientIdentityService.DOH_LinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (null == result) return BadRequest("Invalid Input");
             return Ok(result);
         }
@@ -372,12 +372,12 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPut("DOH_unlink")]
+        [HttpPut("DOH-unlink")]
         public async Task<IActionResult> DOH_UnLink([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.UnLinkIdentities(value.content.unLinkingSources, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var result = await _clientIdentityService.DOH_UnLinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
@@ -395,12 +395,12 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPut("DOH_merge")]
+        [HttpPut("DOH-merge")]
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.MergeIdentities(value.content.MergingSources, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var result = await _clientIdentityService.DOH_MergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
@@ -418,16 +418,18 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPut("DOH_unmerge")]
+        [HttpPut("DOH-unmerge")]
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.UnMergeIdentities(value.content.UnMergingSources, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            var result = await _clientIdentityService.DOH_UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
-                #endregion
+
+
+        #endregion
     }
 
 

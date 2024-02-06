@@ -146,7 +146,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var sourceIdentity = await _clientIdentityRepository.GetBySource(linkingSources.Source.Name, linkingSources.Source.Id);
 
         try
-        {
+            {
             if (null == linkToIdentity)
                 throw new HcaBadRequestException("link source not found");
 

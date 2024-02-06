@@ -4,47 +4,35 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using ThirdParty.Json.LitJson;
 
 namespace HCA.Models.Request.DOH
 {
+    //public DOH_LinkingSources(Content _content, int trackingID)
+    //{
+    //    content = _content;
+    //    TrackingID = trackingID;
+    //}
+
+    // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
+   
     /// <summary>
     /// 
     /// </summary>
     public class DOH_LinkingSources
     {
         /// <summary>
-        /// <see cref="LinkingSources"/>
+        /// 
         /// </summary>
-        /// <param name="_content">Contect has an enclosed LinkingSources</param>
-        /// <param name="trackingID">Tracking ID</param>
-        public DOH_LinkingSources(Content _content, int trackingID)
-        {
-            content = _content;
-            TrackingID = trackingID;
-        }
+        public string trackingId { get; set; }
 
-        /// <summary>
-        /// Content
-        /// </summary>
-        public Content content { get; set; }
-
-
-        /// <summary>
-        /// Source to be linke
-        /// </summary>
-        public int TrackingID { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public class Content
-        {
-            /// <summary>
-            /// 
-            /// </summary>
-            public LinkingSources LinkingSources { get; set; }
-
-        }
-
+        //[JsonPropertyName("content")]
+        public LinkingSources  content { get; set; }
     }
-}
+    }
