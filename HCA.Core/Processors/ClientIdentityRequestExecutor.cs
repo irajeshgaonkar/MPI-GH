@@ -390,7 +390,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content.UnlinkedId);
                 return response;
             }
-
             var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
             throw new HcaMuleSoftException(errorMessage);
         }
@@ -418,12 +417,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             var response = await _muleSoftRequestExecuter.Execute<DOH_MergeClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateMergeIdentitiesNotification(null, null, toRetireIdentity.MpiLinkId);
 
-            if (null != response && response.Success && null != response.Content?.LinkId)
+            if (null != response && response.Success)
             {
-                _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, response.Content.LinkId);
+                MergeIdentitiesResponseContent content = JsonConvert.DeserializeObject<MergeIdentitiesResponseContent>(response.Content.ToString());
+                _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, content.LinkId);
                 return response;
             }
-
             var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
             throw new HcaMuleSoftException(errorMessage);
         }
@@ -453,9 +452,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity.MpiLinkId);
             notificationsUpdated = true;
 
-            if (null != response && response.Success && null != response.Content?.UnmergedId)
+            if (null != response && response.Success)
             {
-                _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, response.Content.UnmergedId);
+                UnMergeIdentitiesResponseContent content = JsonConvert.DeserializeObject<UnMergeIdentitiesResponseContent>(response.Content.ToString());
+                _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, content.UnmergedId);
                 return response;
             }
 

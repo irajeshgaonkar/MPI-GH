@@ -24,29 +24,29 @@ public class NewClientIdentityMapper
         //if (identity == null)
           //  throw Exception(invalid records");
         //var request = identity.;
-        bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.First(), culture, DateTimeStyles.None, out var dob);
+        bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.FirstOrDefault(), culture, DateTimeStyles.None, out var dob);
         //DateTime.TryParse(Identity.SourceSystemUpdated, culture, DateTimeStyles.None, out var sourceSystemUpdated);
         //bool.TryParse(request.ProtectedPopulationFlag, out var protectedPopulationFlag);
         result.MpiLinkId = linkId;
-        result.SourceSystemName = identity.Sources.First().Name;
-        result.SourceSystemId = identity.Sources.First().Id;
+        result.SourceSystemName = identity.Sources.FirstOrDefault().Name;
+        result.SourceSystemId = identity.Sources.FirstOrDefault().Id;
         result.SourceSystemAgency = "";
-        result.FirstName = identity.Names.First().First;
-        result.MiddleName = identity.Names.First().Middle;
-        result.LastName = identity.Names.First().Last;
-        result.NameSuffix = identity.Names.First().Suffix;
-        result.Ssn = identity.Ssns.First();
+        result.FirstName = identity.Names.FirstOrDefault().First;
+        result.MiddleName = identity.Names.FirstOrDefault().Middle;
+        result.LastName = identity.Names.FirstOrDefault().Last;
+        result.NameSuffix = identity.Names.FirstOrDefault().Suffix;
+        result.Ssn = identity.Ssns.FirstOrDefault();
         result.Dob = valiDob ? dob : null;
-        result.Gender = identity.Genders.First();
+        result.Gender = identity.Genders.FirstOrDefault();
         result.ProtectedPopulationFlag = false;
         result.ProtectedPopulationType = "";
         result.MpiUpdated = mpiUpdated;
         result.SourceSystemUpdated = DateTime.Now;
         result.IsActive = true;
         result.IsDelete = false;
-        result.CreatedBy = "Batch File";
+        result.CreatedBy = "DOH";
         result.CreatedDate = DateTime.Now;
-        result.UpdatedBy = "Batch File";
+        result.UpdatedBy = "DOH";
         result.UpdatedDate = DateTime.Now;
 
         // Deserialize the JSON string into a JObject 
@@ -54,14 +54,17 @@ public class NewClientIdentityMapper
         string customCreateDatesJson = string.Empty;
         // Find the index of the start and end of "custom.CreateDates" array
         int startIndex = strIdentities.IndexOf("\"custom.CreateDates\":");
-        int endIndex = strIdentities.IndexOf("]", startIndex);
-
-        // Extract the substring containing "custom.CreateDates" array
-        if (startIndex > 0)
+        if (startIndex != -1)
         {
-            customCreateDatesJson = strIdentities.Substring(startIndex, endIndex - startIndex + 1);
-        }
+            int endIndex = strIdentities.IndexOf("]", startIndex);
 
+            // Extract the substring containing "custom.CreateDates" array
+            if (startIndex > 0)
+            {
+                customCreateDatesJson = strIdentities.Substring(startIndex, endIndex - startIndex + 1);
+            }
+        }
+        
         result.CustomJson = customCreateDatesJson;
 
         //var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
@@ -98,13 +101,13 @@ public class NewClientIdentityMapper
             foreach (var communicationGroup in identity.PhoneNumbers)
             {
                 var communication = new ClientIdentityCommunicationEntity();
-                //var communicationRequest = communicationGroup.First();
+                //var communicationRequest = communicationGroup.FirstOrDefault();
                 communication.MpiLinkId = result.MpiLinkId;
                 communication.SourceSystemName = result.SourceSystemName;
                 communication.SourceSystemId = result.SourceSystemId;
                 communication.PhoneType = "";
                 communication.EmailType = "";
-                communication.EmailAddress = identity.Emails.First() ?? "";
+                communication.EmailAddress = identity.Emails.FirstOrDefault() ?? "";
                 communication.PhoneNumber = communicationGroup.Number ?? "";
                 communication.SourceSystemUpdated = result.SourceSystemUpdated;
                 communication.IsActive = true;
