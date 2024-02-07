@@ -75,9 +75,15 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request)
         => await Execute<LinkIdentitiesResponse>(MuleSoftUrls.LinkIdntities, request);
 
+    public async Task<DOH_LinkIdentitiesResponse> DOH_LinkIdentities(LinkIdentitiesRequest request)
+       => await Execute<DOH_LinkIdentitiesResponse>(MuleSoftUrls.LinkIdntities, request);
+
     ///<inheritdoc />
     public async Task<UnLinkIdentitiesResponse> UnLinkIdentities(UnLinkIdentitiesRequest request)
         => await Execute<UnLinkIdentitiesResponse>(MuleSoftUrls.UnLinkIdentities, request);
+
+    public async Task<DOH_UnLinkIdentitiesResponse> DOH_UnLinkIdentities(UnLinkIdentitiesRequest request)
+       => await Execute<DOH_UnLinkIdentitiesResponse>(MuleSoftUrls.UnLinkIdentities, request);
 
     public async Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request)
         => await Execute<DeleteIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
@@ -86,9 +92,16 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest request)
         => await Execute<MergeIdentitiesResponse>(MuleSoftUrls.MergeIdentities, request);
 
+    public async Task<DOH_MergeIdentitiesResponse> DOH_MergeIdentities(MergeIdentitiesRequest request)
+       => await Execute<DOH_MergeIdentitiesResponse>(MuleSoftUrls.MergeIdentities, request);
+
     ///<inheritdoc />
     public async Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest request)
         => await Execute<UnMergeIdentitiesResponse>(MuleSoftUrls.UnMergeIdentitie, request);
+
+
+    public async Task<DOH_UnMergeIdentitiesResponse> DOH_UnMergeIdentities(UnMergeIdentitiesRequest request)
+       => await Execute<DOH_UnMergeIdentitiesResponse>(MuleSoftUrls.UnMergeIdentitie, request);
 
     ///<inheritdoc />
     public async Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request)

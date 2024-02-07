@@ -11,3 +11,12 @@ public class MergeIdentitiesResponse : MuleSoftResponse
     public MergeIdentitiesResponseContent Content { get; set; }
 }
 
+
+
+public class DOH_MergeIdentitiesResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// Merge identities response content <see cref="MergeIdentitiesResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}

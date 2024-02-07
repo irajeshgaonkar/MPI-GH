@@ -12,3 +12,12 @@ public class UnLinkClientIdentityRequest : BaseRequest
     public UnLinkingSources Content { get; set; }
 }
 
+public class DOH_UnLinkClientIdentityRequest : BaseRequest
+{
+    public DOH_UnLinkClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEUnLink, trackingId)
+    {
+    }
+
+    public UnLinkingSources Content { get; set; }
+}
+

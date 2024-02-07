@@ -5,6 +5,7 @@ using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
+using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using Newtonsoft.Json;
@@ -51,6 +52,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEUnLink] = UnLinkIdentities,
             [ApiCallType.VEMerge] = MergeIdentities,
             [ApiCallType.VEUnMerge] = UnMergeIdentities,
+            [ApiCallType.DOH_VELink] = DOH_LinkIdentities,
+            [ApiCallType.DOH_VEUnLink] = DOH_UnLinkIdentities,
+            [ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
+            [ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
             [ApiCallType.VEDelete] = DeleteIdentity,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
             [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
@@ -317,6 +322,155 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         {
             if (!notificationsUpdated)
                 await UpdateUnMergeIdentitiesNotification(unMergeClientIdentityRequest, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_LinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var linkIdentitiesRequest = Cast<DOH_LinkClientIdentityRequest>(request);
+        var linkingSources = linkIdentitiesRequest.Content;
+        var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(linkingSources.Source.Name, linkingSources.Source.Id);
+
+        try
+        {
+            if (null == linkToIdentity)
+                throw new HcaBadRequestException("link source not found");
+
+            if (null == sourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
+                throw new HcaBadRequestException("sources are already linked");
+
+            var response = await _muleSoftRequestExecuter.Execute<DOH_LinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(null, null, sourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success )
+            {
+                LinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<LinkIdentitiesResponseContent>(response.Content.ToString());
+
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content!.LinkId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(null, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_UnLinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unLinkClientIdentityRequest = Cast<DOH_UnLinkClientIdentityRequest>(request);
+        var unLinkingSources = unLinkClientIdentityRequest.Content;
+        var unlinkFromIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.UnlinkFromSource.Name, unLinkingSources.UnlinkFromSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.Source.Name, unLinkingSources.Source.Id);
+
+        try
+        {
+            if (null == unlinkFromIdentity)
+                throw new HcaBadRequestException("Un link source not found");
+
+            if (null == sourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            var response = await _muleSoftRequestExecuter.Execute<DOH_UnLinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnLinkIdentitiesNotification(null, null, sourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success )
+            {
+                UnLinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<UnLinkIdentitiesResponseContent>(response.Content.ToString());
+
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content.UnlinkedId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateUnLinkIdentitiesNotification(null, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_MergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var mergeClientIdentityRequest = Cast<DOH_MergeClientIdentityRequest>(request);
+        var mergingSources = mergeClientIdentityRequest.Content;
+        var toSurviveIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToSurviveSource.Name, mergingSources.ToSurviveSource.Id);
+        var toRetireIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToRetireSource.Name, mergingSources.ToRetireSource.Id);
+
+        try
+        {
+            if (null == toSurviveIdentity)
+                throw new HcaBadRequestException("To servive source not found");
+
+            if (null == toRetireIdentity)
+                throw new HcaBadRequestException("To retire source not found");
+            var response = await _muleSoftRequestExecuter.Execute<DOH_MergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateMergeIdentitiesNotification(null, null, toRetireIdentity.MpiLinkId);
+
+            if (null != response && response.Success && null != response.Content?.LinkId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, response.Content.LinkId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaMuleSoftException e)
+        {
+            await UpdateMergeIdentitiesNotification(null, null, toRetireIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_UnMergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unMergeClientIdentityRequest = Cast<DOH_UnMergeClientIdentityRequest>(request);
+        var unMergingSources = unMergeClientIdentityRequest.Content;
+        var unmergeFromIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeFromSource.Name, unMergingSources.UnmergeFromSource.Id);
+        var unmergeSourceIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeSource.Name, unMergingSources.UnmergeSource.Id);
+        var notificationsUpdated = false;
+
+        try
+        {
+            if (null == unmergeFromIdentity)
+                throw new HcaBadRequestException("Un merge from source not found");
+
+            if (null == unmergeSourceIdentity)
+                throw new HcaBadRequestException("Un merge source not found");
+            var response = await _muleSoftRequestExecuter.Execute<DOH_UnMergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity.MpiLinkId);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content?.UnmergedId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, response.Content.UnmergedId);
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity?.MpiLinkId ?? "");
             throw;
         }
     }

@@ -36,5 +36,17 @@ public enum ApiCallType
     VEDemographicQuery,
 
 [StringValue("VE Demographic Query")]
-    DOH_VEDemographicQuery
+    DOH_VEDemographicQuery,
+
+    [StringValue("VE Link")]
+    DOH_VELink,
+
+    [StringValue("VE Un Link")]
+    DOH_VEUnLink,
+
+    [StringValue("VE Merge")]
+    DOH_VEMerge,
+
+    [StringValue("VE Un Merge")]
+    DOH_VEUnMerge,
 }

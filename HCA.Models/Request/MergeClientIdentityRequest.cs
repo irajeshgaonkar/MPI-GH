@@ -12,3 +12,13 @@ public class MergeClientIdentityRequest : BaseRequest
     public MergingSources Content { get; set; }
 }
 
+
+public class DOH_MergeClientIdentityRequest : BaseRequest
+{
+    public DOH_MergeClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEMerge, trackingId)
+    {
+    }
+
+    public MergingSources Content { get; set; }
+}
+

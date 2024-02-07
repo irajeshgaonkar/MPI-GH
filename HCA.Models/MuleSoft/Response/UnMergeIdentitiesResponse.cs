@@ -11,5 +11,13 @@ public class UnMergeIdentitiesResponse : MuleSoftResponse
     public UnMergeIdentitiesResponseContent Content { get; set; }
 }
 
+public class DOH_UnMergeIdentitiesResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// Un merged identities response content <see cref="UnMergeIdentitiesResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}
+
 
 

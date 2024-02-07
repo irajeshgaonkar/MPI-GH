@@ -12,3 +12,13 @@ public class UnMergeClientIdentityRequest : BaseRequest
     public UnMergingSources Content { get; set; }
 }
 
+
+public class DOH_UnMergeClientIdentityRequest : BaseRequest
+{
+    public DOH_UnMergeClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEUnMerge, trackingId)
+    {
+    }
+
+    public UnMergingSources Content { get; set; }
+}
+

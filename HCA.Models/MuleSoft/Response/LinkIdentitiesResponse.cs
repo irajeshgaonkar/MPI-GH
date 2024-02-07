@@ -11,3 +11,11 @@ public class LinkIdentitiesResponse : MuleSoftResponse
     /// </summary>
     public LinkIdentitiesResponseContent Content { get; set; }
 }
+
+public class DOH_LinkIdentitiesResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// Link Identities response content <see cref="LinkIdentitiesResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}

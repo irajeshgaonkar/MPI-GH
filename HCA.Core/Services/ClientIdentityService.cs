@@ -325,19 +325,19 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_LinkIdentities(DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
-        var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.VELink, currentUser, trackingId, notificationOptions);
+        var trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
+        var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.DOH_VELink, currentUser, trackingId, notificationOptions);
 
         try
         {
             if (processType == ProcessType.Async)
             {
-                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
+                await PublishMessageToSqs(ApiCallType.DOH_VELink, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
-            return await LinkIdentities(userRequestEntity, linkingSources.content);
+            return await DOH_LinkIdentities(userRequestEntity, linkingSources.content);
         }
         catch (HcaBadRequestException e)
         {
@@ -353,19 +353,19 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnLinkIdentities(DOH_UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId(unLinkingSources.content.UnlinkFromSource)}";
-        var userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.VEUnLink, currentUser, trackingId, notificationOptions);
+        var trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId(unLinkingSources.content.UnlinkFromSource)}";
+        var userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.DOH_VEUnLink, currentUser, trackingId, notificationOptions);
 
         try
         {
             if (processType == ProcessType.Async)
             {
-                await PublishMessageToSqs(ApiCallType.VEUnLink, userRequestEntity);
+                await PublishMessageToSqs(ApiCallType.DOH_VEUnLink, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, unLinkingSources.UnlinkFromSource, unLinkingSources.Source);
-            return await UnLinkIdentities(userRequestEntity, unLinkingSources.content);
+            return await DOH_UnLinkIdentities(userRequestEntity, unLinkingSources.content);
         }
         catch (HcaBadRequestException e)
         {
@@ -381,19 +381,19 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities(DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
-        var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.VEMerge, currentUser, trackingId, notificationOptions);
+        var trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
+        var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
 
         try
         {
             if (processType == ProcessType.Async)
             {
-                await PublishMessageToSqs(ApiCallType.VEMerge, userRequestEntity);
+                await PublishMessageToSqs(ApiCallType.DOH_VEMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-            return await MergeIdentities(userRequestEntity, mergingSources.content);
+            return await DOH_MergeIdentities(userRequestEntity, mergingSources.content);
         }
         catch (HcaBadRequestException e)
         {
@@ -409,19 +409,19 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities(DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
-        var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.VEUnMerge, currentUser, trackingId, notificationOptions);
+        var trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
+        var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
 
         try
         {
             if (processType == ProcessType.Async)
             {
-                await PublishMessageToSqs(ApiCallType.VEUnMerge, userRequestEntity);
+                await PublishMessageToSqs(ApiCallType.DOH_VEUnMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
-            return await UnMergeIdentities(userRequestEntity, unMergingSources.content);
+            return await DOH_UnMergeIdentities(userRequestEntity, unMergingSources.content);
         }
         catch (HcaBadRequestException e)
         {
@@ -565,56 +565,56 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<LinkIdentitiesResponseContent?> DOH_LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
+    private async Task<dynamic?> DOH_LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
-        var linkIdentityRequest = new LinkClientIdentityRequest(userRequestEntity.TrackingId)
+        var linkIdentityRequest = new DOH_LinkClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = linkingSources
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
-    private async Task<UnLinkIdentitiesResponseContent?> DOH_UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)
+    private async Task<dynamic?> DOH_UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
-        var unLinkClientIdentityRequest = new UnLinkClientIdentityRequest(userRequestEntity.TrackingId)
+        var unLinkClientIdentityRequest = new DOH_UnLinkClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = unLinkingSources
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
-    private async Task<MergeIdentitiesResponseContent?> DOH_MergeIdentities(UserRequestEntity userRequestEntity, MergingSources mergingSources)
+    private async Task<dynamic?> DOH_MergeIdentities(UserRequestEntity userRequestEntity, MergingSources mergingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        var mergeClientIdentityRequest = new MergeClientIdentityRequest(userRequestEntity.TrackingId)
+        var mergeClientIdentityRequest = new DOH_MergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = mergingSources
         };
-        var response = await _clientIdentityRequestExecutor.Execute<MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
-    private async Task<UnMergeIdentitiesResponseContent?> DOH_UnMergeIdentities(UserRequestEntity userRequestEntity, UnMergingSources unMergingSources)
+    private async Task<dynamic?> DOH_UnMergeIdentities(UserRequestEntity userRequestEntity, UnMergingSources unMergingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        var unMergeClientIdentityRequest = new UnMergeClientIdentityRequest(userRequestEntity.TrackingId)
+        var unMergeClientIdentityRequest = new DOH_UnMergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = unMergingSources
         };
-        var response = await _clientIdentityRequestExecutor.Execute<UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
     private async Task PublishMessageToSqs(ApiCallType apiCallType, UserRequestEntity userRequestEntity)
