@@ -60,7 +60,8 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
             [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
             [ApiCallType.VEDemographicQuery] = DemographicQuery,
-            [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery
+            [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
+            [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
         };
 
         return requestExecuters;
@@ -251,7 +252,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         var deleteClientIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
         var deleteSource = deleteClientIdentityRequest.Content;
-        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.Name, deleteSource.Id);
+        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.source.Name, deleteSource.source.Id);
 
         try
         {
@@ -471,6 +472,39 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         {
             if (!notificationsUpdated)
                 await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var deleteIdentitiesRequest = Cast<DOH_DeleteSourceIdentityRequest>(request);
+        var deletingSource = deleteIdentitiesRequest.Content;
+        //var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
+        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.source.Name, deletingSource.source.Id);
+
+        try
+        {
+            if (null == deleteSourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            var response = await _muleSoftRequestExecuter.Execute<DOH_DeleteSourceIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success)
+            {
+                DeleteIdentityResponseContent content = JsonConvert.DeserializeObject<DeleteIdentityResponseContent>(response.Content.ToString());
+
+                //_clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity?.MpiLinkId ?? "");
             throw;
         }
     }

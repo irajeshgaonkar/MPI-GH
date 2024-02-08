@@ -1,5 +1,6 @@
 ﻿using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using HCA.Models.Request;
 using HCA.Models.Response;
 
 namespace HCA.MuleSoft;
@@ -34,7 +35,10 @@ public interface IMuleSoftRepository
     /// <param name="request">Link identities request <see cref="LinkIdentitiesRequest"/></param>
     /// <returns>Link identities response <see cref="LinkIdentitiesResponse"/></returns>
     Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request);
+
     Task<DOH_LinkIdentitiesResponse> DOH_LinkIdentities(LinkIdentitiesRequest request);
+
+    Task<DOH_DeleteSourceIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request);
 
     /// <summary>
     /// MuleSoft un link identities api call

@@ -1,21 +1,16 @@
 ﻿using HCA.Models.MuleSoft;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace HCA.Models.Request.DOH
 {
-  
     /// <summary>
     /// 
     /// </summary>
-    public class DOH_LinkingSources
+    public class DOH_DeleteSourceIdentity
     {
         /// <summary>
         /// 
@@ -26,6 +21,16 @@ namespace HCA.Models.Request.DOH
         /// 
         /// </summary>
         //[JsonPropertyName("content")]
-        public LinkingSources  content { get; set; }
+        public ContentD content { get; set; }
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ContentD
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public Source source { get; set; }
     }
+}

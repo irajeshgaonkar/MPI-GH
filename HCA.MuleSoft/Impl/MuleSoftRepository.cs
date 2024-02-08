@@ -4,6 +4,7 @@ using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
+using HCA.Models.Request;
 using HCA.Models.Response;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -87,6 +88,9 @@ public class MuleSoftRepository : IMuleSoftRepository
 
     public async Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request)
         => await Execute<DeleteIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
+
+    public async Task<DOH_DeleteSourceIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request)
+      => await Execute<DOH_DeleteSourceIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
 
     ///<inheritdoc />
     public async Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest request)
@@ -184,4 +188,6 @@ public class MuleSoftRepository : IMuleSoftRepository
         var fullUrl = new Uri(_muleSoftOptions.BaseUrl);
         return new Uri(fullUrl, uri);
     }
+
+  
 }

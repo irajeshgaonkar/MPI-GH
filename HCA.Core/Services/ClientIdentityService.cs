@@ -435,6 +435,34 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
+    public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.content.source.GetTrackingId(deleteSourceIdentity.content.source)}";
+        var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
+                return trackingId;
+            }
+
+            //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
+            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
+
     private async Task<PostIdentityResponseContent?> PostIdentities(UserRequestEntity userRequestEntity, IEnumerable<ClientIdentityRequest> identities)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
@@ -600,6 +628,19 @@ public class ClientIdentityService : IClientIdentityService
             Content = mergingSources
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        return response;
+    }
+
+    private async Task<dynamic?> DOH_DeleteSourceIdentity(UserRequestEntity userRequestEntity, ContentD deleteSourceIdentity)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+
+        var deleteClientIdentityRequest = new DOH_DeleteSourceIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = deleteSourceIdentity
+        };
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteSourceIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }

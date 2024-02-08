@@ -100,7 +100,8 @@ namespace HCA.Core.Services
                 [ ApiCallType.DOH_VEDemographicSearch ] = DOH_DemographicSearch,
                 [ApiCallType.VEDemographicQuery] = DemographicQuery,
                 [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
-                [ApiCallType.VEDelete] = DeleteIdentity
+                [ApiCallType.VEDelete] = DeleteIdentity,
+                [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
             };
 
             return requestExecuters;
@@ -132,6 +133,16 @@ namespace HCA.Core.Services
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDeleteIdentityRequest(deleteIdentityRequest);
             var muleSoftResponse = await _muleSoftRepository.DeleteIdentity(muleSoftRequest);
             var response = CreateResponse<DeleteClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request)
+        {
+            var deleteIdentityRequest = Cast<DOH_DeleteSourceIdentityRequest>(request);
+            DeleteIdentyRequest muleSoftRequest = new DeleteIdentyRequest(deleteIdentityRequest.TrackingId, deleteIdentityRequest.Content);
+            var muleSoftResponse = await _muleSoftRepository.DOH_DeleteSourceIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_DeleteSourceIdentityResponse>(muleSoftResponse.Content);
             response.Content = muleSoftResponse.Content;
             return response;
         }

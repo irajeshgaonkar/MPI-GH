@@ -28,6 +28,8 @@ public interface IMuleSoftRequestBuilder
 
     DeleteIdentyRequest BuildDeleteIdentityRequest(DeleteClientIdentityRequest request);
 
+    DeleteIdentyRequest DOH_BuildDeleteIdentityRequest(DOH_DeleteSourceIdentityRequest request);
+
     /// <summary>
     /// Un Link identities request builder
     /// </summary>

@@ -49,4 +49,7 @@ public enum ApiCallType
 
     [StringValue("VE Un Merge")]
     DOH_VEUnMerge,
+    
+    [StringValue("VE Delete")]
+    DOH_VEDelete,
 }
