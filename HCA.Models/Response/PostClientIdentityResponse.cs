@@ -26,3 +26,11 @@ public class DeleteClientIdentityResponse : BaseResponse
     /// </summary>
     public DeleteIdentityResponseContent Content { get; set; }
 }
+
+public class DOH_DeleteClientIdentityResponse : BaseResponse
+{
+    /// <summary>
+    /// Post Identity response content <see cref="PostIdentityResponseContent"/>
+    /// </summary>
+    public DeleteIdentityResponseContent Content { get; set; }
+}

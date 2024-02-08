@@ -252,7 +252,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         var deleteClientIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
         var deleteSource = deleteClientIdentityRequest.Content;
-        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.source.Name, deleteSource.source.Id);
+        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.Name, deleteSource.Id);
 
         try
         {
@@ -480,7 +480,6 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         var deleteIdentitiesRequest = Cast<DOH_DeleteSourceIdentityRequest>(request);
         var deletingSource = deleteIdentitiesRequest.Content;
-        //var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
         var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.source.Name, deletingSource.source.Id);
 
         try
@@ -495,7 +494,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             {
                 DeleteIdentityResponseContent content = JsonConvert.DeserializeObject<DeleteIdentityResponseContent>(response.Content.ToString());
 
-                //_clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified);
+                _clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified.FirstOrDefault());
                 return response;
             }
 

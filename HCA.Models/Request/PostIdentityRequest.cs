@@ -22,6 +22,15 @@ public class DeleteClientIdentityRequest : BaseRequest
     public Source Content { get; set; }
 }
 
+public class DOH_DeleteClientIdentityRequest : BaseRequest
+{
+    public DOH_DeleteClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEDelete, trackingId)
+    {
+    }
+
+    public Source Content { get; set; }
+}
+
 public class DOH_PostClientIdentityRequest : BaseRequest
 {
     public DOH_PostClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEPost, trackingId)
