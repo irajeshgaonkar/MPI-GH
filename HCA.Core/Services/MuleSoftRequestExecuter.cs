@@ -254,15 +254,6 @@ namespace HCA.Core.Services
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicQueryRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DOH_DemographicQuery(muleSoftRequest);
             var response = CreateResponse<DOH_DemographicQueryClientIdentityResponse>(muleSoftResponse);
-            = new T
-            {
-                TrackingId = muleSoftResponse.TrackingId,
-                AuditId = muleSoftResponse.AuditId,
-                Success = muleSoftResponse.Success,
-                RetryableError = muleSoftResponse.RetryableError,
-                Message = muleSoftResponse.Message,
-                Errors = muleSoftResponse.Errors,
-            };
             response.Content = muleSoftResponse.Content;
             return response;
         }
