@@ -20,7 +20,6 @@ public class DOH_DemographicSearchClientIdentityResponse : BaseResponse
     /// </summary>
     public dynamic Content { get; set; }
 
-    public IList<Identity> Result { get; set; }
 }
 
 
