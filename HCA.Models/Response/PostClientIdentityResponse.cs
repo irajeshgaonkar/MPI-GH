@@ -15,7 +15,7 @@ public class DOH_PostClientIdentityResponse : BaseResponse
     /// <summary>
     /// Post Identity response content <see cref="PostIdentityResponseContent"/>
     /// </summary>
-    public DOH_PostIdentityResponseContent Content { get; set; }
+    public dynamic Content { get; set; }
 }
 
 

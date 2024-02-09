@@ -22,3 +22,11 @@ public class DeleteIdentityResponse : MuleSoftResponse
 
 
 
+public class DOH_DeleteIdentityResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// Post Identity response content <see cref="DeleteIdentityResponse"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}
+

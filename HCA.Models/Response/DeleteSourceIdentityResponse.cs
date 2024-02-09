@@ -14,14 +14,5 @@ namespace HCA.Models.Response
         public Source Content { get; set; }
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public class DOH_DeleteSourceIdentityResponse : BaseResponse
-    {
-        /// <summary>
-        /// Delete Identities response content 
-        /// </summary>
-        public dynamic Content { get; set; }
-    }
+   
 }

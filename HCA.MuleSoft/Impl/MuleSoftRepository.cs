@@ -89,8 +89,8 @@ public class MuleSoftRepository : IMuleSoftRepository
     public async Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request)
         => await Execute<DeleteIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
 
-    public async Task<DOH_DeleteSourceIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request)
-      => await Execute<DOH_DeleteSourceIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
+    public async Task<DOH_DeleteIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request)
+      => await Execute<DOH_DeleteIdentityResponse>(MuleSoftUrls.DeleteIdentity, request);
 
     ///<inheritdoc />
     public async Task<MergeIdentitiesResponse> MergeIdentities(MergeIdentitiesRequest request)

@@ -24,19 +24,28 @@ public class NewClientIdentityMapper
         //if (identity == null)
           //  throw Exception(invalid records");
         //var request = identity.;
-        bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.FirstOrDefault(), culture, DateTimeStyles.None, out var dob);
         //DateTime.TryParse(Identity.SourceSystemUpdated, culture, DateTimeStyles.None, out var sourceSystemUpdated);
         //bool.TryParse(request.ProtectedPopulationFlag, out var protectedPopulationFlag);
         result.MpiLinkId = linkId;
         result.SourceSystemName = identity.Sources.FirstOrDefault().Name;
         result.SourceSystemId = identity.Sources.FirstOrDefault().Id;
         result.SourceSystemAgency = "";
-        result.FirstName = identity.Names.FirstOrDefault().First;
-        result.MiddleName = identity.Names.FirstOrDefault().Middle;
-        result.LastName = identity.Names.FirstOrDefault().Last;
-        result.NameSuffix = identity.Names.FirstOrDefault().Suffix;
-        result.Ssn = identity.Ssns.FirstOrDefault();
-        result.Dob = valiDob ? dob : null;
+        if (identity.Names.Count > 0)
+        {
+            result.FirstName = identity.Names.FirstOrDefault().First;
+            result.MiddleName = identity.Names.FirstOrDefault().Middle;
+            result.LastName = identity.Names.FirstOrDefault().Last;
+            result.NameSuffix = identity.Names.FirstOrDefault().Suffix;
+        }
+        if (identity.Ssns.Count > 0)
+                 result.Ssn = identity.Ssns.FirstOrDefault();
+
+        if (identity.DatesOfBirth.Count > 0)
+        {
+        bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.FirstOrDefault(), culture, DateTimeStyles.None, out var dob);
+            result.Dob = valiDob ? dob : null;
+        }
+        if (identity.Genders.Count > 0)
         result.Gender = identity.Genders.FirstOrDefault();
         result.ProtectedPopulationFlag = false;
         result.ProtectedPopulationType = "";

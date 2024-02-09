@@ -524,7 +524,8 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content);
+           
+            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content.source);
         }
         catch (HcaBadRequestException e)
         {
@@ -551,7 +552,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<DOH_PostIdentityResponseContent?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
+    private async Task<dynamic?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
@@ -561,7 +562,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-        return response?.Content;
+        return response;
     }
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
@@ -707,15 +708,15 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private async Task<dynamic?> DOH_DeleteSourceIdentity(UserRequestEntity userRequestEntity, ContentD deleteSourceIdentity)
+    private async Task<dynamic?> DOH_DeleteSourceIdentity(UserRequestEntity userRequestEntity, Source deleteSourceIdentity)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        var deleteClientIdentityRequest = new DOH_DeleteSourceIdentityRequest(userRequestEntity.TrackingId)
+        var deleteClientIdentityRequest = new DOH_DeleteClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = deleteSourceIdentity
         };
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteSourceIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }

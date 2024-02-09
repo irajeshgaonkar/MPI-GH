@@ -9,7 +9,6 @@ using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace HCA.Core.Services;
 
@@ -126,10 +125,12 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
             await UpdatePostIdentitiesNotification(null, null);
 
-            if (null != response && response.Success && null != response.Content?.LinkId)
+            if (null != response && response.Success)
             {
+                PostIdentityResponseContent content = JsonConvert.DeserializeObject<PostIdentityResponseContent>(response.Content.ToString());
+
                 //Can we skip this
-                var entity = NewClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest);
+                var entity = NewClientIdentityMapper.MapFromRequestToEntity(content.LinkId, DateTime.Now, postIdentityRequest);
                 await _clientIdentityRepository.Upsert(entity);
                 return response;
             }
@@ -286,6 +287,40 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
     }
 
+    private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        //DOH_DeleteClientIdentityRequest deleteRequest = new DeleteIdentyRequest(request.TrackingId,);
+
+        var deleteIdentitiesRequest = Cast<DOH_DeleteClientIdentityRequest>(request);
+        var deletingSource = deleteIdentitiesRequest.Content;
+        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.Name, deletingSource.Id);
+
+        try
+        {
+            if (null == deleteSourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            var response = await _muleSoftRequestExecuter.Execute<DOH_DeleteClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success)
+            {
+                DeleteIdentityResponseContent content = JsonConvert.DeserializeObject<DeleteIdentityResponseContent>(response.Content.ToString());
+
+                _clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified.FirstOrDefault());
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            throw new HcaMuleSoftException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
     private async Task<BaseResponse> UnMergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var unMergeClientIdentityRequest = Cast<UnMergeClientIdentityRequest>(request);
@@ -343,7 +378,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 throw new HcaBadRequestException("source not found");
 
             if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
-                throw new HcaBadRequestException("sources are already linked");
+               throw new HcaBadRequestException("sources are already linked");
 
             var response = await _muleSoftRequestExecuter.Execute<DOH_LinkClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateLinkIdentitiesNotification(null, null, sourceIdentity.MpiLinkId);
@@ -476,39 +511,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
     }
 
-    private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
-    {
-        var deleteIdentitiesRequest = Cast<DOH_DeleteSourceIdentityRequest>(request);
-        var deletingSource = deleteIdentitiesRequest.Content;
-        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.source.Name, deletingSource.source.Id);
-
-        try
-        {
-            if (null == deleteSourceIdentity)
-                throw new HcaBadRequestException("source not found");
-
-            var response = await _muleSoftRequestExecuter.Execute<DOH_DeleteSourceIdentityResponse>(request, requestStatusUpdater);
-            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity.MpiLinkId);
-
-            if (null != response && response.Success)
-            {
-                DeleteIdentityResponseContent content = JsonConvert.DeserializeObject<DeleteIdentityResponseContent>(response.Content.ToString());
-
-                _clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified.FirstOrDefault());
-                return response;
-            }
-
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
-        }
-        catch (HcaBadRequestException e)
-        {
-            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity?.MpiLinkId ?? "");
-            throw;
-        }
-    }
-
-    private async Task<BaseResponse> DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+      private async Task<BaseResponse> DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var demographicSearchClientIdentityRequest = Cast<DemographicSearchClientIdentityRequest>(request);
         var notificationsUpdated = false;

@@ -429,28 +429,28 @@ namespace HCA.Api.Controllers
         }
 
 
-        /// <summary>
-        /// Delete a client identity
-        /// </summary>
-        /// <param name="value">Delete Sources <see cref=DOH_DeleteSourceIdentity/></param>
-        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
-        /// <returns></returns>
-        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
-        [SwaggerResponse(StatusCodes.Status200OK, "Delete identities response", typeof(MergeIdentitiesResponseContent))]
-        [SwaggerResponse(StatusCodes.Status400BadRequest)]
-        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
-        [SwaggerResponse(StatusCodes.Status403Forbidden)]
-        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
-        [HttpDelete("DOH-delete")]
-        public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteSourceIdentity value, [FromQuery] string? processingOptions = null)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            var result = await _clientIdentityService.DOH_DeleteSourceIdentity(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (result == null) return BadRequest("Invalid Input");
-            return Ok(result);
-        }
+        ///// <summary>
+        ///// Delete a client identity
+        ///// </summary>
+        ///// <param name="value">Delete Sources <see cref=DOH_DeleteSourceIdentity/></param>
+        ///// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        ///// <returns></returns>
+        //[SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        //[SwaggerResponse(StatusCodes.Status200OK, "Delete identities response", typeof(MergeIdentitiesResponseContent))]
+        //[SwaggerResponse(StatusCodes.Status400BadRequest)]
+        //[SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        //[SwaggerResponse(StatusCodes.Status403Forbidden)]
+        //[SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        //[HcaAuthorize(Roles.Admin)]
+        //[HttpDelete("DOH-delete")]
+        //public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteSourceIdentity value, [FromQuery] string? processingOptions = null)
+        //{
+        //    if (!ModelState.IsValid) return BadRequest(ModelState);
+        //    var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+        //    var result = await _clientIdentityService.DOH_DeleteSourceIdentity(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+        //    if (result == null) return BadRequest("Invalid Input");
+        //    return Ok(result);
+        //}
 
 
         #endregion

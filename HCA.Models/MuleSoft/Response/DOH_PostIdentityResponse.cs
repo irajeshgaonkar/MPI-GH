@@ -10,7 +10,7 @@ public class DOH_PostIdentityResponse : MuleSoftResponse
     /// <summary>
     /// Post Identity response content <see cref="PostIdentityResponseContent"/>
     /// </summary>
-    public DOH_PostIdentityResponseContent Content { get; set; }
+    public dynamic Content { get; set; }
 }
 
 

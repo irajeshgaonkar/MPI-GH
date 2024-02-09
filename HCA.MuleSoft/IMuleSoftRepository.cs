@@ -38,7 +38,7 @@ public interface IMuleSoftRepository
 
     Task<DOH_LinkIdentitiesResponse> DOH_LinkIdentities(LinkIdentitiesRequest request);
 
-    Task<DOH_DeleteSourceIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request);
+    Task<DOH_DeleteIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request);
 
     /// <summary>
     /// MuleSoft un link identities api call
