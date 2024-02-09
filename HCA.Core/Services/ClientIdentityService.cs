@@ -9,12 +9,15 @@ using HCA.Infrastructure.Sqs;
 using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
+using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace HCA.Core.Services;
 
@@ -98,7 +101,28 @@ public class ClientIdentityService : IClientIdentityService
         Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
         var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}";
-        var userRequestEntity = CreateUserRequest(request, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
+
+
+        DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
+        if (strIdentities.ToLower().Contains("null"))
+        {
+            // Replace null values with empty strings and get modified JSON string 
+            dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
+
+            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+            PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(modifiedJsonElement);
+
+            postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
+            dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
+        }
+        else
+        {
+            dOH_PostClientIdentityRequest.Content = request.Content;
+        }
+
+
+        var userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
 
         try
         {
@@ -109,7 +133,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
-            return await DOH_PostIdentities(userRequestEntity, request);
+            return await DOH_PostIdentities(userRequestEntity, dOH_PostClientIdentityRequest);
         }
         catch (HcaBadRequestException e)
         {
@@ -122,6 +146,57 @@ public class ClientIdentityService : IClientIdentityService
             throw;
         }
     }
+
+    private JsonElement ConvertJObjectToJsonElement(JObject jObject)
+    {
+        // Serialize the JObject to a JSON string
+        string jsonString = jObject.ToString();
+
+        // Parse the JSON string into a JsonDocument
+        using (JsonDocument document = JsonDocument.Parse(jsonString))
+        {
+            // Get the root element of the JsonDocument
+            JsonElement rootElement = document.RootElement;
+
+            // Return the root element
+            return rootElement.Clone();
+        }
+    }
+
+
+
+    public JObject ReplaceNullValues(string jsonString)
+    {
+        JObject jsonObject = JObject.Parse(jsonString);
+        ReplaceNullValues(jsonObject);
+        return jsonObject;
+    }
+
+    private void ReplaceNullValues(JObject obj)
+    {
+        foreach (var property in obj.Properties())
+        {
+            if (property.Value.Type == JTokenType.Null)
+            {
+                property.Value = "";
+            }
+            else if (property.Value.Type == JTokenType.Object)
+            {
+                ReplaceNullValues((JObject)property.Value);
+            }
+            else if (property.Value.Type == JTokenType.Array)
+            {
+                foreach (var item in property.Value)
+                {
+                    if (item.Type == JTokenType.Object)
+                    {
+                        ReplaceNullValues((JObject)item);
+                    }
+                }
+            }
+        }
+    }
+
 
     public async Task<dynamic?> LinkIdentities(LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
