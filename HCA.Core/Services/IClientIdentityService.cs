@@ -39,6 +39,6 @@ public interface IClientIdentityService
     
     Task<dynamic?> DOH_UnMergeIdentities(DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+    //Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
 }

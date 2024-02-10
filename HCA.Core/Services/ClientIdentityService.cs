@@ -510,34 +510,34 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-    public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
-    {
-        var trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.content.source.GetTrackingId(deleteSourceIdentity.content.source)}";
-        var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
+    //public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    //{
+    //    var trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.content.source.GetTrackingId(deleteSourceIdentity.content.source)}";
+    //    var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
 
-        try
-        {
-            if (processType == ProcessType.Async)
-            {
-                await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
-                return trackingId;
-            }
+    //    try
+    //    {
+    //        if (processType == ProcessType.Async)
+    //        {
+    //            await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
+    //            return trackingId;
+    //        }
 
-            //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
+    //        //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
            
-            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content.source);
-        }
-        catch (HcaBadRequestException e)
-        {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
-            throw;
-        }
-        catch (HcaMuleSoftException e)
-        {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
-            throw;
-        }
-    }
+    //        return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content.source);
+    //    }
+    //    catch (HcaBadRequestException e)
+    //    {
+    //        UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+    //        throw;
+    //    }
+    //    catch (HcaMuleSoftException e)
+    //    {
+    //        UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+    //        throw;
+    //    }
+    //}
 
     private async Task<PostIdentityResponseContent?> PostIdentities(UserRequestEntity userRequestEntity, IEnumerable<ClientIdentityRequest> identities)
     {
