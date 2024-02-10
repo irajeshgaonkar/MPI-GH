@@ -36,9 +36,17 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
     {
         //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Processing, "Started Processing Request");
         var response = await requestExecuters[request.ApiCallType](request, requestStatusUpdater);
-        if (response.Success) return response as T;
-        //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Failed, "Error processing the request");
-        throw new HcaMuleSoftException("Error processing the request");
+        if (request.ApiCallType.ToString().Contains("DOH_"))
+
+        {
+            return response as T;
+        }
+        else
+        {
+            if (response.Success) return response as T;
+            //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Failed, "Error processing the request");
+            throw new HcaMuleSoftException("Error processing the request");
+        }
     }
 
     private IDictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>> BuildRequestExecutors()
@@ -110,18 +118,8 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            //var sourceSystemName = postIdentityRequest.Content.First().SourceSystemName;
-            //var customDataMappings = await _customDataMappingService.GetCustomDataMappingBySourceSystem(sourceSystemName);
-
-            //foreach (var item in postIdentityRequest.Content)
-            //{
-            //    if (item?.CustomJson == null)
-            //        continue;
-
-            //    var customData = JsonConvert.DeserializeObject<Dictionary<string, object>>(item.CustomJson) ?? new Dictionary<string, object>();
-            //    item.CustomJson = _customDataMappingService.MapCustomJson(customDataMappings, customData).ToString();
-            //}
-
+           
+            
             var response = await _muleSoftRequestExecuter.Execute<DOH_PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
             await UpdatePostIdentitiesNotification(null, null);
 
@@ -134,9 +132,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 await _clientIdentityRepository.Upsert(entity);
                 return response;
             }
+            return response;
 
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            //throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
@@ -297,8 +296,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            if (null == deleteSourceIdentity)
-                throw new HcaBadRequestException("source not found");
+            //This is to validate in our source system (postgresDB) when we get request
+
+            //if (null == deleteSourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
 
             var response = await _muleSoftRequestExecuter.Execute<DOH_DeleteClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity.MpiLinkId);
@@ -310,9 +311,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified.FirstOrDefault());
                 return response;
             }
+            return response;
 
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            //throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
@@ -371,17 +373,18 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            if (null == linkToIdentity)
-                throw new HcaBadRequestException("link source not found");
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == linkToIdentity)
+            //    throw new HcaBadRequestException("link source not found");
 
-            if (null == sourceIdentity)
-                throw new HcaBadRequestException("source not found");
+            //if (null == sourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
 
-            if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
-               throw new HcaBadRequestException("sources are already linked");
+            //if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
+            //   throw new HcaBadRequestException("sources are already linked");
 
             var response = await _muleSoftRequestExecuter.Execute<DOH_LinkClientIdentityResponse>(request, requestStatusUpdater);
-            await UpdateLinkIdentitiesNotification(null, null, sourceIdentity.MpiLinkId);
+            await UpdateLinkIdentitiesNotification(null, null, null);
 
             if (null != response && response.Success )
             {
@@ -390,9 +393,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content!.LinkId);
                 return response;
             }
+            return response;
 
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            //throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
@@ -410,14 +414,15 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            if (null == unlinkFromIdentity)
-                throw new HcaBadRequestException("Un link source not found");
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == unlinkFromIdentity)
+            //    throw new HcaBadRequestException("Un link source not found");
 
-            if (null == sourceIdentity)
-                throw new HcaBadRequestException("source not found");
+            //if (null == sourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
 
             var response = await _muleSoftRequestExecuter.Execute<DOH_UnLinkClientIdentityResponse>(request, requestStatusUpdater);
-            await UpdateUnLinkIdentitiesNotification(null, null, sourceIdentity.MpiLinkId);
+            await UpdateUnLinkIdentitiesNotification(null, null, null);
 
             if (null != response && response.Success )
             {
@@ -426,8 +431,10 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content.UnlinkedId);
                 return response;
             }
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
+            return response;
+
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            //throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaBadRequestException e)
         {
@@ -445,13 +452,14 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            if (null == toSurviveIdentity)
-                throw new HcaBadRequestException("To servive source not found");
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == toSurviveIdentity)
+            //    throw new HcaBadRequestException("To servive source not found");
 
-            if (null == toRetireIdentity)
-                throw new HcaBadRequestException("To retire source not found");
+            //if (null == toRetireIdentity)
+            //    throw new HcaBadRequestException("To retire source not found");
             var response = await _muleSoftRequestExecuter.Execute<DOH_MergeClientIdentityResponse>(request, requestStatusUpdater);
-            await UpdateMergeIdentitiesNotification(null, null, toRetireIdentity.MpiLinkId);
+            await UpdateMergeIdentitiesNotification(null, null, null);
 
             if (null != response && response.Success)
             {
@@ -459,8 +467,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, content.LinkId);
                 return response;
             }
-            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
-            throw new HcaMuleSoftException(errorMessage);
+                return response;
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to MuleSoft";
+            //throw new HcaMuleSoftException(errorMessage);
         }
         catch (HcaMuleSoftException e)
         {
@@ -479,13 +488,14 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-            if (null == unmergeFromIdentity)
-                throw new HcaBadRequestException("Un merge from source not found");
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == unmergeFromIdentity)
+            //    throw new HcaBadRequestException("Un merge from source not found");
 
-            if (null == unmergeSourceIdentity)
-                throw new HcaBadRequestException("Un merge source not found");
+            //if (null == unmergeSourceIdentity)
+            //    throw new HcaBadRequestException("Un merge source not found");
             var response = await _muleSoftRequestExecuter.Execute<DOH_UnMergeClientIdentityResponse>(request, requestStatusUpdater);
-            await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity.MpiLinkId);
+            await UpdateUnMergeIdentitiesNotification(null, null, null);
             notificationsUpdated = true;
 
             if (null != response && response.Success)
@@ -494,8 +504,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, content.UnmergedId);
                 return response;
             }
+            return response;
 
-            throw new HcaBadRequestException("Error processing the request");
+            //throw new HcaBadRequestException("Error processing the request");
         }
         catch (HcaBadRequestException e)
         {
@@ -560,8 +571,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             {
                 return response;
             }
+            return response;
 
-            throw new HcaBadRequestException("Error processing the request");
+            //throw new HcaBadRequestException("Error processing the request");
         }
         catch (HcaBadRequestException e)
         {
@@ -625,8 +637,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             {
                 return response;
             }
+            return response;
 
-            throw new HcaBadRequestException("Error processing the request");
+            //throw new HcaBadRequestException("Error processing the request");
         }
         catch (HcaBadRequestException e)
         {

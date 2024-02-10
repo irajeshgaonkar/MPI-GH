@@ -289,7 +289,7 @@ namespace HCA.Api.Controllers
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (searchResult == null) return NoContent();
+            //    if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
 
@@ -309,7 +309,7 @@ namespace HCA.Api.Controllers
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DOH_DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (searchResult == null) return NoContent();
+            //if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
 
@@ -332,7 +332,7 @@ namespace HCA.Api.Controllers
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
 
             var searchResult = await _clientIdentityService.DOH_PostIdentities(request, HttpContext.GetCurrentUser() ?? String.Empty, ProcessType.Sync, null);
-            if (searchResult == null) return NoContent();
+            //if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
         /// <summary>
@@ -355,7 +355,7 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_LinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (null == result) return BadRequest("Invalid Input");
+            //if (null == result) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
@@ -378,7 +378,7 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_UnLinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (result == null) return BadRequest("Invalid Input");
+            //if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
@@ -401,7 +401,7 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_MergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (result == null) return BadRequest("Invalid Input");
+            //if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
@@ -424,7 +424,7 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-            if (result == null) return BadRequest("Invalid Input");
+            //if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }
 
@@ -448,7 +448,7 @@ namespace HCA.Api.Controllers
         //    if (!ModelState.IsValid) return BadRequest(ModelState);
         //    var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
         //    var result = await _clientIdentityService.DOH_DeleteSourceIdentity(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
-        //    if (result == null) return BadRequest("Invalid Input");
+        //    //if (result == null) return BadRequest("Invalid Input");
         //    return Ok(result);
         //}
 
