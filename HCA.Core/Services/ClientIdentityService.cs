@@ -455,7 +455,7 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_LinkIdentities(DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
+        var trackingId = $"{ApiCallType.DOH_VELink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
         var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.DOH_VELink, currentUser, trackingId, notificationOptions);
 
         try
