@@ -32,7 +32,7 @@ namespace HCA.Models.Request.DOH
         /// <summary>
         /// 
         /// </summary>
-        public string[] responseIdentityFormatNames { get; set; } = { "DEFAULT" };
+        public string[] responseIdentityFormatNames { get; set; }
         /// <summary>
         /// 
         /// </summary>

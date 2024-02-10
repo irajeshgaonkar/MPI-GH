@@ -28,7 +28,10 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
     /// </summary>
     public PostIdentityRequest BuildDOH_PostIdentityRequest(DOH_PostClientIdentityRequest request)
     {
-        return new(request.TrackingId, request.Content);
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.Identity);
+        postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
+
+        return new(request.TrackingId, postIdentityRequestContent);
     }
 
     /// <summary>

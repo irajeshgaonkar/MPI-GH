@@ -37,5 +37,5 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     {
     }
 
-    public PostIdentityRequestContent Content { get; set; }
+    public DOH_PostIdentityRequestContent Content { get; set; }
 }

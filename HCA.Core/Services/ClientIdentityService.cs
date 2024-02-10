@@ -100,7 +100,7 @@ public class ClientIdentityService : IClientIdentityService
         string strIdentities = request.Content.Identity.ToString();
         Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
-        var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}";
+        var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
 
         DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
@@ -111,7 +111,7 @@ public class ClientIdentityService : IClientIdentityService
 
             JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
 
-            PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(modifiedJsonElement);
+            DOH_PostIdentityRequestContent postIdentityRequestContent = new DOH_PostIdentityRequestContent(modifiedJsonElement);
 
             postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
             dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
@@ -357,6 +357,12 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+
+        if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+        {
+            filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+        }
+
         var userRequestEntity = CreateUserRequest(filter, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
 
         try
@@ -379,6 +385,12 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions) //,string responseIdentityFormatNames = "DEFAULT")
     {
         var trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+
+        if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+        {
+            filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+        }
+
         var userRequestEntity = CreateUserRequest(filter, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
 
         try
@@ -555,6 +567,12 @@ public class ClientIdentityService : IClientIdentityService
     private async Task<dynamic?> DOH_PostIdentities(UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+
+        if (request.Content.ResponseIdentityFormatNames == null || (request.Content.ResponseIdentityFormatNames != null && request.Content.ResponseIdentityFormatNames[0] == ""))
+        {
+            request.Content.ResponseIdentityFormatNames = new string[] { "DEFAULT" };
+        }
+
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = request.Content
