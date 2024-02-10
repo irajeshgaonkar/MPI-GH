@@ -363,7 +363,28 @@ public class ClientIdentityService : IClientIdentityService
             filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
         }
 
-        var userRequestEntity = CreateUserRequest(filter, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
+        string strIdentities = filter.content.identity.ToString();
+
+        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
+        if (strIdentities.ToLower().Contains("null"))
+        {
+            // Replace null values with empty strings and get modified JSON string 
+            dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
+
+            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+            Content content = new Content();
+            content.identity = modifiedJsonElement;
+            content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+
+            dOH_DemographicQueryRequest.content = content;
+        }
+        else
+        {
+            dOH_DemographicQueryRequest.content = filter.content;
+        }
+
+        var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
 
         try
         {
@@ -373,7 +394,7 @@ public class ClientIdentityService : IClientIdentityService
                 return trackingId;
             }
 
-            return await DOH_DemographicSearch(userRequestEntity, filter);
+            return await DOH_DemographicSearch(userRequestEntity, dOH_DemographicQueryRequest);
         }
         catch (HcaMuleSoftException e)
         {
@@ -391,7 +412,29 @@ public class ClientIdentityService : IClientIdentityService
             filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
         }
 
-        var userRequestEntity = CreateUserRequest(filter, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+        string strIdentities = filter.content.identity.ToString();
+
+        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
+        if (strIdentities.ToLower().Contains("null"))
+        {
+            // Replace null values with empty strings and get modified JSON string 
+            dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
+
+            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+            Content content = new Content();
+            content.identity = modifiedJsonElement;
+            content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+
+            dOH_DemographicQueryRequest.content = content;
+        }
+        else
+        {
+            dOH_DemographicQueryRequest.content = filter.content;
+        }
+
+
+        var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
 
         try
         {
@@ -401,7 +444,7 @@ public class ClientIdentityService : IClientIdentityService
                 return trackingId;
             }
 
-            return await DOH_DemographicQuery(userRequestEntity, filter);
+            return await DOH_DemographicQuery(userRequestEntity, dOH_DemographicQueryRequest);
         }
         catch (HcaMuleSoftException e)
         {

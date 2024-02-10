@@ -36,6 +36,6 @@ namespace HCA.Models.Request.DOH
         /// <summary>
         /// 
         /// </summary>
-        public Identity identity { get; set; }
+        public dynamic identity { get; set; }
     }
 }
