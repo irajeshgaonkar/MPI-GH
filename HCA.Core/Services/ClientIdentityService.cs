@@ -186,14 +186,20 @@ public class ClientIdentityService : IClientIdentityService
             }
             else if (property.Value.Type == JTokenType.Array)
             {
-                foreach (var item in property.Value)
+                JArray array = (JArray)property.Value;
+                for (int i = 0; i < array.Count; i++)
                 {
-                    if (item.Type == JTokenType.Object)
+                    if (array[i].Type == JTokenType.Null)
                     {
-                        ReplaceNullValues((JObject)item);
+                        array[i] = "";
+                    }
+                    else if (array[i].Type == JTokenType.Object)
+                    {
+                        ReplaceNullValues((JObject)array[i]);
                     }
                 }
             }
+
         }
     }
 
@@ -405,7 +411,7 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions) //,string responseIdentityFormatNames = "DEFAULT")
     {
-        var trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var  trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
         if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
         {
@@ -455,7 +461,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_LinkIdentities(DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.DOH_VELink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
+        var trackingId = string.Empty;
+        if (linkingSources.trackingId.ToString().Length >= 1)
+        {
+            trackingId = linkingSources.trackingId.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VELink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
+        }
         var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.DOH_VELink, currentUser, trackingId, notificationOptions);
 
         try
@@ -483,7 +497,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnLinkIdentities(DOH_UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId(unLinkingSources.content.UnlinkFromSource)}";
+        var trackingId = string.Empty;
+        if (unLinkingSources.trackingId.ToString().Length >= 1)
+        {
+            trackingId = unLinkingSources.trackingId.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId(unLinkingSources.content.UnlinkFromSource)}";
+        }
         var userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.DOH_VEUnLink, currentUser, trackingId, notificationOptions);
 
         try
@@ -511,7 +533,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities(DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
+        var trackingId = string.Empty;
+        if (mergingSources.trackingId.ToString().Length >= 1)
+        {
+            trackingId = mergingSources.trackingId.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
+        }
         var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
 
         try
@@ -539,7 +569,16 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities(DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
+        var trackingId = string.Empty;
+        if (unMergingSources.trackingId.ToString().Length >= 1)
+        {
+            trackingId = unMergingSources.trackingId.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
+        }
+
         var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
 
         try
@@ -565,34 +604,42 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-    //public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteSourceIdentity deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
-    //{
-    //    var trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.content.source.GetTrackingId(deleteSourceIdentity.content.source)}";
-    //    var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
+    public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = string.Empty;
+        if (deleteSourceIdentity.TrackingId.ToString().Length >= 1)
+        {
+            trackingId = deleteSourceIdentity.TrackingId.ToString();
+        }
+        else
+        {
+             trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.Content.Source.GetTrackingId(deleteSourceIdentity.Content.Source)}";
+        }
+                var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
 
-    //    try
-    //    {
-    //        if (processType == ProcessType.Async)
-    //        {
-    //            await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
-    //            return trackingId;
-    //        }
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
+                return trackingId;
+            }
 
-    //        //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-           
-    //        return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity.content.source);
-    //    }
-    //    catch (HcaBadRequestException e)
-    //    {
-    //        UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
-    //        throw;
-    //    }
-    //    catch (HcaMuleSoftException e)
-    //    {
-    //        UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
-    //        throw;
-    //    }
-    //}
+            //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
+
+            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            throw;
+        }
+        catch (HcaMuleSoftException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            throw;
+        }
+    }
 
     private async Task<PostIdentityResponseContent?> PostIdentities(UserRequestEntity userRequestEntity, IEnumerable<ClientIdentityRequest> identities)
     {
@@ -769,13 +816,13 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private async Task<dynamic?> DOH_DeleteSourceIdentity(UserRequestEntity userRequestEntity, Source deleteSourceIdentity)
+    private async Task<dynamic?> DOH_DeleteSourceIdentity(UserRequestEntity userRequestEntity, DOH_DeleteClientIdentityRequest deleteSourceIdentity)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
         var deleteClientIdentityRequest = new DOH_DeleteClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            Content = deleteSourceIdentity
+            Content = deleteSourceIdentity.Content
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");

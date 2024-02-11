@@ -292,7 +292,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         var deleteIdentitiesRequest = Cast<DOH_DeleteClientIdentityRequest>(request);
         var deletingSource = deleteIdentitiesRequest.Content;
-        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.Name, deletingSource.Id);
+        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.Source.Name, deletingSource.Source.Id);
 
         try
         {
@@ -302,13 +302,14 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             //    throw new HcaBadRequestException("source not found");
 
             var response = await _muleSoftRequestExecuter.Execute<DOH_DeleteClientIdentityResponse>(request, requestStatusUpdater);
-            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity.MpiLinkId);
+            await UpdateLinkIdentitiesNotification(null, null, null);
 
             if (null != response && response.Success)
             {
-                DeleteIdentityResponseContent content = JsonConvert.DeserializeObject<DeleteIdentityResponseContent>(response.Content.ToString());
-
-                _clientIdentityRepository.UpdateMpiLinkId(deleteSourceIdentity, content?.LinkIdsModified.FirstOrDefault());
+                if (deleteSourceIdentity != null)
+                {
+                    _clientIdentityRepository.DeleteClientIdentity(deleteSourceIdentity);
+                }
                 return response;
             }
             return response;

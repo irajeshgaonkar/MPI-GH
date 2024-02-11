@@ -25,23 +25,5 @@ namespace HCA.Models.Request
     }
 
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public class DOH_DeleteSourceIdentityRequest : BaseRequest
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="trackingId"></param>
-        /// <param name="content"></param>
-        public DOH_DeleteSourceIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEDelete, trackingId)
-        {
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        public ContentD Content { get; set; }
-    }
 
 }

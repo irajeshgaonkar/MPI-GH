@@ -12,7 +12,7 @@ public static class HttpContextExtensions
     }
 
     public static string GetCurrentUser(this HttpContext context)
-    {
+   {
         var currentUser = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return currentUser ?? string.Empty;
     }

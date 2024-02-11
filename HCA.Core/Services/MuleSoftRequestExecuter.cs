@@ -140,10 +140,10 @@ namespace HCA.Core.Services
         private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request)
         {
             var deleteIdentityRequest = Cast<DOH_DeleteClientIdentityRequest>(request);
-            DeleteIdentyRequestContent content = new DeleteIdentyRequestContent(deleteIdentityRequest.Content);
+            DeleteIdentyRequestContent content = new DeleteIdentyRequestContent(deleteIdentityRequest.Content.Source);
             DeleteIdentyRequest muleSoftRequest = new DeleteIdentyRequest(deleteIdentityRequest.TrackingId, content);
             var muleSoftResponse = await _muleSoftRepository.DOH_DeleteSourceIdentities(muleSoftRequest);
-            var response = CreateResponse<DOH_DeleteClientIdentityResponse>(muleSoftResponse.Content);
+            var response = CreateResponse<DOH_DeleteClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

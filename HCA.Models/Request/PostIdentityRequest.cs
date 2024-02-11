@@ -28,7 +28,7 @@ public class DOH_DeleteClientIdentityRequest : BaseRequest
     {
     }
 
-    public Source Content { get; set; }
+    public DeleteIdentyRequestContent Content { get; set; }
 }
 
 public class DOH_PostClientIdentityRequest : BaseRequest

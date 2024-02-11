@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Net;
+using System.Text.RegularExpressions;
 using HCA.Data.Entities;
 using HCA.Infrastructure.Comparer;
 using HCA.Models;
@@ -117,7 +118,7 @@ public class NewClientIdentityMapper
                 communication.PhoneType = "";
                 communication.EmailType = "";
                 communication.EmailAddress = identity.Emails.FirstOrDefault() ?? "";
-                communication.PhoneNumber = communicationGroup.Number ?? "";
+                communication.PhoneNumber = Regex.Replace(communicationGroup.Number ?? "", @"\D", ""); 
                 communication.SourceSystemUpdated = result.SourceSystemUpdated;
                 communication.IsActive = true;
                 communication.IsDelete = false;
