@@ -70,11 +70,13 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         return new PostIdentityRequest(request.TrackingId, content);
     }
 
-    public PostIdentityRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request)
+    public DemographicSearchRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request)
     {
-        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.identity);
-        postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.responseIdentityFormatNames;
-        return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
+        DemographicSearchRequest demographicsSearchRequestContent = new DemographicSearchRequest(request.TrackingId, request.Content);
+        demographicsSearchRequestContent.Content.responseIdentityFormatNames = request.Content.responseIdentityFormatNames;
+        demographicsSearchRequestContent.Content.matchScoreThreshold = request.Content.matchScoreThreshold;
+        demographicsSearchRequestContent.Content.maxSearchResults = request.Content.maxSearchResults;
+        return demographicsSearchRequestContent;
     }
 
     public PostIdentityRequest BuildDemographicQueryRequest(DemographicQueryClientIdentityRequest request)

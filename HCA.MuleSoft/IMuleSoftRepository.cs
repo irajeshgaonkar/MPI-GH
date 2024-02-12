@@ -18,7 +18,7 @@ public interface IMuleSoftRepository
     /// <returns>demographc serach response <see cref="DemoGraphicSearchResponse"/></returns>
     Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
-    Task<DOH_DemoGraphicSearchResponse> DOH_DemographicSearch(PostIdentityRequest request);
+    Task<DOH_DemoGraphicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request);
 
     /// <summary>
     /// MuleSoft demographic search api
@@ -74,4 +74,7 @@ public interface IMuleSoftRepository
     Task<DOH_PostIdentityResponse> DOH_PostIdentity(PostIdentityRequest request);
 
     Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request);
+
+    Task<T> CallMulesoft<T>(string requestUrl, MuleSoftRequest? request);
+
 }

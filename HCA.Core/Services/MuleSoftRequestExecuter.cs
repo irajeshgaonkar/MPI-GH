@@ -243,11 +243,11 @@ namespace HCA.Core.Services
         private async Task<BaseResponse> DOH_DemographicSearch(BaseRequest request)
         {
             var searchRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
-            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
-            var muleSoftResponse = await _muleSoftRepository.DOH_DemographicSearch(muleSoftRequest);
-            var response = CreateResponse<DOH_DemographicSearchClientIdentityResponse>(muleSoftResponse);
-            response.Content = muleSoftResponse.Content;
-            return response;
+            var muleSoftRequest = new DemographicSearchRequest(searchRequest.TrackingId, searchRequest.Content);  //_muleSoftRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.CallMulesoft< DOH_DemographicSearchClientIdentityResponse>(MuleSoftUrls.DemographicSearch,muleSoftRequest);
+            //var response = CreateResponse<DOH_DemographicSearchClientIdentityResponse>(muleSoftResponse);
+            //response.Content = muleSoftResponse.Content;
+            return muleSoftResponse;
         }
 
         private async Task<BaseResponse> DemographicQuery(BaseRequest request)

@@ -29,7 +29,7 @@ public class DOH_DemographicSearchClientIdentityRequest : BaseRequest
     {
     }
 
-    public Content Content { get; set; }
+    public ContentSearch Content { get; set; }
 }
 
 

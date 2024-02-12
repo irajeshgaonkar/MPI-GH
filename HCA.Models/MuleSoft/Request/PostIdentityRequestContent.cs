@@ -20,12 +20,6 @@ public class PostIdentityRequestContent
         Identity = identity;
     }
 
-    //public PostIdentityRequestContent(dynamic identity, string[] responseIdentityFormatNames)
-    //{
-    //    ResponseIdentityFormatNames = responseIdentityFormatNames;
-    //    Identity = identity;
-    //}
-
     /// <summary>
     /// Specifies the response identity format
     /// </summary>
@@ -47,11 +41,6 @@ public class DOH_PostIdentityRequestContent
         Identity = identity;
     }
 
-    //public PostIdentityRequestContent(dynamic identity, string[] responseIdentityFormatNames)
-    //{
-    //    ResponseIdentityFormatNames = responseIdentityFormatNames;
-    //    Identity = identity;
-    //}
 
     /// <summary>
     /// Specifies the response identity format

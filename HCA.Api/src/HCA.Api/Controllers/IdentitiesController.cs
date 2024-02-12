@@ -299,13 +299,13 @@ namespace HCA.Api.Controllers
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
         /// <returns></returns>
-        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<DOH_DemographicQueryRequest>))]
+        [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<DOH_DemographicsSearchRequest>))]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [HttpPost("DOH-demographicSearch")]
-        public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicQueryRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
+        public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DOH_DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);

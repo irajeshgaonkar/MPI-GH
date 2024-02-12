@@ -27,7 +27,7 @@ public interface IClientIdentityService
 
     Task<dynamic?> DemographicQuery(Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
-    Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+    Task<dynamic?> DOH_DemographicSearch(DOH_DemographicsSearchRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
    

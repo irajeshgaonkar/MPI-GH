@@ -61,7 +61,7 @@ public interface IMuleSoftRequestBuilder
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    PostIdentityRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request);
+    DemographicSearchRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request);
 
     /// <summary>
     /// Demographic query request builder

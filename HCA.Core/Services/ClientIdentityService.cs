@@ -366,7 +366,7 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-    public async Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    public async Task<dynamic?> DOH_DemographicSearch(DOH_DemographicsSearchRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
         if (!(string.IsNullOrEmpty(filter.trackingid)) && (filter.trackingid.Length >= 1))
@@ -384,7 +384,7 @@ public class ClientIdentityService : IClientIdentityService
 
         string strIdentities = filter.content.identity.ToString();
 
-        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
+        DOH_DemographicsSearchRequest dOH_DemographicQueryRequest = new DOH_DemographicsSearchRequest();
         if (strIdentities.ToLower().Contains("null"))
         {
             // Replace null values with empty strings and get modified JSON string 
@@ -392,9 +392,11 @@ public class ClientIdentityService : IClientIdentityService
 
             JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
 
-            Content content = new Content();
+            ContentSearch content = new ContentSearch();
             content.identity = modifiedJsonElement;
             content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+            content.matchScoreThreshold = filter.content.matchScoreThreshold;
+            content.maxSearchResults = filter.content.maxSearchResults;
 
             dOH_DemographicQueryRequest.content = content;
         }
@@ -720,7 +722,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<dynamic?> DOH_DemographicSearch(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
+    private async Task<dynamic?> DOH_DemographicSearch(UserRequestEntity userRequestEntity, DOH_DemographicsSearchRequest filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
