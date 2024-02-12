@@ -16,7 +16,7 @@ namespace HCA.Models.Request.DOH
         /// <summary>
         /// 
         /// </summary>
-        public int trackingid { get; set; }
+        public string trackingid { get; set; } = "";
         /// <summary>
         /// 
         /// </summary>

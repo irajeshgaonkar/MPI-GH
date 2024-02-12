@@ -83,7 +83,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
+        /// Demographics Search web service is intended to retrieve one or more identities from identity provider (Verato) that are potential matches to the search input criteria.
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="pagNumber"></param>
@@ -105,7 +105,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// Demographic query  retrieves the single matching identity from identity provider (Verato) that matches the demographic data provided in the web service request.
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
@@ -125,7 +125,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// PostIdentity web service adds or updates your customer records into identity provider (Verato)
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
@@ -151,7 +151,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Links the 2 client identities
+        /// LinkIdentities web service is used to force two customer source records (each identified by its Source + Native ID) to be linked together in a common Link ID.
         /// </summary>
         /// <param name="value">Linking sources <see cref="LinkingSources" /></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -175,7 +175,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Unlink client identiities
+        /// UnlinkIdentities web service is used to force apart two customer source records (each identified by its Source + Native ID) that had been matched into the same Link ID.
         /// </summary>
         /// <param name="value">Un linking sources <see cref="UnLinkingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -198,7 +198,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Merge client identities
+        /// MergeIdentities web service is used to force two customer source records (each identified by its Source + Native ID) to be linked together in a common Link ID and convert one of the customer source records into a retired/merged state.
         /// </summary>
         /// <param name="value">Merge Sources <see cref="MergingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -221,7 +221,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Un merge client identitiess
+        /// UnmergeIdentities web service is used to re-activate a previously-merged source record and force it apart from its current Link ID.
         /// </summary>
         /// <param name="value">Un merge Sources <see cref="UnMergingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -273,7 +273,7 @@ namespace HCA.Api.Controllers
 
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// Demographic query  retrieves the single matching identity from identity provider (Verato) that matches the demographic data provided in the web service request.
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
@@ -294,7 +294,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search results from identity provider (Verato)
+        /// Demographics Search web service is intended to retrieve one or more identities from identity provider (Verato) that are potential matches to the search input criteria.
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
@@ -315,7 +315,7 @@ namespace HCA.Api.Controllers
 
 
         /// <summary>
-        /// Demographic search for the client identities - calls the identity store demographic search api and returns the search result from identity provider (Verato)
+        /// PostIdentity web service adds or updates your customer records into identity provider (Verato)
         /// </summary>
         /// <param name="filter">Filter condition for search</param>
         /// <param name="processingOptions"></param>
@@ -335,13 +335,13 @@ namespace HCA.Api.Controllers
             //if (searchResult == null) return NoContent();
             return Ok(searchResult);
         }
-        /// <summary>
-        /// Links the 2 client identities
-        /// </summary>
-        /// <param name=CIRequest.value">Linking sources <see cref="LinkingSources" /></param>
-        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
-        /// <returns></returns>
 
+        /// <summary>
+        /// LinkIdentities web service is used to force two customer source records (each identified by its Source + Native ID) to be linked together in a common Link ID.
+        /// </summary>
+        /// <param name="value">"DOH_LinkingSources"</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
         [SwaggerResponse(StatusCodes.Status200OK, "Link identities response", typeof(LinkIdentitiesResponseContent))]
         [SwaggerResponse(StatusCodes.Status400BadRequest)]
@@ -360,7 +360,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Unlink client identiities
+        /// UnlinkIdentities web service is used to force apart two customer source records (each identified by its Source + Native ID) that had been matched into the same Link ID.
         /// </summary>
         /// <param name="value">Un linking sources <see cref="UnLinkingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -383,7 +383,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Merge client identities
+        /// MergeIdentities web service is used to force two customer source records (each identified by its Source + Native ID) to be linked together in a common Link ID and convert one of the customer source records into a retired/merged state.
         /// </summary>
         /// <param name="value">Merge Sources <see cref="MergingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -406,7 +406,7 @@ namespace HCA.Api.Controllers
         }
 
         /// <summary>
-        /// Un merge client identitiess
+        /// UnmergeIdentities web service is used to re-activate a previously-merged source record and force it apart from its current Link ID.
         /// </summary>
         /// <param name="value">Un merge Sources <see cref="UnMergingSources"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
@@ -430,9 +430,9 @@ namespace HCA.Api.Controllers
 
 
         /// <summary>
-        /// Delete a client identity
+        /// DeleteSourceIdentity web service is used to physically delete one of your source records from your instance of identity provider (Verato)
         /// </summary>
-        /// <param name="value">Delete Sources <see cref=DOH_DeleteSourceIdentity/></param>
+        /// <param name="value">Delete Sources <see cref="DOH_DeleteClientIdentityRequest"/></param>
         /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
         /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]

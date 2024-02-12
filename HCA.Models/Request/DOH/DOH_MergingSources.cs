@@ -12,15 +12,15 @@ namespace HCA.Models.Request.DOH
     /// </summary>
     public class DOH_MergingSources
     {
-            /// <summary>
-            /// 
-            /// </summary>
-            public string trackingId { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string trackingId { get; set; } = "";
 
-            /// <summary>
-            /// 
-            /// </summary>
-            //[JsonPropertyName("content")]
-            public MergingSources content { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        //[JsonPropertyName("content")]
+        public MergingSources content { get; set; }
     }
 }

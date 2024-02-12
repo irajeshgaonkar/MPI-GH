@@ -99,9 +99,15 @@ public class ClientIdentityService : IClientIdentityService
 
         string strIdentities = request.Content.Identity.ToString();
         Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-
-        var trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
-
+        var trackingId = string.Empty;
+        if (!(string.IsNullOrEmpty(request.TrackingId)) && (request.TrackingId.Length >= 1))
+        {
+            trackingId = request.TrackingId.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        }
 
         DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
         if (strIdentities.ToLower().Contains("null"))
@@ -362,8 +368,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicSearch(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-        var trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
-
+        var trackingId = string.Empty;
+        if (!(string.IsNullOrEmpty(filter.trackingid)) && (filter.trackingid.Length >= 1))
+        {
+            trackingId = filter.trackingid.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        }
         if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
         {
             filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
@@ -411,8 +424,16 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicQuery(DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions) //,string responseIdentityFormatNames = "DEFAULT")
     {
-        var  trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+        var trackingId = string.Empty;
+        if (!(string.IsNullOrEmpty(filter.trackingid)) && (filter.trackingid.Length >= 1))
+        {
+            trackingId = filter.trackingid.ToString();
+        }
+        else
+        {
+            trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
+        }
         if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
         {
             filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
@@ -462,7 +483,7 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_LinkIdentities(DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
-        if (linkingSources.trackingId.ToString().Length >= 1)
+        if (!(string.IsNullOrEmpty(linkingSources.trackingId)) && (linkingSources.trackingId.Length >= 1))
         {
             trackingId = linkingSources.trackingId.ToString();
         }
@@ -498,7 +519,7 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_UnLinkIdentities(DOH_UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
-        if (unLinkingSources.trackingId.ToString().Length >= 1)
+        if (!(string.IsNullOrEmpty(unLinkingSources.trackingId)) && (unLinkingSources.trackingId.Length >= 1))
         {
             trackingId = unLinkingSources.trackingId.ToString();
         }
@@ -534,7 +555,7 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_MergeIdentities(DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
-        if (mergingSources.trackingId.ToString().Length >= 1)
+        if (!(string.IsNullOrEmpty(mergingSources.trackingId)) && (mergingSources.trackingId.Length >= 1))
         {
             trackingId = mergingSources.trackingId.ToString();
         }
@@ -570,7 +591,7 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_UnMergeIdentities(DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
-        if (unMergingSources.trackingId.ToString().Length >= 1)
+        if (!(string.IsNullOrEmpty(unMergingSources.trackingId)) && (unMergingSources.trackingId.Length >= 1))
         {
             trackingId = unMergingSources.trackingId.ToString();
         }
@@ -607,15 +628,15 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         var trackingId = string.Empty;
-        if (deleteSourceIdentity.TrackingId.ToString().Length >= 1)
+        if (!(string.IsNullOrEmpty(deleteSourceIdentity.TrackingId)) && (deleteSourceIdentity.TrackingId.Length >= 1))
         {
             trackingId = deleteSourceIdentity.TrackingId.ToString();
         }
         else
         {
-             trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.Content.Source.GetTrackingId(deleteSourceIdentity.Content.Source)}";
+            trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.Content.Source.GetTrackingId(deleteSourceIdentity.Content.Source)}";
         }
-                var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
+        var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
 
         try
         {
