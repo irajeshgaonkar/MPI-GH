@@ -286,6 +286,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
@@ -300,6 +301,7 @@ namespace HCA.Api.Controllers
         /// <param name="processingOptions"></param>
         /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "List of client identities", typeof(PagenatedCollection<DOH_DemographicsSearchRequest>))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
@@ -307,6 +309,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicSearch")]
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DOH_DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (searchResult == null) return NoContent();
@@ -321,6 +324,7 @@ namespace HCA.Api.Controllers
         /// <param name="processingOptions"></param>
         /// <returns></returns>
         [SwaggerResponse(StatusCodes.Status200OK, "Post client identity response", typeof(DOH_DemographicQueryRequest))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
@@ -330,6 +334,8 @@ namespace HCA.Api.Controllers
         {
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            //if (request == null) return BadRequest("Invalid Request");
 
             var searchResult = await _clientIdentityService.DOH_PostIdentities(request, HttpContext.GetCurrentUser() ?? String.Empty, ProcessType.Sync, null);
             //if (searchResult == null) return NoContent();
