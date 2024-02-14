@@ -355,7 +355,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPost("DOH-link")]
+        [HttpPut("DOH-link")]
         public async Task<IActionResult> DOH_Link([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -378,7 +378,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPost("DOH-unlink")]
+        [HttpPut("DOH-unlink")]
         public async Task<IActionResult> DOH_UnLink([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -401,7 +401,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPost("DOH-merge")]
+        [HttpPut("DOH-merge")]
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -424,7 +424,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPost("DOH-unmerge")]
+        [HttpPut("DOH-unmerge")]
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -448,7 +448,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.Admin)]
-        [HttpPost("DOH-delete")]
+        [HttpDelete("DOH-delete")]
         public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);

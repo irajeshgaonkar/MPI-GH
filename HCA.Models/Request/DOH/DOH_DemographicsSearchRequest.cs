@@ -30,11 +30,11 @@ namespace HCA.Models.Request.DOH
         /// <summary>
         /// 
         /// </summary>
-        public double matchScoreThreshold { get; set; }
+        public double matchScoreThreshold { get; set; } = 0.0;
         /// <summary>
         /// 
         /// </summary>
-        public int maxSearchResults { get; set; }
+        public int maxSearchResults { get; set; } = 10;
 
         /// <summary>
         /// 
