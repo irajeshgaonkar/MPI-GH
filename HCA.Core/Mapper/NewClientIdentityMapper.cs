@@ -33,13 +33,22 @@ public class NewClientIdentityMapper
         result.SourceSystemAgency = "";
         if (identity.Names.Count > 0)
         {
-            result.FirstName = identity.Names.FirstOrDefault().First;
-            result.MiddleName = identity.Names.FirstOrDefault().Middle;
-            result.LastName = identity.Names.FirstOrDefault().Last;
-            result.NameSuffix = identity.Names.FirstOrDefault().Suffix;
+            result.FirstName = identity.Names.FirstOrDefault().First ?? "";
+            result.MiddleName = identity.Names.FirstOrDefault().Middle ?? "";
+            result.LastName = identity.Names.FirstOrDefault().Last ?? "";
+            result.NameSuffix = identity.Names.FirstOrDefault().Suffix ?? "";
+        }
+        else
+        {
+            result.FirstName = "";
+            result.MiddleName = "";
+            result.LastName = "";
+            result.NameSuffix = "";
         }
         if (identity.Ssns.Count > 0)
-                 result.Ssn = identity.Ssns.FirstOrDefault();
+            result.Ssn = identity.Ssns.FirstOrDefault();
+        else
+            result.Ssn = "";
 
         if (identity.DatesOfBirth.Count > 0)
         {
@@ -47,7 +56,9 @@ public class NewClientIdentityMapper
             result.Dob = valiDob ? dob : null;
         }
         if (identity.Genders.Count > 0)
-        result.Gender = identity.Genders.FirstOrDefault();
+            result.Gender = identity.Genders.FirstOrDefault();
+        else
+            result.Gender = "unknown";
         result.ProtectedPopulationFlag = false;
         result.ProtectedPopulationType = "";
         result.MpiUpdated = mpiUpdated;
