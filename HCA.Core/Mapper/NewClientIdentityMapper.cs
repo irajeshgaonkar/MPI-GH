@@ -107,7 +107,23 @@ public class NewClientIdentityMapper
             address.AddressLine3 = "";
             address.City = addressGroup.City;
             address.State = addressGroup.State;
-            address.ZipCode = addressGroup.PostalCode;
+           //address.ZipCode = addressGroup.PostalCode;
+           string inputPostalCode = addressGroup.PostalCode;
+            if (!string.IsNullOrEmpty(inputPostalCode))
+            {
+                if (inputPostalCode.Length > 5)
+                {
+                    address.ZipCode = $"{inputPostalCode.Substring(0, 5)} - {inputPostalCode.Substring(5, Math.Min(4, inputPostalCode.Length - 5))}";
+                }
+                else
+                {
+                    address.ZipCode = inputPostalCode;
+                }
+            }
+            else
+            {
+                address.ZipCode = addressGroup.PostalCode ?? "";
+            }
             address.ZipFour = "";
             address.SourceSystemUpdated = result.SourceSystemUpdated;
             address.IsActive = true;
