@@ -20,6 +20,9 @@ public static class HttpResponseMessageExtensions
             return true;
 
         var responseMessageStr = await responseMessage.Content.ReadAsStringAsync();
+
+        // TODO: This error is not getting logged properly;
+        // V - I've adjusted the logging but the final error is still not getting reported correctly
         throw new HcaHttpException(responseMessage.StatusCode, responseMessageStr);
     }
 }

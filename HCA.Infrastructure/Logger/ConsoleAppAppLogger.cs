@@ -12,7 +12,7 @@ public class ConsoleAppAppLogger : IAppLogger
     }
 
     public void LogError(Exception ex, [CallerMemberName] string callerName = "") =>
-        WriteLine(ex.StackTrace ?? "", ConsoleColor.Red);
+        WriteLine(ex.ToString() ?? "", ConsoleColor.Red);
 
     public void LogCritical(string message, [CallerMemberName] string callerName = "") =>
         WriteLine(message, ConsoleColor.DarkYellow);
