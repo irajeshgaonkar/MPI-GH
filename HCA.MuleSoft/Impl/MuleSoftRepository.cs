@@ -168,6 +168,7 @@ public class MuleSoftRepository : IMuleSoftRepository
             }
             catch (HcaHttpException e)
             {
+                // TODO: propagate error after final failure
                 _appLogger.LogInformation($"Retrying for the exception HcaHttpException {e.StatusCode}");
                 _appLogger.LogError(e);
             }
@@ -180,6 +181,7 @@ public class MuleSoftRepository : IMuleSoftRepository
         if (!IsAuthenticated) await Authenticate();
 
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, GetFullUri(requestUrl));
+        // todo: Error here can lose information from prior calls
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token.AccessToken);
         var jsonString = SerializationExtensions.Serialize(request);
         httpRequest.Content = new StringContent(jsonString, Encoding.UTF8, ContentType.ApplicationJson);
