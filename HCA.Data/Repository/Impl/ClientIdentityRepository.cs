@@ -305,12 +305,14 @@ WHERE mpi_link_id IN
     private Expression<Func<ClientIdentityEntity, bool>> SourceSystemFilterAll(string sourceSystemName, string sourceSystemId)
         => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId;
 
+    // TODO: what does 'Upsert' mean? Perhaps 'assert'?
     public async Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity)
     {
         var identity = await GetBySourceAll(entity.SourceSystemName, entity.SourceSystemId);
 
         if (identity == null)
         {
+            // TODO: this should probably be an error
             AddAsync(entity);
             return entity;
         }
