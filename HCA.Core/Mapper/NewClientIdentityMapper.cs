@@ -90,6 +90,7 @@ public class NewClientIdentityMapper
 
         //var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
 
+        // TODO: make mapping shared code
         foreach (var addressGroup in identity.Addresses)
         {
             List<ClientIdentityAddressCommunicationEntity> addressCommunications = new List<ClientIdentityAddressCommunicationEntity>();
@@ -107,22 +108,21 @@ public class NewClientIdentityMapper
             address.AddressLine3 = "";
             address.City = addressGroup.City;
             address.State = addressGroup.State;
-           //address.ZipCode = addressGroup.PostalCode;
-           string inputPostalCode = addressGroup.PostalCode;
-            if (!string.IsNullOrEmpty(inputPostalCode))
+            if (string.IsNullOrEmpty(addressGroup.PostalCode))
             {
+                address.ZipCode = "";
+            }
+            else
+            {
+                string inputPostalCode = addressGroup.PostalCode;
                 if (inputPostalCode.Length > 5)
                 {
-                    address.ZipCode = $"{inputPostalCode.Substring(0, 5)} - {inputPostalCode.Substring(5, Math.Min(4, inputPostalCode.Length - 5))}";
+                    address.ZipCode = inputPostalCode[..Math.Min(9,inputPostalCode.Length)];
                 }
                 else
                 {
                     address.ZipCode = inputPostalCode;
                 }
-            }
-            else
-            {
-                address.ZipCode = addressGroup.PostalCode ?? "";
             }
             address.ZipFour = "";
             address.SourceSystemUpdated = result.SourceSystemUpdated;
