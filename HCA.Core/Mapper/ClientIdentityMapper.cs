@@ -62,9 +62,22 @@ public class ClientIdentityMapper
             address.AddressLine3 = addressRequest.AddressLine3;
             address.City = addressRequest.City;
             address.State = addressRequest.State;
-            address.ZipCode = addressRequest.ZipCode;
-            address.ZipFour = addressRequest.ZipFour;
-            address.ZipCode = addressRequest.ZipCode;
+            if (string.IsNullOrEmpty(addressRequest.ZipCode))
+            {
+                address.ZipCode = "";
+            }
+            else
+            {
+                string inputPostalCode = addressRequest.ZipCode;
+                if (inputPostalCode.Length > 5)
+                {
+                    address.ZipCode = inputPostalCode[..Math.Min(9, inputPostalCode.Length)];
+                }
+                else
+                {
+                    address.ZipCode = inputPostalCode;
+                }
+            }
             address.ZipFour = addressRequest.ZipFour;
             address.SourceSystemUpdated = result.SourceSystemUpdated;
             address.IsActive = true;
