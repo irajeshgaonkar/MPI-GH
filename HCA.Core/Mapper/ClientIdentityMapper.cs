@@ -68,15 +68,7 @@ public class ClientIdentityMapper
             }
             else
             {
-                string inputPostalCode = addressRequest.ZipCode;
-                if (inputPostalCode.Length > 5)
-                {
-                    address.ZipCode = inputPostalCode[..Math.Min(9, inputPostalCode.Length)];
-                }
-                else
-                {
-                    address.ZipCode = inputPostalCode;
-                }
+                address.ZipCode = addressRequest.ZipCode[..Math.Min(9, addressRequest.ZipCode.Length)];
             }
             address.ZipFour = addressRequest.ZipFour;
             address.SourceSystemUpdated = result.SourceSystemUpdated;
