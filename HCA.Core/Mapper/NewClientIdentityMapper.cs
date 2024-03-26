@@ -124,7 +124,7 @@ public class NewClientIdentityMapper
                     address.ZipCode = inputPostalCode;
                 }
             }
-            address.ZipFour = "";
+            address.ZipFour = addressGroup.ZipFour ?? "";
             address.SourceSystemUpdated = result.SourceSystemUpdated;
             address.IsActive = true;
             address.IsDelete = false;

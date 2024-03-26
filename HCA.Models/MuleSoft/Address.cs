@@ -13,13 +13,15 @@ public class Address
     /// <param name="city">City name</param>
     /// <param name="state">State name / code</param>
     /// <param name="postalCode">Postal code</param>
-    public Address(string line1, string line2, string city, string state, string postalCode)
+    /// <param name="zipFour"></param>
+    public Address(string line1, string line2, string city, string state, string postalCode, string zipFour)
     {
         Line1 = line1;
         Line2 = line2;
         City = city;
         State = state;
         PostalCode = postalCode;
+        ZipFour = zipFour;
     }
 
     /// <summary>
@@ -46,5 +48,10 @@ public class Address
     /// Postal code
     /// </summary>
     public string PostalCode { get; set; }
+
+    /// <summary>
+    /// Zip Four
+    /// </summary>
+    public string ZipFour { get; set; }
 }
 

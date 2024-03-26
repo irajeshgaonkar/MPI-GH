@@ -17,7 +17,7 @@ public static class ClientIdentityRequestExtensions
 
     public static Address GetAddress(this ClientIdentityRequest request)
     {
-        return new(request.AddressLine1, request.GetAddressLine2(), request.City, request.State, request.GetZipCode());
+        return new(request.AddressLine1, request.GetAddressLine2(), request.City, request.State, request.GetZipCode(),request.ZipFour ?? "");
     }
 
     public static PhoneNumber GetPhoneNumber(this ClientIdentityRequest request)
