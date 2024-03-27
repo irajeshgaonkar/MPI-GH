@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 namespace HCA.Data.Entities;
 
 /// <summary>
@@ -85,12 +86,27 @@ public class ClientIdentityAddressEntity : BaseEntity
     [MaxLength(40)]
     public string State { get; set; }
 
+    private string _zipCode;
+
     /// <summary>
     /// Zip Code
     /// </summary>
     [Column("zip_code")]
-    [MaxLength(5)]
-    public string ZipCode { get; set; }
+    [MaxLength(9)]
+    public string ZipCode
+    {
+        get { return _zipCode; }
+        set
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                _zipCode = "";
+            }
+            else
+            {
+                _zipCode = value[..Math.Min(9, value.Length)];
+            }
+        } }
 
     /// <summary>
     /// Zip Plus Four
@@ -152,10 +168,23 @@ public class ClientIdentityAddressEntity : BaseEntity
     [Column("updated_date")]
     public DateTime? UpdatedDate { get; set; }
 
+    private ClientIdentityEntity _clientIdentity;
     /// <summary>
     /// Client Identity
+    /// Automatically populates available fields
     /// </summary>
-    public ClientIdentityEntity ClientIdentity { get; set; }
+    public ClientIdentityEntity ClientIdentity
+    {
+        get { return _clientIdentity; }
+        set
+        {
+            _clientIdentity = value;
+            MpiLinkId = value.MpiLinkId;
+            SourceSystemName = value.SourceSystemName;
+            SourceSystemId = value.SourceSystemId;
+            SourceSystemUpdated = value.SourceSystemUpdated;
+        }
+    }
 
     /// <summary>
     /// Client Identity Id
