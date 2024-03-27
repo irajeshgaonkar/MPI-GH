@@ -91,47 +91,30 @@ public class NewClientIdentityMapper
         //var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
 
         // TODO: make mapping shared code
-        foreach (var addressGroup in identity.Addresses)
+        foreach (Address addressGroup in identity.Addresses)
         {
             List<ClientIdentityAddressCommunicationEntity> addressCommunications = new List<ClientIdentityAddressCommunicationEntity>();
 
             //var requestGroupedByCommunication = addressGroup.GroupBy(r => r, new ClientIdentityRequestCommunicationComparer());
-            var address = new ClientIdentityAddressEntity();
 
-            //var addressRequest = addressGroup;
-            address.MpiLinkId = result.MpiLinkId;
-            address.SourceSystemName = result.SourceSystemName;
-            address.SourceSystemId = result.SourceSystemId;
-            address.AddressType = "";
-            address.AddressLine1 = addressGroup.Line1;
-            address.AddressLine2 = addressGroup.Line2;
-            address.AddressLine3 = "";
-            address.City = addressGroup.City;
-            address.State = addressGroup.State;
-            if (string.IsNullOrEmpty(addressGroup.PostalCode))
+            var address = new ClientIdentityAddressEntity
             {
-                address.ZipCode = "";
-            }
-            else
-            {
-                string inputPostalCode = addressGroup.PostalCode;
-                if (inputPostalCode.Length > 5)
-                {
-                    address.ZipCode = inputPostalCode[..Math.Min(9,inputPostalCode.Length)];
-                }
-                else
-                {
-                    address.ZipCode = inputPostalCode;
-                }
-            }
-            address.ZipFour = addressGroup.ZipFour ?? "";
-            address.SourceSystemUpdated = result.SourceSystemUpdated;
-            address.IsActive = true;
-            address.IsDelete = false;
-            address.CreatedBy = "DOH";
-            address.CreatedDate = DateTime.Now;
-            address.UpdatedBy = "DOH";
-            address.UpdatedDate = DateTime.Now;
+                ClientIdentity = result,
+                AddressType = "",
+                AddressLine1 = addressGroup.Line1,
+                AddressLine2 = addressGroup.Line2,
+                AddressLine3 = "",
+                City = addressGroup.City,
+                State = addressGroup.State,
+                ZipCode = addressGroup.PostalCode,
+                ZipFour = addressGroup.ZipFour ?? "",
+                IsActive = true,
+                IsDelete = false,
+                CreatedBy = "DOH",
+                CreatedDate = DateTime.Now,
+                UpdatedBy = "DOH",
+                UpdatedDate = DateTime.Now
+            };
             result.Addresses.Add(address);
 
 
