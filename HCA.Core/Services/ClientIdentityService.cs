@@ -769,7 +769,7 @@ public class ClientIdentityService : IClientIdentityService
 
         }
         jsonObject["searchResults"] = newArray;
-        response.Content = jsonObject["searchResults"];
+        response.Content = ConvertJObjectToJsonElement(jsonObject);
 
         return response;
     }
