@@ -27,7 +27,18 @@ public class DOH_DeleteClientIdentityRequest : BaseRequest
     public DOH_DeleteClientIdentityRequest(string trackingId = "") : base(ApiCallType.DOH_VEDelete, trackingId)
     {
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    public string SourceSystem { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string Agency { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string? IpAddress { get; set; }
     public DeleteIdentyRequestContent Content { get; set; }
 }
 
@@ -37,5 +48,17 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     {
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public string SourceSystem { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string Agency { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string? IpAddress { get; set; }
     public DOH_PostIdentityRequestContent Content { get; set; }
 }

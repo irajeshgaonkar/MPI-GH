@@ -18,6 +18,14 @@ public class DOH_UnLinkClientIdentityRequest : BaseRequest
     {
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public string SourceSystem { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string Agency { get; set; }
     public UnLinkingSources Content { get; set; }
 }
 

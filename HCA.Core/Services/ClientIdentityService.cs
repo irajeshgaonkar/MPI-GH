@@ -121,10 +121,14 @@ public class ClientIdentityService : IClientIdentityService
 
             postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
             dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
+            dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
+            dOH_PostClientIdentityRequest.Agency = request.Agency;
         }
         else
         {
             dOH_PostClientIdentityRequest.Content = request.Content;
+            dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
+            dOH_PostClientIdentityRequest.Agency = request.Agency;
         }
 
 
@@ -399,10 +403,14 @@ public class ClientIdentityService : IClientIdentityService
             content.maxSearchResults = filter.content.maxSearchResults;
 
             dOH_DemographicQueryRequest.content = content;
+            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
         else
         {
             dOH_DemographicQueryRequest.content = filter.content;
+            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
 
         var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
@@ -456,10 +464,14 @@ public class ClientIdentityService : IClientIdentityService
             content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
 
             dOH_DemographicQueryRequest.content = content;
+            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
         else
         {
             dOH_DemographicQueryRequest.content = filter.content;
+            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
 
 
@@ -504,7 +516,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
-            return await DOH_LinkIdentities(userRequestEntity, linkingSources.content);
+            return await DOH_LinkIdentities(userRequestEntity, linkingSources);
         }
         catch (HcaBadRequestException e)
         {
@@ -540,7 +552,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, unLinkingSources.UnlinkFromSource, unLinkingSources.Source);
-            return await DOH_UnLinkIdentities(userRequestEntity, unLinkingSources.content);
+            return await DOH_UnLinkIdentities(userRequestEntity, unLinkingSources);
         }
         catch (HcaBadRequestException e)
         {
@@ -576,7 +588,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-            return await DOH_MergeIdentities(userRequestEntity, mergingSources.content);
+            return await DOH_MergeIdentities(userRequestEntity, mergingSources);
         }
         catch (HcaBadRequestException e)
         {
@@ -613,7 +625,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
-            return await DOH_UnMergeIdentities(userRequestEntity, unMergingSources.content);
+            return await DOH_UnMergeIdentities(userRequestEntity, unMergingSources);
         }
         catch (HcaBadRequestException e)
         {
@@ -688,6 +700,8 @@ public class ClientIdentityService : IClientIdentityService
 
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
         {
+            SourceSystem = request.SourceSystem,
+            Agency = request.Agency,
             Content = request.Content
         };
 
@@ -727,11 +741,36 @@ public class ClientIdentityService : IClientIdentityService
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
         {
+            SourceSystem = filter.SourceSystem,
+            Agency = filter.Agency,
             Content = filter.content
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+
+
+        JObject jsonObject = JObject.Parse(response.Content.ToString());
+
+        JArray searchResults = (JArray)jsonObject["searchResults"];
+
+        JArray newArray = new();
+
+        foreach (var item in searchResults)
+        {
+            JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
+
+            if (identityGroupedBySourceArray[0]["source"]["name"].ToString().ToLower() == filter.SourceSystem)
+            {
+                newArray.Add(item);
+            }
+
+            // Console.WriteLine(item["source"]["name"].ToString());
+
+        }
+        jsonObject["searchResults"] = newArray;
+        response.Content = jsonObject["searchResults"];
+
         return response;
     }
 
@@ -753,11 +792,15 @@ public class ClientIdentityService : IClientIdentityService
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
         {
+            SourceSystem = filter.SourceSystem,
+            Agency = filter.Agency,
             Content = filter.content
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+
+
         return response;
     }
 
@@ -800,12 +843,14 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
-    private async Task<dynamic?> DOH_LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
+    private async Task<dynamic?> DOH_LinkIdentities(UserRequestEntity userRequestEntity, DOH_LinkingSources linkingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var linkIdentityRequest = new DOH_LinkClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            Content = linkingSources
+            SourceSystem = linkingSources.SourceSystem,
+            Agency = linkingSources.Agency,
+            Content = linkingSources.content
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
@@ -813,12 +858,14 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private async Task<dynamic?> DOH_UnLinkIdentities(UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources)
+    private async Task<dynamic?> DOH_UnLinkIdentities(UserRequestEntity userRequestEntity, DOH_UnLinkingSources unLinkingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var unLinkClientIdentityRequest = new DOH_UnLinkClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            Content = unLinkingSources
+            SourceSystem = unLinkingSources.SourceSystem,
+            Agency = unLinkingSources.Agency,
+            Content = unLinkingSources.content
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
@@ -826,13 +873,15 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private async Task<dynamic?> DOH_MergeIdentities(UserRequestEntity userRequestEntity, MergingSources mergingSources)
+    private async Task<dynamic?> DOH_MergeIdentities(UserRequestEntity userRequestEntity, DOH_MergingSources mergingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
         var mergeClientIdentityRequest = new DOH_MergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            Content = mergingSources
+            SourceSystem = mergingSources.SourceSystem,
+            Agency = mergingSources.Agency,
+            Content = mergingSources.content
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
@@ -845,6 +894,8 @@ public class ClientIdentityService : IClientIdentityService
 
         var deleteClientIdentityRequest = new DOH_DeleteClientIdentityRequest(userRequestEntity.TrackingId)
         {
+            SourceSystem = deleteSourceIdentity.SourceSystem,
+            Agency = deleteSourceIdentity.Agency,
             Content = deleteSourceIdentity.Content
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
@@ -852,13 +903,15 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private async Task<dynamic?> DOH_UnMergeIdentities(UserRequestEntity userRequestEntity, UnMergingSources unMergingSources)
+    private async Task<dynamic?> DOH_UnMergeIdentities(UserRequestEntity userRequestEntity, DOH_UnMergingSources unMergingSources)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
         var unMergeClientIdentityRequest = new DOH_UnMergeClientIdentityRequest(userRequestEntity.TrackingId)
         {
-            Content = unMergingSources
+            SourceSystem = unMergingSources.SourceSystem,
+            Agency = unMergingSources.Agency,
+            Content = unMergingSources.content
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");

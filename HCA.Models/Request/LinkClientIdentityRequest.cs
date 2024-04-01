@@ -18,6 +18,13 @@ public class DOH_LinkClientIdentityRequest : BaseRequest
     public DOH_LinkClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VELink, trackingId)
     {
     }
-
+    /// <summary>
+    /// 
+    /// </summary>
+    public string SourceSystem { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string Agency { get; set; }
     public LinkingSources Content { get; set; }
 }

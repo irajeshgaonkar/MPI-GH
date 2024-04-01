@@ -75,6 +75,8 @@ public class Startup
 
         services.AddHca(Configuration);
 
+        services.AddScoped<IPValidationFilter>();
+
         //?Todo: !Refactor
         //services
         //        .AddScoped<ISessionService, SessionService>()

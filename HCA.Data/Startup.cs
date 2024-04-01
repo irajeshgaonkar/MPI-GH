@@ -28,6 +28,7 @@ public static class Startup
                 .AddScoped<IUserModifyRecordsRepository, UserModifyRecordsRepository>()
                 .AddScoped<ISftpFileTransferRepository, SftpFileTransferRepository>()
                 .AddScoped<ICustomDataMappingRepository, CustomDataMappingRepository>()
-                .AddScoped<IServiceAccountRepository, ServiceAccountRepository>();
+                .AddScoped<IServiceAccountRepository, ServiceAccountRepository>()
+                .AddScoped<IIPConfigRepository,IPConfigRepository>();
     }
 }

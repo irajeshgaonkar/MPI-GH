@@ -14,7 +14,7 @@ public class HcaDbContext : DbContext
 
     public HcaDbContext()
     {
-        _conntectionString = "Host=test-coalition-mpi-06232022.cpv4t30vzqm0.us-west-2.rds.amazonaws.com;Port=5432;Database=Coalition_MPI;Username=Gopala;Password=Pa$$word1;SearchPath='mpicoalation';";
+        _conntectionString = "Host=test-coalition-mpi-06232022.cpv4t30vzqm0.us-west-2.rds.amazonaws.com;Port=5432;Database=Coalition_MPI;Username=kirank107;Password=Pa$$word1;SearchPath='mpicoalation';";
         //_conntectionString = "Host=aurora-postgres-database.cluster-ce211rmnisgi.us-east-1.rds.amazonaws.com;Port=5432;Database=testdb;Username=postgres;Password=admin1234;SearchPath='mpicoalation';";
     }
 
@@ -55,6 +55,8 @@ public class HcaDbContext : DbContext
     public DbSet<CustomDataMappingEntity> CustomDataMappings { get; set; }
 
     public DbSet<ServiceAccountEntity> ServiceAccounts { get; set; }
+
+    public DbSet<IpAddressesEntity> IpAddresses { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
