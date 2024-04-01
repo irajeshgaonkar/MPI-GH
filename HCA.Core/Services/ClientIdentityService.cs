@@ -1,4 +1,5 @@
-﻿using HCA.Core.Mapper;
+﻿using Amazon.Auth.AccessControlPolicy;
+using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Data.Entities;
 using HCA.Data.Repository;
@@ -758,14 +759,41 @@ public class ClientIdentityService : IClientIdentityService
 
         foreach (var item in searchResults)
         {
-            JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
-
-            if (identityGroupedBySourceArray[0]["source"]["name"].ToString().ToLower() == filter.SourceSystem)
+            if (filter.content.responseIdentityFormatNames.ToString().ToUpper() == "GROUP_BY_SOURCE")
             {
-                newArray.Add(item);
+                JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
+                JArray sources = new();
+                foreach (var source in identityGroupedBySourceArray)
+                {
+                    if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
+                }
+                if (sources != null && sources.Count > 0)
+                {
+                    item["identityGroupedBySource"] = sources;
+                    newArray.Add(item);
+                }
             }
-
-            // Console.WriteLine(item["source"]["name"].ToString());
+            else
+            {
+                JArray identityGroupedBySourceArray = (JArray)item["identity"]["sources"];
+                JArray sources = new();
+                foreach (var source in identityGroupedBySourceArray)
+                {
+                    if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
+                }
+                if (sources != null && sources.Count > 0)
+                {
+                    item["identity"]["sources"] = sources;
+                    newArray.Add(item);
+                }
+            }
+            
 
         }
         jsonObject["searchResults"] = newArray;
