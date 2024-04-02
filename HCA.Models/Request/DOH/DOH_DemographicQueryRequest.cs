@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace HCA.Models.Request.DOH
 {
+    // TODO: make a base class that API queries inherit from for shared data/logic (trackingId, sourceSystem, etc)
     /// <summary>
     /// 
     /// </summary>
