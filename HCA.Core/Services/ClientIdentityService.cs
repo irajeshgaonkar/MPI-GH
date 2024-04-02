@@ -111,6 +111,8 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
+        dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
+        dOH_PostClientIdentityRequest.Agency = request.Agency;
         if (strIdentities.ToLower().Contains("null"))
         {
             // Replace null values with empty strings and get modified JSON string 
@@ -122,14 +124,10 @@ public class ClientIdentityService : IClientIdentityService
 
             postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
             dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
-            dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
-            dOH_PostClientIdentityRequest.Agency = request.Agency;
         }
         else
         {
             dOH_PostClientIdentityRequest.Content = request.Content;
-            dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
-            dOH_PostClientIdentityRequest.Agency = request.Agency;
         }
 
 
