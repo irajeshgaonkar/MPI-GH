@@ -1,5 +1,4 @@
 ﻿using HCA.Data.Repository;
-using HCA.Data.Repository.Impl;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
@@ -7,6 +6,8 @@ using Newtonsoft.Json.Linq;
 
 namespace HCA.Api.Filters
 {
+    // TODO: add documentation
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public class IPValidationFilter : IAsyncActionFilter
     {
         private readonly IIPConfigRepository _iPConfigRepository;
@@ -18,6 +19,7 @@ namespace HCA.Api.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
+            // TODO: limit try/catch wrapping
             try
             {
                 var requestBody = context.ActionArguments.FirstOrDefault();
@@ -25,10 +27,10 @@ namespace HCA.Api.Filters
 
                 string body = JsonConvert.SerializeObject(requestBody.Value);
 
-                JObject jsonObject = JObject.Parse(body);
+                JObject jsonObjectRequestBody = JObject.Parse(body);
 
-                string sourceSystem = (string)jsonObject["SourceSystem"];
-                string ipAddress = (string)jsonObject["IpAddress"];
+                string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
+                string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
 
                 if (string.IsNullOrEmpty(sourceSystem) || string.IsNullOrEmpty(ipAddress))
                 {
@@ -55,4 +57,6 @@ namespace HCA.Api.Filters
 
         }
     }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 }
