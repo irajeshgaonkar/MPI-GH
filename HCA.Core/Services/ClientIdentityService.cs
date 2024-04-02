@@ -837,6 +837,7 @@ public class ClientIdentityService : IClientIdentityService
         return response?.Content;
     }
 
+    // TODO: use inheritance to dedup filter/sourceSystem logic
     private async Task<dynamic?> DOH_DemographicQuery(UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter)
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
