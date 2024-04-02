@@ -750,7 +750,13 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
 
+        FilterQueryResponse(filter, response);
 
+        return response;
+    }
+
+    private void FilterQueryResponse(DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse? response)
+    {
         JObject jsonObject = JObject.Parse(response.Content.ToString());
 
         JArray searchResults = (JArray)jsonObject["searchResults"];
@@ -759,7 +765,7 @@ public class ClientIdentityService : IClientIdentityService
 
         foreach (var item in searchResults)
         {
-            if (filter.content.responseIdentityFormatNames.ToString().ToUpper() == "GROUP_BY_SOURCE")
+            if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
             {
                 JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
                 JArray sources = new();
@@ -793,13 +799,11 @@ public class ClientIdentityService : IClientIdentityService
                     newArray.Add(item);
                 }
             }
-            
+
 
         }
         jsonObject["searchResults"] = newArray;
         response.Content = ConvertJObjectToJsonElement(jsonObject);
-
-        return response;
     }
 
     private async Task<DemographicQueryResponseContent?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
