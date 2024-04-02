@@ -158,8 +158,12 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-    private JsonElement ConvertJObjectToJsonElement(JObject jObject)
+    private JsonElement? ConvertJObjectToJsonElement(JObject jObject)
     {
+        if (jObject == null)
+        {
+            return null;
+        }
         // Serialize the JObject to a JSON string
         string jsonString = jObject.ToString();
 
@@ -840,48 +844,59 @@ public class ClientIdentityService : IClientIdentityService
     private void FilterQueryResponse(DOH_DemographicQueryRequest filter, DOH_DemographicQueryClientIdentityResponse? response)
     {
         JObject jsonObject = JObject.Parse(response.Content.ToString());
-
-
+        JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
 
         JArray newArray = new();
 
-        if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
-        {
-            JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
 
-            JArray sources = new();
-            foreach (var source in identityGroupedBySource)
+            if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
             {
-                if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                JArray sources = new();
+                foreach (var source in identityGroupedBySource)
                 {
-                    sources.Add(source);
+                    if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
+                }
+                if (sources != null && sources.Count > 0)
+                {
+                    jsonObject["identityGroupedBySource"] = sources;
+                    newArray.Add(jsonObject);
+                }
+                else
+                {
+                    jsonObject = null;
+                    newArray.Add(jsonObject);
+
+                }
+                    
+                    
+            }
+            else
+            {
+                JArray SourceArray = (JArray)jsonObject["identity"]["sources"];
+                JArray sources = new();
+                foreach (var source in SourceArray)
+                {
+                    if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
+                }
+                if (sources != null && sources.Count > 0)
+                {
+                    jsonObject["identity"]["sources"] = sources;
+                    newArray.Add(jsonObject);
+                }
+                else
+                {
+                    jsonObject = null;
+                    newArray.Add(jsonObject);
+
                 }
             }
-            if (sources != null && sources.Count > 0)
-            {
-                jsonObject["identityGroupedBySource"] = sources;
-                newArray.Add(jsonObject);
-            }
-        }
-        else
-        {
-            JArray SourceArray = (JArray)jsonObject["identity"]["sources"];
-            JArray sources = new();
-            foreach (var source in SourceArray)
-            {
-                if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
-                {
-                    sources.Add(source);
-                }
-            }
-            if (sources != null && sources.Count > 0)
-            {
-                jsonObject["identity"]["sources"] = sources;
-                newArray.Add(jsonObject);
-            }
-        }
-
-        //jsonObject["content"] = newArray;
+              
         response.Content = ConvertJObjectToJsonElement(jsonObject);
     }
 
