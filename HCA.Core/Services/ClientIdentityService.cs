@@ -750,12 +750,12 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
 
-        FilterQueryResponse(filter, response);
+        FilterSearchResponse(filter, response);
 
         return response;
     }
 
-    private void FilterQueryResponse(DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse? response)
+    private void FilterSearchResponse(DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse? response)
     {
         JObject jsonObject = JObject.Parse(response.Content.ToString());
 
