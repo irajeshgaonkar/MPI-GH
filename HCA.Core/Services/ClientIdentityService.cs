@@ -392,6 +392,10 @@ public class ClientIdentityService : IClientIdentityService
         string strIdentities = filter.content.identity.ToString();
 
         DOH_DemographicsSearchRequest dOH_DemographicQueryRequest = new DOH_DemographicsSearchRequest();
+
+        // TODO: dedup internal logic, and look into deduping global logic
+        dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+        dOH_DemographicQueryRequest.Agency = filter.Agency;
         if (strIdentities.ToLower().Contains("null"))
         {
             // Replace null values with empty strings and get modified JSON string 
@@ -406,14 +410,10 @@ public class ClientIdentityService : IClientIdentityService
             content.maxSearchResults = filter.content.maxSearchResults;
 
             dOH_DemographicQueryRequest.content = content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
         else
         {
             dOH_DemographicQueryRequest.content = filter.content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
         }
 
         var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
@@ -749,63 +749,79 @@ public class ClientIdentityService : IClientIdentityService
             Content = filter.content
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater) 
+            ?? throw new HcaBadRequestException("Failed to process request");
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
-
+        
         FilterSearchResponse(filter, response);
 
         return response;
     }
 
-    private void FilterSearchResponse(DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse? response)
+    private void FilterSearchResponse(DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse response)
     {
         JObject jsonObject = JObject.Parse(response.Content.ToString());
 
+        // TODO: refactor to strongly-typed classes
         JArray searchResults = (JArray)jsonObject["searchResults"];
+        if (searchResults == null) { return; }
 
-        JArray newArray = new();
+        JArray filteredResults = new();
 
-        foreach (var item in searchResults)
+        if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
         {
-            if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
+            foreach (var item in searchResults)
             {
-                JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
-                JArray sources = new();
-                foreach (var source in identityGroupedBySourceArray)
-                {
-                    if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
-                    {
-                        sources.Add(source);
-                    }
-                }
-                if (sources != null && sources.Count > 0)
-                {
-                    item["identityGroupedBySource"] = sources;
-                    newArray.Add(item);
-                }
+                FilterSearchResultsGroupBySource(filter, filteredResults, item);
             }
-            else
-            {
-                JArray identityGroupedBySourceArray = (JArray)item["identity"]["sources"];
-                JArray sources = new();
-                foreach (var source in identityGroupedBySourceArray)
-                {
-                    if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
-                    {
-                        sources.Add(source);
-                    }
-                }
-                if (sources != null && sources.Count > 0)
-                {
-                    item["identity"]["sources"] = sources;
-                    newArray.Add(item);
-                }
-            }
-
-
         }
-        jsonObject["searchResults"] = newArray;
+        else
+        {
+            foreach (var item in searchResults)
+            {
+                FilterSearchResultsDefault(filter, filteredResults, item);
+            }
+        }
+
+        jsonObject["searchResults"] = filteredResults;
         response.Content = ConvertJObjectToJsonElement(jsonObject);
+    }
+
+    // TODO: check if shared logic can be extracted
+    private static void FilterSearchResultsDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
+    {
+        JArray identityGroupedBySourceArray = (JArray)item["identity"]["sources"];
+        JArray sources = new();
+        foreach (var source in identityGroupedBySourceArray)
+        {
+            if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+            {
+                sources.Add(source);
+            }
+        }
+        if (sources != null && sources.Count > 0)
+        {
+            item["identity"]["sources"] = sources;
+            filteredResults.Add(item);
+        }
+    }
+
+    private static void FilterSearchResultsGroupBySource(DOH_DemographicsSearchRequest filter, JArray newArray, JToken item)
+    {
+        JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
+        JArray sources = new();
+        foreach (var source in identityGroupedBySourceArray)
+        {
+            if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+            {
+                sources.Add(source);
+            }
+        }
+        if (sources != null && sources.Count > 0)
+        {
+            item["identityGroupedBySource"] = sources;
+            newArray.Add(item);
+        }
     }
 
     private async Task<DemographicQueryResponseContent?> DemographicQuery(UserRequestEntity userRequestEntity, Identity filter)
