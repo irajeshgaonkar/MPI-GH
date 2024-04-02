@@ -22,12 +22,12 @@ namespace HCA.Data.Entities
         public int Id { get; set; }
 
         /// <summary>
-        /// Source Sytem
+        /// Source System
         /// </summary>
         [Column("source_system")]
         [Required]
         [MaxLength(50)]
-        public string SourceSytem { get; set; }
+        public string SourceSystem { get; set; }
 
         /// <summary>
         /// ip address

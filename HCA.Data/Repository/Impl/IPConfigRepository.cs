@@ -19,7 +19,7 @@ namespace HCA.Data.Repository.Impl
 
         public async Task<bool> IsIPAddressTrustedAsync(string sourceSystem, string ipAddress)
         {
-            return await _hcaDbContext.IpAddresses.AnyAsync(ip => ip.SourceSytem == sourceSystem && ip.IpAddress == ipAddress);
+            return await _hcaDbContext.IpAddresses.AnyAsync(ip => ip.SourceSystem == sourceSystem && ip.IpAddress == ipAddress);
         }
 
     }
