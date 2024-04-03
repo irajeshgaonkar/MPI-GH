@@ -6,5 +6,7 @@ namespace HCA.Data.Repository
     public interface IIPConfigRepository : IRepositoryBase<IpAddressesEntity>
     {
         Task<bool> IsIPAddressTrustedAsync(string sourceSystem, string ipAddress);
+
+        Task<string> GetSourceSystemFromIp( string ipAddress );
     }
 }
