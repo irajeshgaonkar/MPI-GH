@@ -31,30 +31,39 @@ namespace HCA.Api.Filters
                 string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
 
-                if (string.IsNullOrEmpty(sourceSystem))
-                {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." );
-                    return;
-                }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
                     context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." );
                     return;
                 }
 
-                bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
-                if (!isTrusted) 
+                if( string.IsNullOrEmpty( sourceSystem ) )
                 {
-                    // TODO: swap this to a unauthorized error/result once systems are online
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
-                    return;
+                    sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
                 }
+                else
+                {
+                    bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
+                    if( !isTrusted )
+                    {
+                        // TODO: swap this to a unauthorized error/result once systems are online
+                        context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
+                        return;
+                    }
+                }
+
                 await next();
             }
-            catch (JsonException)
+            catch (JsonException e)
             {
                 // TODO: swap this to a unauthorized error/result once systems are online
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown Error."  );
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. JsonException Error: "+ e.Message );
+            }
+            catch (InvalidOperationException e) {
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Likely database IP list error: "+ e.Message );
+            }
+            catch (Exception e ){ 
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown error: "+ e.Message );
             }
         }
 
