@@ -17,7 +17,7 @@ namespace HCA.Api.Filters
             _iPConfigRepository = iPConfigRepository;
         }
 
-        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+        public async Task OnActionExecutionAsync( ActionExecutingContext context, ActionExecutionDelegate next )
         {
             // TODO: limit try/catch wrapping
             try
@@ -34,29 +34,32 @@ namespace HCA.Api.Filters
 
                 if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = new BadRequestObjectResult(new { message="sourceSystem Validation  is failed , There is no sourcesystem filed is present in the input"});
+                    context.Result = BuildBadRequestResult( "sourceSystem validation failed. Input is missing sourceSystem field.");
                     return;
                 }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = new BadRequestObjectResult(new { message = "ipAddress Validation is failed , There is no ipAddress value present in input"});
+                    context.Result = BuildBadRequestResult( "ipAddress validation failed. Input is missing ipAddress value."  );
                     return;
                 }
 
                 bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
-                if (!isTrusted)
+                if (!isTrusted) 
                 {
-                    context.Result = new BadRequestObjectResult(new {Message = "IPAddress/SourceSytem name Validation failed. Received IPAddress/SourceSystem names from input are not matched." });
+                    // TODO: swap this to a unauthorized error/result once systems are online
+                    context.Result = BuildBadRequestResult( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
                     return;
                 }
                 await next();
             }
             catch (JsonException)
             {
-                context.Result = new BadRequestResult();
+                // TODO: swap this to a unauthorized error/result once systems are online
+                context.Result = BuildBadRequestResult( "sourceSystem validation failed. Unknown Error."  );
             }
-
         }
+
+        private static BadRequestObjectResult BuildBadRequestResult( string message ) => new( new { Message = message } );
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
