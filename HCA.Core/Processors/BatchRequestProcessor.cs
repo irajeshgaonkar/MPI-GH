@@ -1,18 +1,13 @@
-﻿using HCA.Core.Mapper;
-using HCA.Core.Processors.File;
+﻿using HCA.Core.Processors.File;
 using HCA.Core.Services;
-using HCA.Data.Entities;
 using HCA.Data.Repository;
-using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
 using HCA.Infrastructure.Logger;
-using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using HCA.Models.SQS;
-using Amazon.S3;
 using HCA.Infrastructure.Sqs;
 
 namespace HCA.Core.Processors;

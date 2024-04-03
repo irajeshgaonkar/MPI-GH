@@ -1,5 +1,4 @@
-﻿using System;
-using HCA.Data.Repository;
+﻿using HCA.Data.Repository;
 using HCA.Data.Repository.Impl;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

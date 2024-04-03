@@ -1,8 +1,6 @@
-﻿using System;
-using AutoMapper;
+﻿using AutoMapper;
 using HCA.Data.Entities;
 using HCA.FileProcessor.Models;
-using HCA.Models;
 using HCA.Models.Request;
 
 namespace HCA.Core.Mapper

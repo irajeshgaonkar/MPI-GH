@@ -4,7 +4,6 @@ using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
-using HCA.Data.Entities;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
@@ -13,12 +12,8 @@ using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Net;
-using System.Linq;
-using Newtonsoft.Json;
 
 namespace HCA.Api.Controllers
 {

@@ -1,5 +1,4 @@
-﻿using System;
-namespace HCA.Api.Dto;
+﻿namespace HCA.Api.Dto;
 
 public class FileRequestDto
 {

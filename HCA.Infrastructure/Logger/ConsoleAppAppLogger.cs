@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using Amazon.Lambda.Core;
 
 namespace HCA.Infrastructure.Logger;
 

@@ -1,6 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace HCA.Models.MuleSoft;
+﻿namespace HCA.Models.MuleSoft;
 
 /// <summary>
 /// Identity details

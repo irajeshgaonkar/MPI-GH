@@ -1,5 +1,4 @@
-﻿using System;
-using HCA.Api.Dto;
+﻿using HCA.Api.Dto;
 using HCA.Models;
 using HCA.Models.Request;
 

@@ -2,22 +2,15 @@
 // See https://aka.ms/new-console-template for more information
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
-using HCA.Data;
-using HCA.MuleSoft;
-using HCA.Infrastructure;
 using HCA.Core;
 using HCA.Core.Processors;
-using System.Text.Json;
 using HCA.Infrastructure.Logger;
 using HCA.Core.Processors.File;
 using HCA.Models.SQS;
 using HCA.Models.Enums;
 using HCA.Infrastructure.Extensions;
-using HCA.Models.Request;
 using HCA.Core.Mapper;
 using HCA.Data.Repository;
-using HCA.Infrastructure.sftp;
 using HCA.Core.Processors.Sftp;
 using HCA.Infrastructure.Sqs;
 

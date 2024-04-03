@@ -1,15 +1,12 @@
-﻿using System;
-using HCA.Core.Mapper;
+﻿using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
 using HCA.Core.Processors.Sftp;
 using HCA.Core.Services;
 using HCA.Data;
-using HCA.Data.Entities;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Sqs;
 using HCA.Models;
-using HCA.Models.Request;
 using HCA.MuleSoft;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

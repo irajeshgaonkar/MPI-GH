@@ -1,13 +1,5 @@
 ﻿using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
-using HCA.Data.Repository;
-using HCA.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using HCA.Data.Repository.Impl;
 
 namespace HCA.Data.Repository.Impl
 {

@@ -1,6 +1,4 @@
-﻿using System;
-using HCA.Infrastructure.Comparer;
-using HCA.Models;
+﻿using HCA.Infrastructure.Comparer;
 using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 

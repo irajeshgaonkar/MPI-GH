@@ -1,5 +1,4 @@
-﻿using HCA.Models.Enums;
-using HCA.Models.SQS;
+﻿using HCA.Models.SQS;
 
 namespace HCA.Core.Processors;
 

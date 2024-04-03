@@ -1,13 +1,7 @@
-﻿using HCA.Api.Constants;
-using HCA.Api.Dto;
-using HCA.Api.Extensions;
-using HCA.Api.Filters;
+﻿using HCA.Api.Dto;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
-using HCA.Data.Entities;
 using HCA.Infrastructure.Logger;
-using HCA.Models.Request;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 

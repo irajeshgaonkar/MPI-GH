@@ -1,16 +1,9 @@
 ﻿using HCA.Core.Mapper;
-using HCA.Data.Entities;
 using HCA.Data.Repository;
 using HCA.Infrastructure.JObjectHelper;
 using HCA.Infrastructure.Logger;
-using HCA.Models.Enums;
 using HCA.Models.Request;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Core.Services
 {

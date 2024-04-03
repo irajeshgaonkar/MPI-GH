@@ -1,17 +1,8 @@
 ﻿using HCA.Models.MuleSoft;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using ThirdParty.Json.LitJson;
 
 namespace HCA.Models.Request.DOH
 {
-  
+
     /// <summary>
     /// 
     /// </summary>

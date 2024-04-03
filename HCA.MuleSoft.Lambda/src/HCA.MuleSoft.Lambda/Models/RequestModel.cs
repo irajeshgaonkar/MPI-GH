@@ -1,5 +1,4 @@
-﻿using System;
-namespace HCA.MuleSoft.Lambda.Models
+﻿namespace HCA.MuleSoft.Lambda.Models
 {
     public class RequestModel
     {

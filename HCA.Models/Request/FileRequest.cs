@@ -1,5 +1,4 @@
-﻿using System;
-namespace HCA.Models.Request
+﻿namespace HCA.Models.Request
 {
     public class FileRequest
     {

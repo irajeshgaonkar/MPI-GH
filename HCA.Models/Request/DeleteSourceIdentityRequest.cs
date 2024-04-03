@@ -1,6 +1,5 @@
 ﻿using HCA.Models.MuleSoft;
 using HCA.Models.Enums;
-using HCA.Models.Request.DOH;
 
 namespace HCA.Models.Request
 {

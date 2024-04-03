@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
-using HCA.Models.MuleSoft;
 
 namespace HCA.Data.Repository;
 
