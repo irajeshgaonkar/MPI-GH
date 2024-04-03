@@ -33,12 +33,12 @@ namespace HCA.Api.Filters
 
                 if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field.");
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." );
                     return;
                 }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value."  );
+                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." );
                     return;
                 }
 
