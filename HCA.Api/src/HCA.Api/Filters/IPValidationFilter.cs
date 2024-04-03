@@ -62,5 +62,4 @@ namespace HCA.Api.Filters
         private static OkObjectResult BuildOkObjectResultWith400Error( string message ) => new( new { errorCode = "400", Message = message } );
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-
 }
