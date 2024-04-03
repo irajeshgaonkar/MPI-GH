@@ -1,5 +1,4 @@
-﻿using System;
-namespace HCA.MuleSoft.Lambda
+﻿namespace HCA.MuleSoft.Lambda
 {
     public static class Constants
     {

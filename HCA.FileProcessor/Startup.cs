@@ -1,8 +1,4 @@
-﻿using System;
-using HCA.Data.Entities;
-using HCA.FileProcessor.FileReaders;
-using HCA.Models;
-using HCA.Models.Request;
+﻿using HCA.FileProcessor.FileReaders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HCA.Core;
