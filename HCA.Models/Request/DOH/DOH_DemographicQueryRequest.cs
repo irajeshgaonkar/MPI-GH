@@ -1,12 +1,4 @@
-﻿using HCA.Models.MuleSoft;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace HCA.Models.Request.DOH
+﻿namespace HCA.Models.Request.DOH
 {
     // TODO: make a base class that API queries inherit from for shared data/logic (trackingId, sourceSystem, etc)
     /// <summary>

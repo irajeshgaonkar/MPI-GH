@@ -1,11 +1,10 @@
 ﻿using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Response;
 
 namespace HCA.Models.Response
 {
-   /// <summary>
-   /// 
-   /// </summary>
+    /// <summary>
+    /// 
+    /// </summary>
     public class DeleteSourceIdentityResponse : BaseResponse
     {
         /// <summary>

@@ -1,9 +1,4 @@
 ﻿using HCA.Models.MuleSoft;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Models.Request.DOH
 {

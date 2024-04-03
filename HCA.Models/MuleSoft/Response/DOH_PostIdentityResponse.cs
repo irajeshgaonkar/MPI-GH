@@ -1,6 +1,4 @@
-﻿using HCA.Models.Response;
-
-namespace HCA.Models.MuleSoft.Response;
+﻿namespace HCA.Models.MuleSoft.Response;
 
 /// <summary>
 /// Post Identity Response Content
