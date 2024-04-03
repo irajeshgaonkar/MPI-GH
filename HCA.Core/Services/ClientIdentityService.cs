@@ -711,9 +711,54 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        FilterPostResponse(request, response);
         return response;
     }
 
+    private void FilterPostResponse(DOH_PostClientIdentityRequest request, DOH_PostClientIdentityResponse? response)
+    {
+        JObject jsonObject = JObject.Parse(response.Content.ToString());
+
+
+        JArray newArray = new();
+
+
+        if (request.Content.ResponseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
+        {
+            JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
+            JArray sources = new();
+            foreach (var source in identityGroupedBySource)
+            {
+                if (source["source"]["name"].ToString().ToLower() == request.SourceSystem.ToLower())
+                {
+                    sources.Add(source);
+                }
+            }
+            if (sources != null && sources.Count > 0)
+            {
+                jsonObject["identityGroupedBySource"] = sources;
+                newArray.Add(jsonObject);
+            }
+        }
+        else
+        {
+            JArray SourceArray = (JArray)jsonObject["linkIdentity"]["sources"];
+            JArray sources = new();
+            foreach (var source in SourceArray)
+            {
+                if (source["name"].ToString().ToLower() == request.SourceSystem.ToLower())
+                {
+                    sources.Add(source);
+                }
+            }
+            if (sources != null && sources.Count > 0)
+            {
+                jsonObject["linkIdentity"]["sources"] = sources;
+                newArray.Add(jsonObject);
+            }
+        }
+        response.Content = ConvertJObjectToJsonElement(jsonObject);
+    }
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
     {
