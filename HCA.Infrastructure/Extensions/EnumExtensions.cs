@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using HCA.Models.Enums;
+﻿using HCA.Models.Enums;
 
 namespace HCA.Infrastructure.Extensions;
 

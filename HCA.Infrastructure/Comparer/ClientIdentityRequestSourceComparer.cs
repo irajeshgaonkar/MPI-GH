@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using HCA.Models;
 using HCA.Models.Request;
 
 namespace HCA.Infrastructure.Comparer;

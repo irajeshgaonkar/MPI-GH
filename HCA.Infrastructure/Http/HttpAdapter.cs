@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Text;
-using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 
 namespace HCA.Infrastructure.Http;

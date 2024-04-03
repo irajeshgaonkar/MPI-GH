@@ -1,6 +1,4 @@
-﻿using System;
-using Amazon.SQS;
-using Amazon.SQS.Model;
+﻿using Amazon.SQS;
 using HCA.Infrastructure.Extensions;
 using HCA.Models.SQS;
 
