@@ -1,13 +1,9 @@
 ﻿
 using HCA.Api.Constants;
 using HCA.Api.Options;
-using HCA.Infrastructure.Extensions;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Principal;
-using System.Text;
 using HCA.Api.Extensions;
 
 namespace HCA.Api.Middleware;

@@ -1,6 +1,5 @@
 ﻿using HCA.Api.Constants;
 using HCA.Core.Services;
-using HCA.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.IdentityModel.Tokens.Jwt;

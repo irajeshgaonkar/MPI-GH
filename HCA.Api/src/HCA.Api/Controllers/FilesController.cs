@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using HCA.Api.Constants;
+﻿using HCA.Api.Constants;
 using HCA.Api.Dto;
 using HCA.Api.Filters;
 using HCA.Api.Mapper;
