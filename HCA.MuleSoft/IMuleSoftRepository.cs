@@ -1,7 +1,5 @@
 ﻿using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
-using HCA.Models.Request;
-using HCA.Models.Response;
 
 namespace HCA.MuleSoft;
 

@@ -3,7 +3,6 @@ using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.Request;
 using HCA.MuleSoft.Extensions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using HCA.Infrastructure.JObjectHelper;
 

@@ -1,5 +1,4 @@
-﻿using System;
-using HCA.Infrastructure.Http;
+﻿using HCA.Infrastructure.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

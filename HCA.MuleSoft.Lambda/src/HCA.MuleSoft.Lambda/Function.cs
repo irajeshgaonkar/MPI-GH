@@ -1,16 +1,12 @@
-﻿using System.Text.Json;
-using Amazon.Lambda.Core;
+﻿using Amazon.Lambda.Core;
 using Amazon.Lambda.SQSEvents;
 using Amazon.S3;
 using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
-using HCA.Data;
-using HCA.Infrastructure;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.SQS;
-using HCA.MuleSoft.Lambda.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
