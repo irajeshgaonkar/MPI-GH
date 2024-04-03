@@ -24,7 +24,6 @@ namespace HCA.Api.Filters
             {
                 var requestBody = context.ActionArguments.FirstOrDefault();
 
-
                 string body = JsonConvert.SerializeObject(requestBody.Value);
 
                 JObject jsonObjectRequestBody = JObject.Parse(body);
