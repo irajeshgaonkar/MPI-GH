@@ -2,11 +2,6 @@
 using HCA.Data.Repository;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Request;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Core.Services
 {

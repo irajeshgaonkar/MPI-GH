@@ -1,5 +1,4 @@
-﻿using Amazon.Auth.AccessControlPolicy;
-using HCA.Core.Mapper;
+﻿using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Data.Entities;
 using HCA.Data.Repository;

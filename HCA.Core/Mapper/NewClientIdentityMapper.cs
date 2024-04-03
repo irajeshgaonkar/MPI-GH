@@ -1,8 +1,6 @@
 ﻿using System.Globalization;
-using System.Net;
 using System.Text.RegularExpressions;
 using HCA.Data.Entities;
-using HCA.Infrastructure.Comparer;
 using HCA.Models;
 using HCA.Models.MuleSoft;
 using HCA.Models.Request;

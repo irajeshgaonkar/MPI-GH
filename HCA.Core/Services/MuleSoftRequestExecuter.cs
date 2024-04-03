@@ -1,6 +1,5 @@
 ﻿using HCA.Core.Processors;
 using HCA.Infrastructure.Exceptions;
-using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;

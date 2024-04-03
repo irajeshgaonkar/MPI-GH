@@ -2,7 +2,6 @@
 using HCA.Data.Entities;
 using HCA.Infrastructure.Comparer;
 using HCA.Models;
-using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 
 namespace HCA.Core.Mapper;
