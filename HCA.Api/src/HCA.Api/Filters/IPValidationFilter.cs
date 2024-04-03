@@ -34,12 +34,12 @@ namespace HCA.Api.Filters
 
                 if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = BuildBadRequestResult( "sourceSystem validation failed. Input is missing sourceSystem field.");
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field.");
                     return;
                 }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = BuildBadRequestResult( "ipAddress validation failed. Input is missing ipAddress value."  );
+                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value."  );
                     return;
                 }
 
@@ -47,7 +47,7 @@ namespace HCA.Api.Filters
                 if (!isTrusted) 
                 {
                     // TODO: swap this to a unauthorized error/result once systems are online
-                    context.Result = BuildBadRequestResult( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
                     return;
                 }
                 await next();
@@ -55,11 +55,11 @@ namespace HCA.Api.Filters
             catch (JsonException)
             {
                 // TODO: swap this to a unauthorized error/result once systems are online
-                context.Result = BuildBadRequestResult( "sourceSystem validation failed. Unknown Error."  );
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown Error."  );
             }
         }
 
-        private static BadRequestObjectResult BuildBadRequestResult( string message ) => new( new { Message = message } );
+        private static OkObjectResult BuildOkObjectResultWith400Error( string message ) => new( new { errorCode = "400", Message = message } );
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
