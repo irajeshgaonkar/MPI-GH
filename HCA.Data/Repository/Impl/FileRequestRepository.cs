@@ -1,6 +1,5 @@
 ﻿using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCA.Data.Repository;
 

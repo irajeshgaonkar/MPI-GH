@@ -1,9 +1,5 @@
-﻿using System;
-using System.Linq.Expressions;
-using HCA.Data.Entities;
+﻿using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
-using HCA.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCA.Data.Repository;
 
