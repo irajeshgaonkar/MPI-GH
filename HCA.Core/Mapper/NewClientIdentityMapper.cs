@@ -59,8 +59,30 @@ public class NewClientIdentityMapper
             result.Gender = identity.Genders.FirstOrDefault();
         else
             result.Gender = "unknown";
-        result.ProtectedPopulationFlag = false;
-        result.ProtectedPopulationType = "";
+        if (requests.protectedPopulation != null && requests.protectedPopulation.First() != null)
+        {
+            if (requests.protectedPopulation.First().ProtectedPopulationFlag != false)
+            {
+                result.ProtectedPopulationFlag = requests.protectedPopulation.First().ProtectedPopulationFlag ?? false;
+            }
+            else
+            {
+                result.ProtectedPopulationFlag = false;
+            }
+            ;
+            if (requests.protectedPopulation.First().ProtectedPopulationTypes != null)
+            {
+                result.ProtectedPopulationType = string.Join(",", requests.protectedPopulation.First().ProtectedPopulationTypes);
+            }
+            else
+            {
+                result.ProtectedPopulationType = "";
+            }
+        }   
+        else {
+            result.ProtectedPopulationFlag = false;
+            result.ProtectedPopulationType = "";
+        }
         result.MpiUpdated = mpiUpdated;
         result.SourceSystemUpdated = DateTime.Now;
         result.IsActive = true;

@@ -32,20 +32,21 @@ namespace HCA.Api.Filters
                 string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
 
-                if (string.IsNullOrEmpty(sourceSystem) || string.IsNullOrEmpty(ipAddress))
+                if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = new BadRequestObjectResult("Both sourceSystem and ipAddress are required fields");
+                    context.Result = new BadRequestObjectResult(new { message="sourceSystem Validation  is failed , There is no sourcesystem filed is present in the input"});
+                    return;
+                }
+                if (string.IsNullOrEmpty(ipAddress))
+                {
+                    context.Result = new BadRequestObjectResult(new { message = "ipAddress Validation is failed , There is no ipAddress value present in input"});
                     return;
                 }
 
                 bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
                 if (!isTrusted)
                 {
-                    string errorMessage = "IP Validation failed.The IP address is not trusted.";
-                    context.Result = new ObjectResult(errorMessage)
-                    {
-                        StatusCode = StatusCodes.Status403Forbidden
-                    };
+                    context.Result = new BadRequestObjectResult(new {Message = "IPAddress/SourceSytem name Validation failed. Received IPAddress/SourceSystem names from input are not matched." });
                     return;
                 }
                 await next();

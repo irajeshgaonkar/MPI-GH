@@ -42,11 +42,22 @@ public class DOH_DeleteClientIdentityRequest : BaseRequest
     public DeleteIdentyRequestContent Content { get; set; }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public class DOH_PostClientIdentityRequest : BaseRequest
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public DOH_PostClientIdentityRequest(string trackingId = "") : base(ApiCallType.DOH_VEPost, trackingId)
     {
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public ProtectedPopulation[]? protectedPopulation { get; set; }
 
     /// <summary>
     /// 
@@ -61,4 +72,19 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     /// </summary>
     public string? IpAddress { get; set; }
     public DOH_PostIdentityRequestContent Content { get; set; }
+}
+
+/// <summary>
+/// 
+/// </summary>
+public class ProtectedPopulation
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    public bool? ProtectedPopulationFlag { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string[]? ProtectedPopulationTypes { get; set; }
 }

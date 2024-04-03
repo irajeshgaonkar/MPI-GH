@@ -113,6 +113,7 @@ public class ClientIdentityService : IClientIdentityService
         DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
         dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
         dOH_PostClientIdentityRequest.Agency = request.Agency;
+        dOH_PostClientIdentityRequest.protectedPopulation = request.protectedPopulation;
         if (strIdentities.ToLower().Contains("null"))
         {
             // Replace null values with empty strings and get modified JSON string 
@@ -703,6 +704,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
         {
+            protectedPopulation = request.protectedPopulation,
             SourceSystem = request.SourceSystem,
             Agency = request.Agency,
             Content = request.Content
@@ -712,6 +714,7 @@ public class ClientIdentityService : IClientIdentityService
         UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         return response;
     }
+
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities(UserRequestEntity userRequestEntity, LinkingSources linkingSources)
     {
