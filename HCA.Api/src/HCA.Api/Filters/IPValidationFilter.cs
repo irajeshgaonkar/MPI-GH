@@ -31,21 +31,21 @@ namespace HCA.Api.Filters
                 string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
                 string agency = Convert.ToString(jsonObjectRequestBody["Agency"]) ?? "";
-                string trackingid = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
+                string trackingId = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
                 if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingid);
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingId);
                     return;
                 }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingid);
+                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
                     return;
                 }
                 if (string.IsNullOrEmpty(agency))
                 {
-                    context.Result = BuildOkObjectResultWith400Error("Agency validation failed. Input is missing agency value.", trackingid);
+                    context.Result = BuildOkObjectResultWith400Error("Agency validation failed. Input is missing agency value.", trackingId);
                     return;
                 }
 
@@ -53,7 +53,7 @@ namespace HCA.Api.Filters
                 if (!isTrusted) 
                 {
                     // TODO: swap this to a unauthorized error/result once systems are online
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingid);
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingId);
                     return;
                 }
                 await next();
