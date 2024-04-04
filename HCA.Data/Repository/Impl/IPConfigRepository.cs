@@ -17,5 +17,9 @@ namespace HCA.Data.Repository.Impl
             return await _hcaDbContext.IpAddresses.AnyAsync(ip => ip.SourceSystem == sourceSystem && ip.IpAddress == ipAddress);
         }
 
+        public async Task<string> GetSourceSystemFromIp( string ipAddress ) 
+        {
+            return (await _hcaDbContext.IpAddresses.SingleAsync( ip => ip.IpAddress==ipAddress )).SourceSystem;
+        }
     }
 }

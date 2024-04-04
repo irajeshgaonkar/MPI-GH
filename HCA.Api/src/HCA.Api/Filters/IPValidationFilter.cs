@@ -58,10 +58,16 @@ namespace HCA.Api.Filters
                 }
                 await next();
             }
-            catch (JsonException)
+            catch (JsonException e)
             {
                 // TODO: swap this to a unauthorized error/result once systems are online
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown Error." );
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. JsonException Error: "+ e.Message );
+            }
+            catch (InvalidOperationException e) {
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Likely database IP list error: "+ e.Message );
+            }
+            catch (Exception e ){ 
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown error: "+ e.Message );
             }
         }
 
