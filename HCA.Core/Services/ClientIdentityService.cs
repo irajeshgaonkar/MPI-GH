@@ -1137,7 +1137,7 @@ public class ClientIdentityService : IClientIdentityService
 
     private UserRequestEntity CreateUserRequest<T>(T request, ApiCallType apiCallType, string userName, string trackingId, NotificationOptions? notificationOptions)
     {
-        if (request == null) throw new ArgumentNullException("ClientIdentityService:CreateUserRequest:Request cannot be nulle");
+        if (request == null) throw new ArgumentNullException("ClientIdentityService:CreateUserRequest:Request cannot be null");
 
         var userRequest = new UserRequestEntity()
         {
