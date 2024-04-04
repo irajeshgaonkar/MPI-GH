@@ -30,15 +30,22 @@ namespace HCA.Api.Filters
 
                 string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
+                string agency = Convert.ToString(jsonObjectRequestBody["Agency"]) ?? "";
+                string trackingid = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
                 if (string.IsNullOrEmpty(sourceSystem))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." );
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingid);
                     return;
                 }
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." );
+                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingid);
+                    return;
+                }
+                if (string.IsNullOrEmpty(agency))
+                {
+                    context.Result = BuildOkObjectResultWith400Error("Agency validation failed. Input is missing agency value.", trackingid);
                     return;
                 }
 
@@ -46,7 +53,7 @@ namespace HCA.Api.Filters
                 if (!isTrusted) 
                 {
                     // TODO: swap this to a unauthorized error/result once systems are online
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." );
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingid);
                     return;
                 }
                 await next();
@@ -54,11 +61,11 @@ namespace HCA.Api.Filters
             catch (JsonException)
             {
                 // TODO: swap this to a unauthorized error/result once systems are online
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown Error."  );
+                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown Error." );
             }
         }
 
-        private static OkObjectResult BuildOkObjectResultWith400Error( string message ) => new( new { errorCode = "400", Message = message } );
+        private static OkObjectResult BuildOkObjectResultWith400Error( string message,string? trackingid = "" ) => new( new { errorCode = "400", Message = message,Success = false, TrackingId = trackingid} );
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

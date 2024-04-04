@@ -15,6 +15,7 @@ using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
@@ -96,9 +97,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
-
         string strIdentities = request.Content.Identity.ToString();
         Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
+        
+        if (request.SourceSystem.ToLower() != identity.Sources[0].Name.ToString().ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match" };
+            return errorResponse;
+        }
+
         var trackingId = string.Empty;
         if (!(string.IsNullOrEmpty(request.TrackingId)) && (request.TrackingId.Length >= 1))
         {
@@ -571,6 +578,22 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities(DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
+        if (mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match" };
+            return errorResponse;
+        }
+        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match" };
+            return errorResponse;
+        }
+        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match" };
+            return errorResponse;
+        }
+
         var trackingId = string.Empty;
         if (!(string.IsNullOrEmpty(mergingSources.trackingId)) && (mergingSources.trackingId.Length >= 1))
         {
@@ -607,6 +630,21 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities(DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
+        if (unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match" };
+            return errorResponse;
+        }
+        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match" };
+            return errorResponse;
+        }
+        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match" };
+            return errorResponse;
+        }
         var trackingId = string.Empty;
         if (!(string.IsNullOrEmpty(unMergingSources.trackingId)) && (unMergingSources.trackingId.Length >= 1))
         {

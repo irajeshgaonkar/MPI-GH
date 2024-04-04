@@ -82,7 +82,7 @@ public class ProtectedPopulation
     /// <summary>
     /// 
     /// </summary>
-    public bool? ProtectedPopulationFlag { get; set; }
+    public string? ProtectedPopulationFlag { get; set; }
     /// <summary>
     /// 
     /// </summary>
