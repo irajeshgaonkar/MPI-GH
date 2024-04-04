@@ -122,9 +122,10 @@ public class ClientIdentityService : IClientIdentityService
 
             JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
 
-            DOH_PostIdentityRequestContent postIdentityRequestContent = new DOH_PostIdentityRequestContent(modifiedJsonElement);
-
-            postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
+            DOH_PostIdentityRequestContent postIdentityRequestContent = new( modifiedJsonElement )
+            {
+                ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames
+            };
             dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
         }
         else
@@ -133,7 +134,7 @@ public class ClientIdentityService : IClientIdentityService
         }
 
 
-        var userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
+        UserRequestEntity userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
 
         try
         {
@@ -143,7 +144,6 @@ public class ClientIdentityService : IClientIdentityService
                 return trackingId;
             }
 
-            //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
             return await DOH_PostIdentities( userRequestEntity, dOH_PostClientIdentityRequest );
         }
         catch( HcaBadRequestException e )
