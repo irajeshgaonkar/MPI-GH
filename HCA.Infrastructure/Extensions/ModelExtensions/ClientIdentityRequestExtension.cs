@@ -1,4 +1,5 @@
 ﻿using HCA.Infrastructure.Comparer;
+using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 
@@ -47,7 +48,7 @@ public static class ClientIdentityRequestExtension
 
     public static string GetTrackingId(string sourceName, string sourceSystemId)
     {
-        return $"{sourceName}-{sourceSystemId}-{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}";
+        return $"{sourceName}-{sourceSystemId}-{GetDateTime()}";
     }
 
     public static string GetTrackingId(this Source source)
@@ -57,18 +58,22 @@ public static class ClientIdentityRequestExtension
 
     public static string GetTrackingId(this Source source, Source source2)
     {
-        return $"{source.Name}-{source.Id}-{source2.Name}-{source2.Id}-{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")}";
+        return $"{source.Name}-{source.Id}-{source2.Name}-{source2.Id}-{GetDateTime()}";
     }
 
-    public static string GetTrackingId(this Source source, Identity identity)
+    public static string GetTrackingId( Identity identity, ApiCallType apiCallType )
     {
-
-        return "";
+        return $"{apiCallType.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{GetTrackingId()}";
     }
 
     public static string GetTrackingId()
     {
-        return DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+        return GetDateTime();
+    }
+
+    private static string GetDateTime()
+    {
+        return DateTime.Now.ToString( "yyyy-MM-ddTHH:mm:ss" );
     }
 }
 

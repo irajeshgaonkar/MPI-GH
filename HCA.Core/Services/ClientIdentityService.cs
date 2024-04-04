@@ -107,7 +107,7 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         string trackingId = request.TrackingId
-                            ?? $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
+                            ?? ClientIdentityRequestExtension.GetTrackingId( identity, ApiCallType.DOH_VEPost );
 
         DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new( trackingId )
         {
@@ -157,6 +157,8 @@ public class ClientIdentityService : IClientIdentityService
             throw;
         }
     }
+
+
 
     private JsonElement? ConvertJObjectToJsonElement( JObject jObject )
     {
