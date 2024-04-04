@@ -98,28 +98,23 @@ public class ClientIdentityService : IClientIdentityService
     public async Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
     {
         string strIdentities = request.Content.Identity.ToString();
-        Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-        
-        if (request.SourceSystem.ToLower() != identity.Sources[0].Name.ToString().ToLower())
+        Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
+
+        if( identity is null || string.Equals( request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase ) )
         {
             var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match" };
             return errorResponse;
         }
 
-        var trackingId = string.Empty;
-        if (!(string.IsNullOrEmpty(request.TrackingId)) && (request.TrackingId.Length >= 1))
-        {
-            trackingId = request.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
-        }
+        string trackingId = request.TrackingId
+                            ?? $"{ApiCallType.DOH_VEPost.GetStringValue()}-{identity.Sources.First().Name}-{identity.Sources.First().Name}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
-        DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new DOH_PostClientIdentityRequest(trackingId);
-        dOH_PostClientIdentityRequest.SourceSystem = request.SourceSystem;
-        dOH_PostClientIdentityRequest.Agency = request.Agency;
-        dOH_PostClientIdentityRequest.protectedPopulation = request.protectedPopulation;
+        DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new( trackingId )
+        {
+            SourceSystem = request.SourceSystem,
+            Agency = request.Agency,
+            protectedPopulation = request.protectedPopulation
+        };
         if (strIdentities.ToLower().Contains("null"))
         {
             // Replace null values with empty strings and get modified JSON string 
@@ -182,8 +177,6 @@ public class ClientIdentityService : IClientIdentityService
             return rootElement.Clone();
         }
     }
-
-
 
     public JObject ReplaceNullValues(string jsonString)
     {
