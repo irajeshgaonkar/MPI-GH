@@ -99,7 +99,7 @@ public class ClientIdentityService : IClientIdentityService
         string strIdentities = request.Content.Identity.ToString();
         Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
-        if( identity is null || string.Equals( request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase ) )
+        if( request.SourceSystem.ToLower() != identity.Sources[0].Name.ToLower() )
         {
             var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match" };
             return errorResponse;
@@ -743,10 +743,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        if (response.Content != null)
-        {
-            FilterPostResponse(request, response);
-        }     
+        FilterPostResponse(request, response);
         return response;
     }
 
@@ -835,10 +832,7 @@ public class ClientIdentityService : IClientIdentityService
             ?? throw new HcaBadRequestException("Failed to process request");
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        if (response.Content != null)
-        {
-            FilterSearchResponse(filter, response);
-        }      
+        FilterSearchResponse(filter, response);
 
         return response;
     }
@@ -936,10 +930,7 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        if (response.Content != null)
-        {
-            FilterQueryResponse(filter, response);
-        }      
+        FilterQueryResponse(filter, response);    
 
         return response;
     }
