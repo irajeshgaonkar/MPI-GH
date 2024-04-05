@@ -53,7 +53,7 @@ namespace HCA.Api.Filters
                 //    return;
                 //}
 
-                // TODO: no need to check this given
+                // TODO: no need to check this given we get source system from ip
                 bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
                 if (!isTrusted) 
                 {
