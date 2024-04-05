@@ -43,6 +43,7 @@ namespace HCA.Api.Filters
                     context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
                     return;
                 }
+                // TODO: URGENT/current: why are we requiring agency?
                 if (string.IsNullOrEmpty(agency))
                 {
                     context.Result = BuildOkObjectResultWith400Error("Agency validation failed. Input is missing agency value.", trackingId);
