@@ -574,17 +574,17 @@ public class ClientIdentityService : IClientIdentityService
     {
         if( mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match",success = false, trackingId = mergingSources.trackingId ?? "" };
             return errorResponse;
         }
         if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
             return errorResponse;
         }
         if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
             return errorResponse;
         }
 
@@ -626,17 +626,17 @@ public class ClientIdentityService : IClientIdentityService
     {
         if( unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
             return errorResponse;
         }
         if( unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
             return errorResponse;
         }
         if( unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match" };
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
             return errorResponse;
         }
         var trackingId = string.Empty;
@@ -743,7 +743,10 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        FilterPostResponse( request, response );
+        if (response.Content != null)
+        {
+            FilterPostResponse(request, response);
+        }     
         return response;
     }
 
@@ -832,7 +835,10 @@ public class ClientIdentityService : IClientIdentityService
             ?? throw new HcaBadRequestException("Failed to process request");
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        FilterSearchResponse( filter, response );
+        if (response.Content != null)
+        {
+            FilterSearchResponse(filter, response);
+        }      
 
         return response;
     }
@@ -930,7 +936,10 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        FilterQueryResponse( filter, response );
+        if (response.Content != null)
+        {
+            FilterQueryResponse(filter, response);
+        }      
 
         return response;
     }

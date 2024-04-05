@@ -62,7 +62,7 @@ public class NewClientIdentityMapper
             
             if (requests.protectedPopulation.First().ProtectedPopulationFlag != null)
             {
-                if (requests.protectedPopulation.First().ProtectedPopulationFlag == "Y")
+                if (requests.protectedPopulation.First().ProtectedPopulationFlag.ToUpper() == "Y")
                 {
                     result.ProtectedPopulationFlag = true;
                 }
