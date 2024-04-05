@@ -57,19 +57,16 @@ public class NewClientIdentityMapper
             result.Gender = identity.Genders.FirstOrDefault();
         else
             result.Gender = "unknown";
-        if (requests.protectedPopulation != null && requests.protectedPopulation.First() != null)
+
+        ProtectedPopulation? protectedPopulationFromRequest = requests.protectedPopulation?.First();
+        if (protectedPopulationFromRequest != null)
         {
             // TODO: use String comparison everywhere; set up warning rule on direct comparison
-            result.ProtectedPopulationFlag = string.Equals( "Y", requests.protectedPopulation.First().ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
+            result.ProtectedPopulationFlag = string.Equals( "Y", protectedPopulationFromRequest.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
 
-            if( requests.protectedPopulation.First().ProtectedPopulationTypes != null)
-            {
-                result.ProtectedPopulationType = string.Join(",", requests.protectedPopulation.First().ProtectedPopulationTypes);
-            }
-            else
-            {
-                result.ProtectedPopulationType = "";
-            }
+            result.ProtectedPopulationType = protectedPopulationFromRequest.ProtectedPopulationTypes is not null
+                ? string.Join( ",", protectedPopulationFromRequest.ProtectedPopulationTypes )
+                : "";
         }   
         else {
             result.ProtectedPopulationFlag = false;
