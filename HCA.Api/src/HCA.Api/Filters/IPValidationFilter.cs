@@ -46,6 +46,12 @@ namespace HCA.Api.Filters
                 }
 
                 sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
+                if( string.IsNullOrEmpty( sourceSystem ) )
+                {
+                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mapping failed.", trackingId );
+                    return;
+                }
+               
                 // TODO: URGENT/current: why are we requiring agency?
                 //if (string.IsNullOrEmpty(agency))
                 //{
@@ -54,13 +60,13 @@ namespace HCA.Api.Filters
                 //}
 
                 // TODO: no need to check this given we get source system from ip
-                bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
-                if (!isTrusted) 
-                {
-                    // TODO: swap this to a unauthorized error/result once systems are online
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingId);
-                    return;
-                }
+                //bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
+                //if (!isTrusted) 
+                //{
+                //    // TODO: swap this to a unauthorized error/result once systems are online
+                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingId);
+                //    return;
+                //}
                 await next();
             }
             catch (JsonException e)
@@ -76,7 +82,7 @@ namespace HCA.Api.Filters
             }
         }
 
-        private static OkObjectResult BuildOkObjectResultWith400Error( string message,string? trackingid = "" ) => new( new { errorCode = "400", Message = message,Success = false, TrackingId = trackingid} );
+        private static OkObjectResult BuildOkObjectResultWith400Error( string message, string? trackingid = "" ) => new( new { errorCode = "400", Message = message, Success = false, TrackingId = trackingid } );
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
