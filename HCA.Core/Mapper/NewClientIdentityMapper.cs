@@ -76,8 +76,8 @@ public class NewClientIdentityMapper
         result.IsActive = true;
         result.IsDelete = false;
         // TODO: URGENT/ERROR: populate this correctly
-        result.CreatedBy = "DOH";
-        result.UpdatedBy = "DOH";
+        result.CreatedBy = result.SourceSystemName;
+        result.UpdatedBy = result.SourceSystemName;
         result.SetAllDateTimesToNow();
 
         // Deserialize the JSON string into a JObject 
