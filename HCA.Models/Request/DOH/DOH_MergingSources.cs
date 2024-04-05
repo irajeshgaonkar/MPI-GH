@@ -14,11 +14,11 @@ namespace HCA.Models.Request.DOH
         /// <summary>
         /// 
         /// </summary>
-        public string SourceSystem { get; set; }
+        public string? SourceSystem { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        public string Agency { get; set; }
+        public string? Agency { get; set; }
         /// <summary>
         /// 
         /// </summary>

@@ -30,11 +30,11 @@ public class DOH_DeleteClientIdentityRequest : BaseRequest
     /// <summary>
     /// 
     /// </summary>
-    public string SourceSystem { get; set; }
+    public string? SourceSystem { get; set; }
     /// <summary>
     /// 
     /// </summary>
-    public string Agency { get; set; }
+    public string? Agency { get; set; }
     /// <summary>
     /// 
     /// </summary>
@@ -62,11 +62,11 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     /// <summary>
     /// 
     /// </summary>
-    public string SourceSystem { get; set; }
+    public string? SourceSystem { get; set; }
     /// <summary>
     /// 
     /// </summary>
-    public string Agency { get; set; }
+    public string? Agency { get; set; }
     /// <summary>
     /// 
     /// </summary>

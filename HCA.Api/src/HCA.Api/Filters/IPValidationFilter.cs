@@ -45,12 +45,12 @@ namespace HCA.Api.Filters
                     return;
                 }
 
-                sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
-                if( string.IsNullOrEmpty( sourceSystem ) )
-                {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mapping failed.", trackingId );
-                    return;
-                }
+                //sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
+                //if( string.IsNullOrEmpty( sourceSystem ) )
+                //{
+                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mapping failed.", trackingId );
+                //    return;
+                //}
                
                 // TODO: URGENT/current: why are we requiring agency?
                 //if (string.IsNullOrEmpty(agency))
