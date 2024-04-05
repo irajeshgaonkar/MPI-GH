@@ -34,16 +34,18 @@ namespace HCA.Api.Filters
                 string trackingId = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
                 // TODO: we can load source system from the DB
-                if (string.IsNullOrEmpty(sourceSystem))
-                {
-                    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingId);
-                    return;
-                }
+                //if (string.IsNullOrEmpty(sourceSystem))
+                //{
+                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingId);
+                //    return;
+                //}
                 if (string.IsNullOrEmpty(ipAddress))
                 {
                     context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
                     return;
                 }
+
+                sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
                 // TODO: URGENT/current: why are we requiring agency?
                 //if (string.IsNullOrEmpty(agency))
                 //{
@@ -51,6 +53,7 @@ namespace HCA.Api.Filters
                 //    return;
                 //}
 
+                // TODO: no need to check this given
                 bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
                 if (!isTrusted) 
                 {
