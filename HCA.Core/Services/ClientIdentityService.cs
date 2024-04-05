@@ -376,6 +376,7 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicSearch( DOH_DemographicsSearchRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
+        // TODO: empty string init not required; logic can be simplified (also extracted to shared logic)
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( filter.trackingid )) && (filter.trackingid.Length >= 1) )
         {
