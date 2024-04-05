@@ -62,6 +62,7 @@ public class NewClientIdentityMapper
             
             if (requests.protectedPopulation.First().ProtectedPopulationFlag != null)
             {
+                // TODO: use String comparison everywhere; set up warning rule on direct comparison
                 if (requests.protectedPopulation.First().ProtectedPopulationFlag.ToUpper() == "Y")
                 {
                     result.ProtectedPopulationFlag = true;
