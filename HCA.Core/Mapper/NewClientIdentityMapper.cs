@@ -73,13 +73,11 @@ public class NewClientIdentityMapper
             result.ProtectedPopulationType = "";
         }
         result.MpiUpdated = mpiUpdated;
-        result.SourceSystemUpdated = DateTime.Now;
         result.IsActive = true;
         result.IsDelete = false;
         result.CreatedBy = "DOH";
-        result.CreatedDate = DateTime.Now;
         result.UpdatedBy = "DOH";
-        result.UpdatedDate = DateTime.Now;
+        result.SetAllDateTimesToNow();
 
         // Deserialize the JSON string into a JObject 
         JObject json = JObject.Parse(strIdentities);
