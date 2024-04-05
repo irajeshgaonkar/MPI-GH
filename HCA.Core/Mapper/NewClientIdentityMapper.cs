@@ -59,24 +59,10 @@ public class NewClientIdentityMapper
             result.Gender = "unknown";
         if (requests.protectedPopulation != null && requests.protectedPopulation.First() != null)
         {
-            
-            if (requests.protectedPopulation.First().ProtectedPopulationFlag != null)
-            {
-                // TODO: use String comparison everywhere; set up warning rule on direct comparison
-                if (requests.protectedPopulation.First().ProtectedPopulationFlag.ToUpper() == "Y")
-                {
-                    result.ProtectedPopulationFlag = true;
-                }
-                else
-                {
-                    result.ProtectedPopulationFlag = false;
-                }
-            }
-            else
-            {
-                result.ProtectedPopulationFlag = false;
-            }
-            if (requests.protectedPopulation.First().ProtectedPopulationTypes != null)
+            // TODO: use String comparison everywhere; set up warning rule on direct comparison
+            result.ProtectedPopulationFlag = string.Equals( "Y", requests.protectedPopulation.First().ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
+
+            if( requests.protectedPopulation.First().ProtectedPopulationTypes != null)
             {
                 result.ProtectedPopulationType = string.Join(",", requests.protectedPopulation.First().ProtectedPopulationTypes);
             }
