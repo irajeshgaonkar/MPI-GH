@@ -101,8 +101,7 @@ public class ClientIdentityService : IClientIdentityService
 
         if (request.SourceSystem.ToLower() != identity.Sources[0].Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match", success = false, trackingId = request.TrackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( request.TrackingId, "Either SourceSystem and  name in source does not match" );
         }
 
         string trackingId = request.TrackingId
@@ -575,18 +574,15 @@ public class ClientIdentityService : IClientIdentityService
     {
         if (mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( mergingSources.trackingId, "Either name in ToSurviveSource and ToRetireSource does not match" );
         }
-        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower())
+        if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower() )
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( mergingSources.trackingId, "Either SourceSystem and name in ToSurviveSource  does not match" );
         }
         if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( mergingSources.trackingId, "Either SourceSystem and name in ToRetireSource  does not match" );
         }
 
         var trackingId = string.Empty;
@@ -623,22 +619,22 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
+    private static object ErrorResponseBuilder( string trackingId, string errorMessage ) 
+        => new { errorCode = "400", message = errorMessage, success = false, trackingId = trackingId ?? "" };
+
     public async Task<dynamic?> DOH_UnMergeIdentities( DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
         if (unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( unMergingSources.trackingId, "Either name in UnmergeFromSource and UnmergeSource does not match" );
         }
         if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( unMergingSources.trackingId, "Either SourceSystem and name in UnmergeFromSource  does not match" );
         }
         if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
         {
-            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-            return errorResponse;
+            return ErrorResponseBuilder( unMergingSources.trackingId, "Either SourceSystem and name in UnmergeSource  does not match" );
         }
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( unMergingSources.trackingId )) && (unMergingSources.trackingId.Length >= 1) )
