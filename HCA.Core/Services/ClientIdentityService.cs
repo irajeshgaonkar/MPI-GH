@@ -99,7 +99,7 @@ public class ClientIdentityService : IClientIdentityService
         string strIdentities = request.Content.Identity.ToString();
         Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
-        if (request.SourceSystem.ToLower() != identity.Sources[0].Name.ToLower())
+        if ( !string.Equals( request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( request.TrackingId, "Either SourceSystem and  name in source does not match" );
         }
@@ -572,15 +572,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities( DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if (mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        if( !string.Equals( mergingSources.content.ToSurviveSource.Name, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ) )
         {
             return ErrorResponseBuilder( mergingSources.trackingId, "Either name in ToSurviveSource and ToRetireSource does not match" );
         }
-        if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower() )
+        if( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToSurviveSource.Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( mergingSources.trackingId, "Either SourceSystem and name in ToSurviveSource  does not match" );
         }
-        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        if ( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( mergingSources.trackingId, "Either SourceSystem and name in ToRetireSource  does not match" );
         }
@@ -624,15 +624,15 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities( DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if (unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        if ( !string.Equals( unMergingSources.content.UnmergeFromSource.Name, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( unMergingSources.trackingId, "Either name in UnmergeFromSource and UnmergeSource does not match" );
         }
-        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower())
+        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeFromSource.Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( unMergingSources.trackingId, "Either SourceSystem and name in UnmergeFromSource  does not match" );
         }
-        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
         {
             return ErrorResponseBuilder( unMergingSources.trackingId, "Either SourceSystem and name in UnmergeSource  does not match" );
         }
