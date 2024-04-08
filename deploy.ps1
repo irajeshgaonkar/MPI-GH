@@ -43,9 +43,15 @@ $environmentToProfile = @{
     "Prod" = "TODO:MPI-Prod"
 }
 
-# TODO: Pull in appsettings.json dynamically
+$ErrorActionPreference = "Stop"
 
+# TODO: Pull in appsettings.json dynamically
 dotnet publish -f net6.0 -c Release
+$result = $? -and -not $LASTEXITCODE
+if (-not ($result)) {
+    Write-Error "Code build/publish error."
+    exit 1
+}
 
 try { Get-Command aws > $null }
 catch {
@@ -53,8 +59,7 @@ catch {
     exit 1
 }
 
-$region = aws configure get region
-Write-Output "Deploying MPI AWS Lambdas to ${region}:$Environment"
+Write-Verbose "Generating lambda zip files"
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
@@ -70,7 +75,28 @@ foreach ($project in $projectsToLambdas.Keys) {
     Write-Verbose "Zipped $project to $zipName"
 }
 
-# TODO check aws creds and run HCA_AWS_
+$region = aws configure get region
+
+Write-Output "Deploying MPI AWS Lambdas to ${region}:$Environment"
+$awsProfile = $environmentToProfile[$Environment]
+aws sts get-caller-identity --profile $awsProfile > $null
+$result = $? -and -not $LASTEXITCODE
+if (-not ($result)) {
+    #TODO: check that it's a cert issue before running aws_accesss.exe
+    try {
+        Write-Information "Attempting to call hca_aws_access"
+        hca_aws_access.exe
+        $result = $? -and -not $LASTEXITCODE
+        if (-not ($result)) {
+            Write-Error "AWS error."
+            exit 1
+        }
+    }
+    catch {
+        Write-Error "AWS error."
+        exit 1
+    }
+}
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
@@ -84,5 +110,5 @@ foreach ($project in $projectsToLambdas.Keys) {
     else {
         Write-Output "Upload failed"
         exit 1
-    }   
+    }
 }
