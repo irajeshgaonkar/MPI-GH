@@ -10,6 +10,7 @@ Foolproof steps!
 
 Note: Your User\.aws\credentials file must have a functioning profile for the target environment:
 [MPI-Dev]
+[MPI-Integration]
 [MPI-Test]
 [MPI-Prod]
 
@@ -20,8 +21,8 @@ The script DOES NOT update appsettings.json (yet).
 [CmdletBinding()]
 Param(
     # Environment that the lambda will be updated to: Dev, Test or Prod
-    [Parameter(Mandatory, Position = 0, HelpMessage = "Enter environment: Dev|Test|Prod")]
-    [ValidateSet("Dev", "Test", "Prod")]
+    [Parameter(Mandatory, Position = 0, HelpMessage = "Enter environment: Dev|Integration|Test|Prod")]
+    [ValidateSet("Dev", "Integration","Int", "Test", "Prod")]
     [String]$Environment
 )
 
@@ -36,6 +37,8 @@ $projectsToLambdas = @{
 # TODO: more thorough testing before using in prod
 $environmentToProfile = @{
     "Dev"  = "MPI-Dev"
+    "Integration" = "MPI-Integration"
+    "Int" = "MPI-Integration"
     "Test" = "MPI-Test"
     "Prod" = "TODO:MPI-Prod"
 }
