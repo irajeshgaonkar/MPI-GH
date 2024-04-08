@@ -283,6 +283,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
@@ -307,7 +311,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var searchResult = await _clientIdentityService.DOH_DemographicSearch(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (searchResult == null) return NoContent();
@@ -334,6 +341,10 @@ namespace HCA.Api.Controllers
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                request.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             //if (request == null) return BadRequest("Invalid Request");
 
             var searchResult = await _clientIdentityService.DOH_PostIdentities(request, HttpContext.GetCurrentUser() ?? String.Empty, ProcessType.Sync, null);
@@ -407,6 +418,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_MergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (result == null) return BadRequest("Invalid Input");
@@ -431,6 +446,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (result == null) return BadRequest("Invalid Input");

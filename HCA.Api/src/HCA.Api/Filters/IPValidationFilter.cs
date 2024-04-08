@@ -28,45 +28,30 @@ namespace HCA.Api.Filters
 
                 JObject jsonObjectRequestBody = JObject.Parse(body);
 
-                string sourceSystem = Convert.ToString(jsonObjectRequestBody["SourceSystem"]) ?? "";
+
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
-                string agency = Convert.ToString(jsonObjectRequestBody["Agency"]) ?? "";
                 string trackingId = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
-                // TODO: we can load source system from the DB
-                //if (string.IsNullOrEmpty(sourceSystem))
-                //{
-                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Input is missing sourceSystem field." , trackingId);
-                //    return;
-                //}
+
                 if (string.IsNullOrEmpty(ipAddress))
                 {
                     context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
                     return;
                 }
 
-                //sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
-                //if( string.IsNullOrEmpty( sourceSystem ) )
-                //{
-                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mapping failed.", trackingId );
-                //    return;
-                //}
-               
-                // TODO: URGENT/current: why are we requiring agency?
-                //if (string.IsNullOrEmpty(agency))
-                //{
-                //    context.Result = BuildOkObjectResultWith400Error("Agency validation failed. Input is missing agency value.", trackingId);
-                //    return;
-                //}
+                string sourceSystem = await _iPConfigRepository.GetSourceSystemFromIp( ipAddress );
 
                 // TODO: no need to check this given we get source system from ip
-                //bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
-                //if (!isTrusted) 
-                //{
-                //    // TODO: swap this to a unauthorized error/result once systems are online
-                //    context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. ipAddress/sourceSystem mismatch." ,trackingId);
-                //    return;
-                //}
+                bool isTrusted = await _iPConfigRepository.IsIPAddressTrustedAsync(sourceSystem, ipAddress);
+                if (!isTrusted)
+                {
+                    // TODO: swap this to a unauthorized error/result once systems are online
+                    context.Result = BuildOkObjectResultWith400Error("sourceSystem validation failed. ipAddress/sourceSystem mismatch.", trackingId);
+                    return;
+                }
+
+                context.HttpContext.Items["SourceSystem"] = sourceSystem;
+
                 await next();
             }
             catch (JsonException e)

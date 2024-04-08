@@ -99,11 +99,11 @@ public class ClientIdentityService : IClientIdentityService
         string strIdentities = request.Content.Identity.ToString();
         Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
-        //if( request.SourceSystem.ToLower() != identity.Sources[0].Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match" };
-        //    return errorResponse;
-        //}
+        if (request.SourceSystem.ToLower() != identity.Sources[0].Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and  name in source does not match", success = false, trackingId = request.TrackingId ?? "" };
+            return errorResponse;
+        }
 
         string trackingId = request.TrackingId
                             ?? ClientIdentityRequestExtension.GetTrackingId( identity, ApiCallType.DOH_VEPost );
@@ -573,21 +573,21 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities( DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        //if( mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match",success = false, trackingId = mergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
-        //if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
-        //if( mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
+        if (mergingSources.content.ToSurviveSource.Name.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either name in ToSurviveSource and ToRetireSource does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
+        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToSurviveSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToSurviveSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
+        if (mergingSources.SourceSystem.ToLower() != mergingSources.content.ToRetireSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in ToRetireSource  does not match", success = false, trackingId = mergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
 
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( mergingSources.trackingId )) && (mergingSources.trackingId.Length >= 1) )
@@ -625,21 +625,21 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities( DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        //if( unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
-        //if( unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
-        //if( unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower() )
-        //{
-        //    var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
-        //    return errorResponse;
-        //}
+        if (unMergingSources.content.UnmergeFromSource.Name.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either name in UnmergeFromSource and UnmergeSource does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
+        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeFromSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeFromSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
+        if (unMergingSources.SourceSystem.ToLower() != unMergingSources.content.UnmergeSource.Name.ToLower())
+        {
+            var errorResponse = new { errorCode = "400", message = "Either SourceSystem and name in UnmergeSource  does not match", success = false, trackingId = unMergingSources.trackingId ?? "" };
+            return errorResponse;
+        }
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( unMergingSources.trackingId )) && (unMergingSources.trackingId.Length >= 1) )
         {
@@ -744,7 +744,7 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        //FilterPostResponse(request, response);
+        FilterPostResponse(request, response);
         return response;
     }
 
@@ -833,7 +833,7 @@ public class ClientIdentityService : IClientIdentityService
             ?? throw new HcaBadRequestException("Failed to process request");
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        //FilterSearchResponse(filter, response);
+        FilterSearchResponse(filter, response);
 
         return response;
     }
@@ -931,7 +931,7 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        //FilterQueryResponse(filter, response);    
+        FilterQueryResponse(filter, response);    
 
         return response;
     }
