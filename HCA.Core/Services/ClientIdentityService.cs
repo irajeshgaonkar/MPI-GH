@@ -788,7 +788,7 @@ public class ClientIdentityService : IClientIdentityService
 
         if( request.Content.ResponseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
         {
-            // TODO: null checks/validation
+            // TODO: null checks/validation/strong typing
             JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
             JArray sources = new();
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
@@ -808,7 +808,8 @@ public class ClientIdentityService : IClientIdentityService
         }
         else
         {
-            JArray SourceArray = (JArray)jsonObjectResponse["linkIdentity"]["sources"];
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            JArray? SourceArray = jsonObjectResponse["linkIdentity"]["sources"] as JArray;
             JArray sources = new();
             foreach( var source in SourceArray )
             {
@@ -820,6 +821,7 @@ public class ClientIdentityService : IClientIdentityService
             if( sources != null && sources.Count > 0 )
             {
                 jsonObjectResponse["linkIdentity"]["sources"] = sources;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
                 newArray.Add( jsonObjectResponse );
             }
         }
