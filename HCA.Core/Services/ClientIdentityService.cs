@@ -788,9 +788,9 @@ public class ClientIdentityService : IClientIdentityService
 
         if( request.Content.ResponseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
         {
-            // TODO: null checks/validation/strong typing
             JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
             JArray sources = new();
+            // TODO: null checks/validation/strong typing
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             foreach( var source in identityGroupedBySource )
             {
@@ -808,6 +808,7 @@ public class ClientIdentityService : IClientIdentityService
         }
         else
         {
+            // TODO: null checks/validation/strong typing
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             JArray? SourceArray = jsonObjectResponse["linkIdentity"]["sources"] as JArray;
             JArray sources = new();
