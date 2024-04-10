@@ -774,8 +774,15 @@ public class ClientIdentityService : IClientIdentityService
 
     private void FilterPostResponse( DOH_PostClientIdentityRequest request, DOH_PostClientIdentityResponse? response )
     {
-        JObject jsonObject = JObject.Parse(response.Content.ToString());
+        string responseContent = Convert.ToString(response.Content);
 
+        if (string.IsNullOrEmpty(responseContent))
+        {
+            response.Content = null;
+            return;
+        }
+
+        JObject jsonObject = JObject.Parse(responseContent);
 
         JArray newArray = new();
 
