@@ -500,6 +500,18 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_LinkIdentities( DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
+        if (!string.Equals(linkingSources.content.LinkToSource.Name, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(linkingSources.trackingId, "LinkToSource and Source do not match.");
+        }
+        if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.LinkToSource.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(linkingSources.trackingId, "SourceSystem and LinkToSource do not match.");
+        }
+        if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(linkingSources.trackingId, "SourceSystem and Source do not match.");
+        }
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( linkingSources.trackingId )) && (linkingSources.trackingId.Length >= 1) )
         {
@@ -536,6 +548,18 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnLinkIdentities( DOH_UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
+        if (!string.Equals(unLinkingSources.content.UnlinkFromSource.Name, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(unLinkingSources.trackingId, "UnlinkFromSource and Source do not match.");
+        }
+        if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.UnlinkFromSource.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(unLinkingSources.trackingId, "SourceSystem and UnlinkFromSource do not match.");
+        }
+        if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(unLinkingSources.trackingId, "SourceSystem and Source do not match.");
+        }
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( unLinkingSources.trackingId )) && (unLinkingSources.trackingId.Length >= 1) )
         {
@@ -673,6 +697,10 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DeleteSourceIdentity( DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
+        if (!string.Equals(deleteSourceIdentity.SourceSystem, deleteSourceIdentity.Content.Source.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResponseBuilder(deleteSourceIdentity.TrackingId, "SourceSystem and Source do not match.");
+        }
         var trackingId = string.Empty;
         if( !(string.IsNullOrEmpty( deleteSourceIdentity.TrackingId )) && (deleteSourceIdentity.TrackingId.Length >= 1) )
         {
@@ -939,54 +967,57 @@ public class ClientIdentityService : IClientIdentityService
 
         JArray newArray = new();
 
-
-        if( filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
+        if(jsonObject !=null && jsonObject.Count > 0 )
         {
-            JArray sources = new();
-            foreach( var source in identityGroupedBySource )
+            if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
             {
-                if( source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower() )
+                JArray sources = new();
+                foreach (var source in identityGroupedBySource)
                 {
-                    sources.Add( source );
+                    if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
                 }
-            }
-            if( sources != null && sources.Count > 0 )
-            {
-                jsonObject["identityGroupedBySource"] = sources;
-                newArray.Add( jsonObject );
+                if (sources != null && sources.Count > 0)
+                {
+                    jsonObject["identityGroupedBySource"] = sources;
+                    newArray.Add(jsonObject);
+                }
+                else
+                {
+                    jsonObject = null;
+                    newArray.Add(jsonObject);
+
+                }
+
+
             }
             else
             {
-                jsonObject = null;
-                newArray.Add( jsonObject );
-
-            }
-
-
-        }
-        else
-        {
-            JArray SourceArray = (JArray)jsonObject["identity"]["sources"];
-            JArray sources = new();
-            foreach( var source in SourceArray )
-            {
-                if( source["name"].ToString().ToLower() == filter.SourceSystem.ToLower() )
+                JArray SourceArray = (JArray)jsonObject["identity"]["sources"];
+                JArray sources = new();
+                foreach (var source in SourceArray)
                 {
-                    sources.Add( source );
+                    if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    {
+                        sources.Add(source);
+                    }
+                }
+                if (sources != null && sources.Count > 0)
+                {
+                    jsonObject["identity"]["sources"] = sources;
+                    newArray.Add(jsonObject);
+                }
+                else
+                {
+                    jsonObject = null;
+                    newArray.Add(jsonObject);
+
                 }
             }
-            if( sources != null && sources.Count > 0 )
-            {
-                jsonObject["identity"]["sources"] = sources;
-                newArray.Add( jsonObject );
-            }
-            else
-            {
-                jsonObject = null;
-                newArray.Add( jsonObject );
-
-            }
         }
+        
 
         response.Content = ConvertJObjectToJsonElement( jsonObject );
     }

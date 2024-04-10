@@ -370,6 +370,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_Link([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_LinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (null == result) return BadRequest("Invalid Input");
@@ -394,6 +398,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_UnLink([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_UnLinkIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (result == null) return BadRequest("Invalid Input");
@@ -475,6 +483,10 @@ namespace HCA.Api.Controllers
         public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
+            }
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.DOH_DeleteSourceIdentity(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //if (result == null) return BadRequest("Invalid Input");
