@@ -782,15 +782,16 @@ public class ClientIdentityService : IClientIdentityService
             return;
         }
 
-        JObject jsonObject = JObject.Parse(responseContent);
+        JObject jsonObjectResponse = JObject.Parse(responseContent);
 
         JArray newArray = new();
 
-
         if( request.Content.ResponseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
         {
-            JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
+            // TODO: null checks/validation
+            JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
             JArray sources = new();
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             foreach( var source in identityGroupedBySource )
             {
                 if( source["source"]["name"].ToString().ToLower() == request.SourceSystem.ToLower() )
@@ -798,15 +799,16 @@ public class ClientIdentityService : IClientIdentityService
                     sources.Add( source );
                 }
             }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
             if( sources != null && sources.Count > 0 )
             {
-                jsonObject["identityGroupedBySource"] = sources;
-                newArray.Add( jsonObject );
+                jsonObjectResponse["identityGroupedBySource"] = sources;
+                newArray.Add( jsonObjectResponse );
             }
         }
         else
         {
-            JArray SourceArray = (JArray)jsonObject["linkIdentity"]["sources"];
+            JArray SourceArray = (JArray)jsonObjectResponse["linkIdentity"]["sources"];
             JArray sources = new();
             foreach( var source in SourceArray )
             {
@@ -817,11 +819,11 @@ public class ClientIdentityService : IClientIdentityService
             }
             if( sources != null && sources.Count > 0 )
             {
-                jsonObject["linkIdentity"]["sources"] = sources;
-                newArray.Add( jsonObject );
+                jsonObjectResponse["linkIdentity"]["sources"] = sources;
+                newArray.Add( jsonObjectResponse );
             }
         }
-        response.Content = ConvertJObjectToJsonElement( jsonObject );
+        response.Content = ConvertJObjectToJsonElement( jsonObjectResponse );
     }
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities( UserRequestEntity userRequestEntity, LinkingSources linkingSources )
