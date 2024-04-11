@@ -9,7 +9,7 @@
         /// <summary>
         /// 
         /// </summary>
-        public string trackingid { get; set; } = "";
+        public string Trackingid { get; set; } = "";
 
         /// <summary>
         /// 
