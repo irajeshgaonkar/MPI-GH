@@ -13,6 +13,7 @@ using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace HCA.Api.Controllers
@@ -282,7 +283,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = filter.Trackingid ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -310,7 +311,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicSearch")]
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = filter.Trackingid ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -340,7 +341,7 @@ namespace HCA.Api.Controllers
         {
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = request.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), request.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 request.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -369,7 +370,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-link")]
         public async Task<IActionResult> DOH_Link([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em =>em.ErrorMessage).ToList(), Success = false, TrackingId = value.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -397,7 +398,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-unlink")]
         public async Task<IActionResult> DOH_UnLink([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = value.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -425,7 +426,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-merge")]
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = value.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -453,7 +454,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-unmerge")]
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = value.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -482,7 +483,7 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-delete")]
         public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return new OkObjectResult(new { errorCode = "400", Message = ModelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList(), Success = false, TrackingId = value.TrackingId ?? "" });
+            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -493,6 +494,8 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        private static List<string> GetErrorMessages(ModelStateDictionary modelState) => modelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList();
+        private static OkObjectResult BuildOkObjectResultWith400Error(List<string> message, string? trackingid = "") => new(new { errorCode = "400", Message = String.Join(",",message), Success = false, TrackingId = trackingid });
 
         #endregion
     }
