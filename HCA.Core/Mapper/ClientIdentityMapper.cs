@@ -32,8 +32,13 @@ public class ClientIdentityMapper
         result.Ssn = request.Ssn;
         result.Dob = valiDob ? dob : null;
         result.Gender = request.Gender;
-        result.ProtectedPopulationFlag = protectedPopulationFlag;
-        result.ProtectedPopulationType = request.ProtectedPopulationType ?? "";
+        if (request.ProtectedPopulationFlag != null)
+        {
+            result.ProtectedPopulationFlag = string.Equals("Y", request.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+            result.ProtectedPopulationFlag = false;
+        result.ProtectedPopulationType = request.ProtectedPopulationType is not null ? string.Join(",", request.ProtectedPopulationType) : "";
         result.MpiUpdated = mpiUpdated;
         result.SourceSystemUpdated = sourceSystemUpdated;
         result.IsActive = true;
