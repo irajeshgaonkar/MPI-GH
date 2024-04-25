@@ -6,7 +6,7 @@ public interface IAppLogger
 {
     void LogInformation(string message, [CallerMemberName] string callerName = "");
 
-    void LogError(Exception ex, [CallerMemberName] string callerName = "");
+    void LogError(Exception ex, string? message = null, [CallerMemberName] string callerName = "");
 
     void LogDebug(string message, [CallerMemberName] string callerName = "");
 

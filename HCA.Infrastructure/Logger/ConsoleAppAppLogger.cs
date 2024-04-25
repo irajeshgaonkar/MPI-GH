@@ -10,8 +10,8 @@ public class ConsoleAppAppLogger : IAppLogger
         WriteLine(message, ConsoleColor.Blue);
     }
 
-    public void LogError(Exception ex, [CallerMemberName] string callerName = "") =>
-        WriteLine(ex.ToString() ?? "", ConsoleColor.Red);
+    public void LogError(Exception ex, string? message = null, [CallerMemberName] string callerName = "") =>
+        WriteLine(ex.ToString() ?? "" + message, ConsoleColor.Red);
 
     public void LogCritical(string message, [CallerMemberName] string callerName = "") =>
         WriteLine(message, ConsoleColor.DarkYellow);

@@ -7,6 +7,7 @@ using HCA.Core.Services;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
+using HCA.Models.Logging;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
@@ -283,7 +284,21 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                    TrackingId = filter.Trackingid,
+                    //LinkId = filter.
+                };
+
+                //_logger.LogCritical()
+
+                return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
