@@ -15,6 +15,7 @@ using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace HCA.Api.Controllers
@@ -287,15 +288,25 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid)
             {
                 var errorMessage = GetErrorMessages(ModelState);
-
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = filter.Agency,
+                    Role = HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                    FunctionName = nameof(DOH_DemographicQuery),
+                    ErrorMessage = String.Join(",",errorMessage),
+                    ErrorCode = "400"
+                };              
                 var errorLogItem = new LogItem()
                 {
-                    Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_DemographicQuery)}-Failed",
                     TrackingId = filter.Trackingid,
-                    //LinkId = filter.
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
                 };
 
-                //_logger.LogCritical()
+                
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
 
                 return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
             }

@@ -28,7 +28,7 @@
         /// <summary>
         /// CustomProperties
         /// </summary>
-        public CustomProperties? CustomProperties { get; set; }
+        public ExceptionCustomProperties? ExceptionCustomProperties { get; set; }
 
     }
 }

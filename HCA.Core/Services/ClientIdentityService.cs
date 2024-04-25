@@ -5,9 +5,11 @@ using HCA.Data.Repository;
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
+using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sqs;
 using HCA.Models;
 using HCA.Models.Enums;
+using HCA.Models.Logging;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
@@ -15,8 +17,11 @@ using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace HCA.Core.Services;
@@ -39,13 +44,19 @@ public class ClientIdentityService : IClientIdentityService
 
     private readonly IUserRequestMapper _userRequestMapper;
 
-    public ClientIdentityService( IUserRequestRepository userRequestRepository,
+    private readonly IAppLogger _logger;
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public ClientIdentityService(IUserRequestRepository userRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
         IClientIdentityRepository clientIdentityRepository,
         IUserModifyRecordsRepository userModifyRecordsRepository,
         IRequestProcessLogRepository requestProcessLogRepository,
         IUserModifyRecordsService userModifyRecordsService,
-        ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper )
+        ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper,
+        IAppLogger logger, 
+        IHttpContextAccessor httpContextAccessor)
     {
         _userRequestRepository = userRequestRepository;
         _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
@@ -55,6 +66,8 @@ public class ClientIdentityService : IClientIdentityService
         _sqsPublisher = sqsPublisher;
         _userRequestMapper = userRequestMapper;
         _userModifyRecordsService = userModifyRecordsService;
+        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll( string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "" )
@@ -438,62 +451,83 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicQuery( DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions ) //,string responseIdentityFormatNames = "DEFAULT")
     {
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( filter.Trackingid )) && (filter.Trackingid.Length >= 1) )
-        {
-            trackingId = filter.Trackingid.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
-
-        }
-        if( filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == "") )
-        {
-            filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
-        }
-
-        string strIdentities = filter.content.identity.ToString();
-
-        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
-        if( strIdentities.ToLower().Contains( "null" ) )
-        {
-            // Replace null values with empty strings and get modified JSON string 
-            dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
-
-            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
-
-            Content content = new Content();
-            content.identity = modifiedJsonElement;
-            content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
-
-            dOH_DemographicQueryRequest.content = content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
-        }
-        else
-        {
-            dOH_DemographicQueryRequest.content = filter.content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
-        }
-
-
-        var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
-
         try
         {
-            if( processType == ProcessType.Async )
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(filter.Trackingid)) && (filter.Trackingid.Length >= 1))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEDemographicQuery, userRequestEntity );
+                trackingId = filter.Trackingid.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+
+            }
+            if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+            {
+                filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+            }
+
+            string strIdentities = filter.content.identity.ToString();
+
+            DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
+            if (strIdentities.ToLower().Contains("null"))
+            {
+                // Replace null values with empty strings and get modified JSON string 
+                dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                Content content = new Content();
+                content.identity = modifiedJsonElement;
+                content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+
+                dOH_DemographicQueryRequest.content = content;
+                dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+                dOH_DemographicQueryRequest.Agency = filter.Agency;
+            }
+            else
+            {
+                dOH_DemographicQueryRequest.content = filter.content;
+                dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+                dOH_DemographicQueryRequest.Agency = filter.Agency;
+            }
+
+
+            var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDemographicQuery, userRequestEntity);
                 return trackingId;
             }
 
-            return await DOH_DemographicQuery( userRequestEntity, dOH_DemographicQueryRequest );
+            return await DOH_DemographicQuery(userRequestEntity, dOH_DemographicQueryRequest);
         }
         catch( HcaMuleSoftException e )
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
