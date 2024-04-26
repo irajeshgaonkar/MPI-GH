@@ -308,7 +308,7 @@ namespace HCA.Api.Controllers
                 
                 _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
 
-                return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
+                return BuildOkObjectResultWith400Error(errorMessage, filter.Trackingid);
             }
             if (HttpContext.Items["SourceSystem"] != null)
             {

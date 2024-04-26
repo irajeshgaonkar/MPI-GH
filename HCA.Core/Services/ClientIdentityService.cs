@@ -451,6 +451,8 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicQuery( DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions ) //,string responseIdentityFormatNames = "DEFAULT")
     {
+        UserRequestEntity userRequestEntity = new UserRequestEntity();
+
         try
         {
             var trackingId = string.Empty;
@@ -494,7 +496,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
 
-            var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+            userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
 
 
             if (processType == ProcessType.Async)
@@ -524,7 +526,6 @@ public class ClientIdentityService : IClientIdentityService
                 Layer = ServiceLayer.API.ToString(),
                 ExceptionCustomProperties = exceptionCustomProperties
             };
-
 
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
 
