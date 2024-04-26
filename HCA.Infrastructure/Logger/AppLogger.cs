@@ -18,7 +18,7 @@ public class AppLogger : IAppLogger
         _logger.LogInformation($"{_logPrefix} {callerName}: {message}");
 
     public void LogError(Exception ex, string? message = null, [CallerMemberName] string callerName = "") =>
-        _logger.LogError($"{_logPrefix} {callerName}: {ex.StackTrace}: {message}");
+        _logger.LogError($"{_logPrefix} {callerName}: {message}: {ex}");
 
     public void LogCritical(string message, [CallerMemberName] string callerName = "") =>
         _logger.LogCritical($"{_logPrefix} {callerName}: {message}");

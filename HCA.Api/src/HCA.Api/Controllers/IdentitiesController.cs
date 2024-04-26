@@ -288,6 +288,7 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid)
             {
                 var errorMessage = GetErrorMessages(ModelState);
+
                 var exceptionCustomProperties = new ExceptionCustomProperties
                 {
                     User = HttpContext.GetCurrentUser(),
@@ -304,7 +305,6 @@ namespace HCA.Api.Controllers
                     Layer = ServiceLayer.API.ToString(),
                     ExceptionCustomProperties = exceptionCustomProperties
                 };
-
                 
                 _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
 
@@ -314,6 +314,7 @@ namespace HCA.Api.Controllers
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
             }
+
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
@@ -386,7 +387,6 @@ namespace HCA.Api.Controllers
                     Layer = ServiceLayer.API.ToString(),
                     ExceptionCustomProperties = exceptionCustomProperties
                 };
-
 
                 _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
 

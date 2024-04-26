@@ -109,7 +109,7 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_PostIdentities( DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        UserRequestEntity userRequestEntity = new UserRequestEntity();
+        UserRequestEntity userRequestEntity = new();
         try
         {
             string strIdentities = request.Content.Identity.ToString();
@@ -166,13 +166,14 @@ public class ClientIdentityService : IClientIdentityService
                 User = currentUser,
                 Agency = request.Agency,
                 Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
-                FunctionName = nameof(DOH_DemographicQuery),
+                FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
                 ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
             };
             var errorLogItem = new LogItem()
             {
-                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
                 TrackingId = request.TrackingId,
                 Layer = ServiceLayer.API.ToString(),
                 ExceptionCustomProperties = exceptionCustomProperties
@@ -189,13 +190,38 @@ public class ClientIdentityService : IClientIdentityService
                 User = currentUser,
                 Agency = request.Agency,
                 Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
-                FunctionName = nameof(DOH_DemographicQuery),
+                FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
                 ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
             };
             var errorLogItem = new LogItem()
             {
-                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                FunctionName = nameof(DOH_PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
                 TrackingId = request.TrackingId,
                 Layer = ServiceLayer.API.ToString(),
                 ExceptionCustomProperties = exceptionCustomProperties
@@ -488,11 +514,12 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_DemographicQuery( DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions ) //,string responseIdentityFormatNames = "DEFAULT")
     {
-        UserRequestEntity userRequestEntity = new UserRequestEntity();
+        UserRequestEntity userRequestEntity = new();
+        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new();
+        var trackingId = string.Empty;
 
         try
         {            
-            var trackingId = string.Empty;
             if (!(string.IsNullOrEmpty(filter.Trackingid)) && (filter.Trackingid.Length >= 1))
             {
                 trackingId = filter.Trackingid.ToString();
@@ -509,7 +536,6 @@ public class ClientIdentityService : IClientIdentityService
 
             string strIdentities = filter.content.identity.ToString();
 
-            DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
             if (strIdentities.ToLower().Contains("null"))
             {
                 // Replace null values with empty strings and get modified JSON string 
@@ -532,9 +558,7 @@ public class ClientIdentityService : IClientIdentityService
                 dOH_DemographicQueryRequest.Agency = filter.Agency;
             }
 
-
             userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
-
 
             if (processType == ProcessType.Async)
             {
@@ -547,6 +571,32 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
             var exceptionCustomProperties = new ExceptionCustomProperties
             {
                 User = currentUser,
