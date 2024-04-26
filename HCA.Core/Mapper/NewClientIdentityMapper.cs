@@ -65,7 +65,7 @@ public class NewClientIdentityMapper
             result.ProtectedPopulationFlag = string.Equals( "Y", protectedPopulationFromRequest.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
 
             result.ProtectedPopulationType = protectedPopulationFromRequest.ProtectedPopulationTypes is not null
-                ? string.Join( ",", protectedPopulationFromRequest.ProtectedPopulationTypes )
+                ? string.Join( ";", protectedPopulationFromRequest.ProtectedPopulationTypes )
                 : "";
         }   
         else {
