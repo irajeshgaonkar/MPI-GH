@@ -109,62 +109,99 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_PostIdentities( DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        string strIdentities = request.Content.Identity.ToString();
-        Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-
-        if ( !string.Equals( request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( request.TrackingId, "Source system mismatch." );
-        }
-
-        string trackingId = request.TrackingId
-                            ?? ClientIdentityRequestExtension.GetTrackingId( identity, ApiCallType.DOH_VEPost );
-
-        DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new( trackingId )
-        {
-            SourceSystem = request.SourceSystem,
-            Agency = request.Agency,
-            protectedPopulation = request.protectedPopulation
-        };
-        if( strIdentities.ToLower().Contains( "null" ) )
-        {
-            // Replace null values with empty strings and get modified JSON string 
-            dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
-
-            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
-
-            DOH_PostIdentityRequestContent postIdentityRequestContent = new( modifiedJsonElement )
-            {
-                ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames
-            };
-            dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
-        }
-        else
-        {
-            dOH_PostClientIdentityRequest.Content = request.Content;
-        }
-
-
-        UserRequestEntity userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new UserRequestEntity();
         try
         {
-            if( processType == ProcessType.Async )
+            string strIdentities = request.Content.Identity.ToString();
+            Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
+
+            if (!string.Equals(request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.VELink, userRequestEntity );
+                return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
+            }
+
+            string trackingId = request.TrackingId
+                                ?? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost);
+
+            DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
+            {
+                SourceSystem = request.SourceSystem,
+                Agency = request.Agency,
+                protectedPopulation = request.protectedPopulation
+            };
+            if (strIdentities.ToLower().Contains("null"))
+            {
+                // Replace null values with empty strings and get modified JSON string 
+                dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                DOH_PostIdentityRequestContent postIdentityRequestContent = new(modifiedJsonElement)
+                {
+                    ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames
+                };
+                dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
+            }
+            else
+            {
+                dOH_PostClientIdentityRequest.Content = request.Content;
+            }
+
+
+            userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
+            
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
                 return trackingId;
             }
 
-            return await DOH_PostIdentities( userRequestEntity, dOH_PostClientIdentityRequest );
+            return await DOH_PostIdentities(userRequestEntity, dOH_PostClientIdentityRequest);
         }
-        catch( HcaBadRequestException e )
+        catch ( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -454,7 +491,7 @@ public class ClientIdentityService : IClientIdentityService
         UserRequestEntity userRequestEntity = new UserRequestEntity();
 
         try
-        {
+        {            
             var trackingId = string.Empty;
             if (!(string.IsNullOrEmpty(filter.Trackingid)) && (filter.Trackingid.Length >= 1))
             {

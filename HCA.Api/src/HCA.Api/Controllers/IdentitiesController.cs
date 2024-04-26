@@ -367,7 +367,31 @@ namespace HCA.Api.Controllers
         {
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), request.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = request.Agency,
+                    Role = HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                    FunctionName = nameof(DOH_PostIdentity),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_PostIdentity)}-Failed",
+                    TrackingId = request.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, request.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 request.SourceSystem = HttpContext.Items["SourceSystem"].ToString();

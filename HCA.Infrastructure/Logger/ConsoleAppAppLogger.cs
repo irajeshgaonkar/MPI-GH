@@ -11,7 +11,7 @@ public class ConsoleAppAppLogger : IAppLogger
     }
 
     public void LogError(Exception ex, string? message = null, [CallerMemberName] string callerName = "") =>
-        WriteLine(ex.ToString() ?? "" + message, ConsoleColor.Red);
+        WriteLine(ex.ToString() + " " + message ?? "", ConsoleColor.Red);
 
     public void LogCritical(string message, [CallerMemberName] string callerName = "") =>
         WriteLine(message, ConsoleColor.DarkYellow);

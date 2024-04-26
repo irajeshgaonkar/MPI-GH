@@ -72,6 +72,8 @@ public class Startup
 
         services.AddHca(Configuration);
 
+        services.AddHttpContextAccessor();
+
         services.AddScoped<IPValidationFilter>();
 
         //?Todo: !Refactor
