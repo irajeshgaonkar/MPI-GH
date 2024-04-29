@@ -165,7 +165,7 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
@@ -189,7 +189,7 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
@@ -213,7 +213,7 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
@@ -576,7 +576,7 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = filter.Agency,
-                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
                 FunctionName = nameof(DOH_DemographicQuery),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
@@ -602,7 +602,7 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = filter.Agency,
-                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
                 FunctionName = nameof(DOH_DemographicQuery),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
@@ -1334,6 +1334,21 @@ public class ClientIdentityService : IClientIdentityService
 
         if( source2Id != null )
             await _userModifyRecordsService.RemoveModify( userName, source2Id ?? 0 );
+    }
+
+    /// <summary>
+    /// Get Role claim for user in context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static string GetUserRoles(HttpContext context)
+    {
+        if (context.User != null && context.User.Claims.Any(c => c.Type == ClaimTypes.Role))
+        {
+            return context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+        }
+
+        return string.Empty;
     }
 
 }

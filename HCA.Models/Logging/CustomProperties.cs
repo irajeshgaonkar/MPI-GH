@@ -16,6 +16,11 @@
         public string Agency { get; set; }
 
         /// <summary>
+        /// SourceSystem in context
+        /// </summary>
+        public string SourceSystem { get; set; }
+
+        /// <summary>
         /// Role in context
         /// </summary>
         public string Role { get; set; }
