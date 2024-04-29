@@ -149,7 +149,7 @@ public class ClientIdentityService : IClientIdentityService
 
 
             userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
-            
+
             if (processType == ProcessType.Async)
             {
                 await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
@@ -165,11 +165,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
-                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+                ErrorCode = "500"
             };
             var errorLogItem = new LogItem()
             {
@@ -189,11 +189,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
-                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+                ErrorCode = "500"
             };
             var errorLogItem = new LogItem()
             {
@@ -213,11 +213,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = request.Agency,
-                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
                 FunctionName = nameof(DOH_PostIdentities),
                 ErrorMessage = e.Message,
                 StackTrace = e.StackTrace,
-                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+                ErrorCode = "500"
             };
             var errorLogItem = new LogItem()
             {
@@ -576,10 +576,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = filter.Agency,
-                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
                 FunctionName = nameof(DOH_DemographicQuery),
                 ErrorMessage = e.Message,
-                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
             };
             var errorLogItem = new LogItem()
             {
@@ -601,10 +602,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 User = currentUser,
                 Agency = filter.Agency,
-                Role = _httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                Role = _httpContextAccessor?.HttpContext?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value,
                 FunctionName = nameof(DOH_DemographicQuery),
                 ErrorMessage = e.Message,
-                ErrorCode = (e.InnerException as WebException)?.Response is HttpWebResponse httpReponse ? httpReponse.StatusCode.ToString() : null
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
             };
             var errorLogItem = new LogItem()
             {

@@ -90,4 +90,20 @@ public static class HttpContextExtensions
 
         return string.Empty;
     }
+
+    /// <summary>
+    /// Get Role claim for user in context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    public static string GetUserRoles(this HttpContext context)
+    {
+        if (context.User != null && context.User.Claims.Any(c => c.Type == ClaimTypes.Role))
+        {
+            return context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+        }
+
+        return string.Empty;
+    }
+
 }

@@ -293,7 +293,7 @@ namespace HCA.Api.Controllers
                 {
                     User = HttpContext.GetCurrentUser(),
                     Agency = filter.Agency,
-                    Role = HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                    Role = HttpContext.GetUserRoles(),
                     FunctionName = nameof(DOH_DemographicQuery),
                     ErrorMessage = String.Join(",",errorMessage),
                     ErrorCode = "400"
@@ -375,7 +375,7 @@ namespace HCA.Api.Controllers
                 {
                     User = HttpContext.GetCurrentUser(),
                     Agency = request.Agency,
-                    Role = HttpContext.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role).Value,
+                    Role = HttpContext.GetUserRoles(),
                     FunctionName = nameof(DOH_PostIdentity),
                     ErrorMessage = String.Join(",", errorMessage),
                     ErrorCode = "400"
