@@ -72,11 +72,35 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll( string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "" )
     {
-        //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
-        var userModifyRecords = new List<int>();
-        var (count, entities) = await _clientIdentityRepository.GetAll( searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy );
-        var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
-        return (count, models);
+        try
+        {
+            //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
+            var userModifyRecords = new List<int>();
+            var (count, entities) = await _clientIdentityRepository.GetAll(searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
+            var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
+            return (count, models);
+        }
+        catch(Exception ex)
+        {
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(GetAll),
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(GetAll)}-Failed",
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(ex, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
     }
 
     public async Task<dynamic?> PostIdentities( IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
@@ -98,11 +122,72 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId= trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -232,8 +317,6 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-
-
     private JsonElement? ConvertJObjectToJsonElement( JObject jObject )
     {
         if( jObject == null )
@@ -292,7 +375,6 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-
     public async Task<dynamic?> LinkIdentities( LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
         var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{linkingSources.Source.GetTrackingId(linkingSources.LinkToSource)}";
@@ -312,11 +394,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -340,11 +484,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -368,11 +574,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -396,11 +664,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -423,6 +753,49 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicSearch)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicSearch)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -445,6 +818,49 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicQuery)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicQuery)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }

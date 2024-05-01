@@ -1,10 +1,11 @@
 ﻿
 using HCA.Api.Constants;
+using HCA.Api.Extensions;
 using HCA.Api.Options;
+using HCA.Infrastructure.Logger;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Principal;
-using HCA.Api.Extensions;
 
 namespace HCA.Api.Middleware;
 
@@ -13,11 +14,13 @@ public class JwtMiddleware
     private readonly RequestDelegate _next;
 
     private readonly SecurityOptions _securityOptions;
+    private readonly IAppLogger _logger;
 
-    public JwtMiddleware(RequestDelegate next, SecurityOptions securityOptions)
+    public JwtMiddleware(RequestDelegate next, SecurityOptions securityOptions, IAppLogger logger)
     {
         _next = next;
         _securityOptions = securityOptions;
+        _logger = logger;
     }
 
     public async Task Invoke(HttpContext context)
@@ -53,7 +56,7 @@ public class JwtMiddleware
         }
         catch (Exception ex)
         {
-            //// do nothing if jwt validation fails
+            _logger.LogError(ex);
             //// user is not attached to context so request won't have access to secure routes
         }
     }

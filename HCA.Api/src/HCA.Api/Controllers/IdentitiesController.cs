@@ -548,7 +548,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-merge")]
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_Merge),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_Merge)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -576,7 +600,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-unmerge")]
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_UnMerge),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_UnMerge)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
