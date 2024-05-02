@@ -14,13 +14,11 @@ public class JwtMiddleware
     private readonly RequestDelegate _next;
 
     private readonly SecurityOptions _securityOptions;
-    private readonly IAppLogger _logger;
 
-    public JwtMiddleware(RequestDelegate next, SecurityOptions securityOptions, IAppLogger logger)
+    public JwtMiddleware(RequestDelegate next, SecurityOptions securityOptions)
     {
         _next = next;
         _securityOptions = securityOptions;
-        _logger = logger;
     }
 
     public async Task Invoke(HttpContext context)
@@ -56,7 +54,6 @@ public class JwtMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex);
             //// user is not attached to context so request won't have access to secure routes
         }
     }
