@@ -1313,49 +1313,114 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_MergeIdentities( DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if( !string.Equals( mergingSources.content.ToSurviveSource.Name, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ) )
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "ToSurviveSource and ToRetireSource do not match." );
-        }
-        if( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToSurviveSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "SourceSystem and ToSurviveSource do not match." );
-        }
-        if ( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "SourceSystem and ToRetireSource do not match." );
-        }
-
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( mergingSources.TrackingId)) && (mergingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = mergingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId( mergingSources.content.ToRetireSource )}";
-        }
-        var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(mergingSources.content.ToSurviveSource.Name, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEMerge, userRequestEntity );
+                return ErrorResponseBuilder(mergingSources.TrackingId, "ToSurviveSource and ToRetireSource do not match.");
+            }
+            if (!string.Equals(mergingSources.SourceSystem, mergingSources.content.ToSurviveSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(mergingSources.TrackingId, "SourceSystem and ToSurviveSource do not match.");
+            }
+            if (!string.Equals(mergingSources.SourceSystem, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(mergingSources.TrackingId, "SourceSystem and ToRetireSource do not match.");
+            }
+
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(mergingSources.TrackingId)) && (mergingSources.TrackingId.Length >= 1))
+            {
+                trackingId = mergingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
+            }
+            userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-            return await DOH_MergeIdentities( userRequestEntity, mergingSources );
+            return await DOH_MergeIdentities(userRequestEntity, mergingSources);
         }
-        catch( HcaBadRequestException e )
+        catch (HcaBadRequestException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch (HcaMuleSoftException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
@@ -1365,49 +1430,114 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities( DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if ( !string.Equals( unMergingSources.content.UnmergeFromSource.Name, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "UnmergeFromSource and UnmergeSource do not match." );
-        }
-        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeFromSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "SourceSystem and UnmergeFromSource do not match." );
-        }
-        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "SourceSystem and UnmergeSource do not match." );
-        }
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( unMergingSources.TrackingId)) && (unMergingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = unMergingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId( unMergingSources.content.UnmergeSource )}";
-        }
-
-        var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(unMergingSources.content.UnmergeFromSource.Name, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEUnMerge, userRequestEntity );
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "UnmergeFromSource and UnmergeSource do not match.");
+            }
+            if (!string.Equals(unMergingSources.SourceSystem, unMergingSources.content.UnmergeFromSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "SourceSystem and UnmergeFromSource do not match.");
+            }
+            if (!string.Equals(unMergingSources.SourceSystem, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "SourceSystem and UnmergeSource do not match.");
+            }
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(unMergingSources.TrackingId)) && (unMergingSources.TrackingId.Length >= 1))
+            {
+                trackingId = unMergingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
+            }
+
+            userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEUnMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
-            return await DOH_UnMergeIdentities( userRequestEntity, unMergingSources );
+            return await DOH_UnMergeIdentities(userRequestEntity, unMergingSources);
         }
-        catch( HcaBadRequestException e )
+        catch (HcaBadRequestException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch (HcaMuleSoftException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
