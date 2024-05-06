@@ -9,6 +9,9 @@ using HCA.Models.Request;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using HCA.Infrastructure.Sqs;
+using HCA.Models.Logging;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace HCA.Core.Processors;
 
@@ -113,22 +116,22 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         var firstRequest = requests.First();
         var trackingId = ClientIdentityRequestExtension.GetTrackingId(firstRequest.SourceSystemName, firstRequest.SourceSystemId);
 
-        _logger.LogInformation($"Processing request TrackingId: {trackingId}");
-        var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
-
-        if (!requests.Any())
-            return;
-
-        await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
-
-        var request = requests.First();
-        var deleteIdentityRequest = new DeleteClientIdentityRequest(trackingId)
-        {
-            Content = new Models.MuleSoft.Source(request.SourceSystemName, request.SourceSystemId)
-        };
-
         try
         {
+            _logger.LogInformation($"Processing request TrackingId: {trackingId}");
+            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
+
+            if (!requests.Any())
+                return;
+
+            await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
+
+            var request = requests.First();
+            var deleteIdentityRequest = new DeleteClientIdentityRequest(trackingId)
+            {
+                Content = new Models.MuleSoft.Source(request.SourceSystemName, request.SourceSystemId)
+            };
+
             var response = await _clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(deleteIdentityRequest, requestStatusUpdater);
 
             if (null == response || response.Success == false)
@@ -142,6 +145,27 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         catch (Exception e)
         {
             await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = "BatchProcess",
+                Agency = firstRequest.SourceSystemAgency,
+                FunctionName = nameof(ProcessDeleteIdentityRequests),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_Batch}{nameof(ProcessDeleteIdentityRequests)}-Failed",
+                TrackingId = string.IsNullOrEmpty(firstRequest.TrackingId) ? trackingId : firstRequest.TrackingId,
+                Layer = ServiceLayer.Batch.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            //Log error and move on
+            //Do not throw as we need to process the remaining items in the request
         }
     }
 
@@ -150,23 +174,23 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         var firstRequest = requests.First();
         var trackingId = ClientIdentityRequestExtension.GetTrackingId(firstRequest.SourceSystemName, firstRequest.SourceSystemId);
 
-        _logger.LogInformation($"Processing request TrackingId: {trackingId}");
-        var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
-        requests = await RemoveDuplicates(requests);
-        _logger.LogInformation($"Completed removing duplicates: {trackingId}");
-
-        if (!requests.Any())
-            return;
-
-        await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
-
-        var postIdentityRequest = new PostClientIdentityRequest(trackingId)
-        {
-            Content = requests.ToList()
-        };
-
         try
         {
+            _logger.LogInformation($"Processing request TrackingId: {trackingId}");
+            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
+            requests = await RemoveDuplicates(requests);
+            _logger.LogInformation($"Completed removing duplicates: {trackingId}");
+
+            if (!requests.Any())
+                return;
+
+            await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
+
+            var postIdentityRequest = new PostClientIdentityRequest(trackingId)
+            {
+                Content = requests.ToList()
+            };
+
             var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
 
             if (null == response || response.Success == false)
@@ -180,6 +204,27 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         catch (Exception e)
         {
             await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = "BatchProcess",
+                Agency = firstRequest.SourceSystemAgency,
+                FunctionName = nameof(ProcessPostIdentityRequests),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_Batch}{nameof(ProcessPostIdentityRequests)}-Failed",
+                TrackingId = string.IsNullOrEmpty(firstRequest.TrackingId) ? trackingId : firstRequest.TrackingId,
+                Layer = ServiceLayer.Batch.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            //Log error and move on
+            //Do not throw as we need to process the remaining items in the request
         }
     }
 

@@ -6,8 +6,11 @@ using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sqs;
 using HCA.Models.Enums;
+using HCA.Models.Logging;
 using HCA.Models.Request;
 using HCA.Models.SQS;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace HCA.Core.Processors;
 
@@ -40,23 +43,50 @@ public class ClientIdentitySQSPublisher : IClientIdentitySQSPublisher
 
     public async Task Publish(string requestId)
     {
-        var fileRequest = await _fileRequestService.UpdatefileRequestStatus(requestId, RequestStatus.Processing.GetStringValue());
-
-        if (null == fileRequest)
+        FileRequestEntity fileRequest = new();
+        try
         {
-            _logger.LogInformation("Couldn't able to find the file request details");
-            return;
+            fileRequest = await _fileRequestService.UpdatefileRequestStatus(requestId, RequestStatus.Processing.GetStringValue());
+
+            if (null == fileRequest)
+            {
+                _logger.LogInformation("Couldn't able to find the file request details");
+                return;
+            }
+
+
+            var requestEntities = await _clientIdentityRequestRepository.GetRequests(requestId);
+            var allrequests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
+
+            var groupedRqeusts = allrequests.GroupBy(g => g.BatchNumber);
+            //_logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
+            int maxDegreeOfParallelism = 1;
+            await groupedRqeusts.ParallelForEachAsync((requests) => PublishMessageToQueue(requests.ToList(), requests.Key, fileRequest.RequestId, fileRequest.ApiCallType), maxDegreeOfParallelism);
+            _logger.LogInformation($"Completed Publishing records to SQS for requestId: {requestId}");
         }
+        catch(Exception ex)
+        {
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = "BatchProcess",
+                Agency = fileRequest.SourceSystemAgency,
+                FunctionName = nameof(Publish),
+                ErrorMessage = ex.Message,
+                ErrorCode = "500",
+                StackTrace = ex.StackTrace
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_Batch}{nameof(Publish)}-Failed",
+                TrackingId = fileRequest.TrackingId,
+                Layer = ServiceLayer.Batch.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
 
-
-        var requestEntities = await _clientIdentityRequestRepository.GetRequests(requestId);
-        var allrequests = _clientIdentityRequestMapper.MapToModelCollection(requestEntities);
-
-        var groupedRqeusts = allrequests.GroupBy(g => g.BatchNumber);
-        //_logger.LogInformation($"Started Publishing records to SQS for requestId: {requestId}");
-        int maxDegreeOfParallelism = 1;
-        await groupedRqeusts.ParallelForEachAsync((requests) => PublishMessageToQueue(requests.ToList(), requests.Key, fileRequest.RequestId, fileRequest.ApiCallType), maxDegreeOfParallelism);
-        _logger.LogInformation($"Completed Publishing records to SQS for requestId: {requestId}");
+            _logger.LogError(ex, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        
     }
 
     private async Task PublishMessageToQueue(IEnumerable<ClientIdentityRequest> identityRequests, int batchNumber, string requestId, string apiCallType)
