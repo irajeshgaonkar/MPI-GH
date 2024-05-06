@@ -1675,7 +1675,8 @@ public class ClientIdentityService : IClientIdentityService
             protectedPopulation = request.protectedPopulation,
             SourceSystem = request.SourceSystem,
             Agency = request.Agency,
-            Content = request.Content
+            Content = request.Content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
@@ -1774,7 +1775,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content
+            Content = filter.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
@@ -1873,7 +1875,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content
+            Content = filter.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
@@ -1992,7 +1995,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = linkingSources.SourceSystem,
             Agency = linkingSources.Agency,
-            Content = linkingSources.content
+            Content = linkingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
@@ -2007,7 +2011,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = unLinkingSources.SourceSystem,
             Agency = unLinkingSources.Agency,
-            Content = unLinkingSources.content
+            Content = unLinkingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
@@ -2023,7 +2028,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = mergingSources.SourceSystem,
             Agency = mergingSources.Agency,
-            Content = mergingSources.content
+            Content = mergingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
@@ -2038,7 +2044,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = deleteSourceIdentity.SourceSystem,
             Agency = deleteSourceIdentity.Agency,
-            Content = deleteSourceIdentity.Content
+            Content = deleteSourceIdentity.Content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
@@ -2053,7 +2060,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = unMergingSources.SourceSystem,
             Agency = unMergingSources.Agency,
-            Content = unMergingSources.content
+            Content = unMergingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );

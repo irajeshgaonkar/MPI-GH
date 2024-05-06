@@ -13,4 +13,6 @@ public abstract class BaseRequest
     public string TrackingId { get; set; }
 
     public ApiCallType ApiCallType { get; set; }
+
+    public string? Caller { get; set; }
 }
