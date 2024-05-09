@@ -90,6 +90,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
+            // TODO: ensure errors propagate to caller and AWS when using API
             if (null == linkToIdentity)
                 throw new HcaBadRequestException("link source not found");
 
