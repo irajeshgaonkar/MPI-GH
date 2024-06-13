@@ -8,6 +8,9 @@ public enum ApiCallType
     [StringValue("VE VEPost")]
     VEPost,
 
+    [StringValue("VE VEPost")]
+    DOH_VEPost,
+
     [StringValue("VE Link")]
     VELink,
 
@@ -24,5 +27,29 @@ public enum ApiCallType
     VEDelete,
 
     [StringValue("VE Demographic Search")]
-    VEDemographicSearch
+    VEDemographicSearch,
+
+    [StringValue("VE Demographic Search")]
+    DOH_VEDemographicSearch,
+    
+    [StringValue("VE Demographic Query")]
+    VEDemographicQuery,
+
+[StringValue("VE Demographic Query")]
+    DOH_VEDemographicQuery,
+
+    [StringValue("VE Link")]
+    DOH_VELink,
+
+    [StringValue("VE Un Link")]
+    DOH_VEUnLink,
+
+    [StringValue("VE Merge")]
+    DOH_VEMerge,
+
+    [StringValue("VE Un Merge")]
+    DOH_VEUnMerge,
+    
+    [StringValue("VE Delete")]
+    DOH_VEDelete,
 }

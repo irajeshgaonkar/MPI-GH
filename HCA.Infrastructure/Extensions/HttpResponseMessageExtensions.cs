@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.Json;
 using HCA.Infrastructure.Extensions;
 
 namespace HCA.Infrastructure.Http;

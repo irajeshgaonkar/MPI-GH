@@ -3,7 +3,6 @@ using System.Text;
 using HCA.FileProcessor.Attributes;
 using HCA.FileProcessor.Converters;
 using HCA.FileProcessor.Validators;
-using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 
 namespace HCA.FileProcessor.Parsers;

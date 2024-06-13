@@ -1,7 +1,6 @@
 ﻿using System.Linq.Expressions;
 using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
-using HCA.Models.MuleSoft;
 
 namespace HCA.Data.Repository;
 
@@ -22,4 +21,8 @@ public interface IClientIdentityRepository : IRepositoryBase<ClientIdentityEntit
     Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity);
 
     Task<(int, Dictionary<string, IEnumerable<ClientIdentityEntity>>)> GetClientIdentityGroupedByLinkId(string linkId, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "");
+
+    Task DeleteMpiLinkId(string mpiLinkId);
+
+    void DeleteClientIdentity(ClientIdentityEntity clientIdentityEntity);
 }

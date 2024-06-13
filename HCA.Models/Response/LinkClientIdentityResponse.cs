@@ -9,3 +9,12 @@ public class LinkClientIdentityResponse : BaseResponse
     /// </summary>
     public LinkIdentitiesResponseContent Content { get; set; }
 }
+
+
+public class DOH_LinkClientIdentityResponse : BaseResponse
+{
+    /// <summary>
+    /// Link Identities response content <see cref="LinkIdentitiesResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}

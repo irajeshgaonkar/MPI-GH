@@ -16,12 +16,17 @@ public interface IMuleSoftRequestBuilder
     /// <returns>return Post identity request for mulesoft <see cref="PostIdentityRequest"></returns>
     PostIdentityRequest BuildPostIdentityRequest(PostClientIdentityRequest request);
 
+    PostIdentityRequest BuildDOH_PostIdentityRequest(DOH_PostClientIdentityRequest request);
+
     /// <summary>
     /// Link identities request builder
     /// </summary>
     /// <param name="request">Link identities request <see cref="LinkClientIdentityRequest"/></param>
     /// <returns>return Link identities request for mulesoft <see cref="LinkIdentitiesRequest"></returns>
     LinkIdentitiesRequest BuildLinkIdentitisRequest(LinkClientIdentityRequest request);
+
+
+    DeleteIdentyRequest BuildDeleteIdentityRequest(DeleteClientIdentityRequest request);
 
     /// <summary>
     /// Un Link identities request builder
@@ -50,4 +55,25 @@ public interface IMuleSoftRequestBuilder
     /// <param name="request">Demographic search request <see cref="DemographicSearchClientIdentityRequest"/></param>
     /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
     PostIdentityRequest BuildDemographicSearchRequest(DemographicSearchClientIdentityRequest request);
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns></returns>
+    DemographicSearchRequest BuildDOH_DemographicSearchRequest(DOH_DemographicSearchClientIdentityRequest request);
+
+    /// <summary>
+    /// Demographic query request builder
+    /// </summary>
+    /// <param name="request">Demographic search request <see cref="DemographicQueryClientIdentityRequest"/></param>
+    /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
+    PostIdentityRequest BuildDemographicQueryRequest(DemographicQueryClientIdentityRequest request);
+
+    /// <summary>
+    /// Demographic query request builder
+    /// </summary>
+    /// <param name="request">Demographic search request <see cref="DemographicQueryClientIdentityRequest"/></param>
+    /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
+    PostIdentityRequest BuildDOH_DemographicQueryRequest(DOH_DemographicQueryClientIdentityRequest request);
 }

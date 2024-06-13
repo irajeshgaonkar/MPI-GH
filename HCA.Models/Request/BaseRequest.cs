@@ -1,6 +1,4 @@
-﻿using System;
-using HCA.Models.Enums;
-using HCA.Models.MuleSoft.Response;
+﻿using HCA.Models.Enums;
 
 namespace HCA.Models.Request;
 

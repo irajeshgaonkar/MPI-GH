@@ -1,5 +1,4 @@
 ﻿using HCA.Core.Mapper;
-using HCA.Data.Entities;
 using HCA.Data.Repository;
 using HCA.Models;
 using HCA.Models.Request;

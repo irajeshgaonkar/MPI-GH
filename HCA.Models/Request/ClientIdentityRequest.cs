@@ -163,5 +163,10 @@ public class ClientIdentityRequest
     /// Status
     /// </summary>
     public string? Message { get; set; }
+
+    /// <summary>
+    /// CustomJson
+    /// </summary>
+    public string? CustomJson { get; set; }
 }
 

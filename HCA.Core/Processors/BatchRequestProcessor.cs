@@ -1,18 +1,13 @@
-﻿using HCA.Core.Mapper;
-using HCA.Core.Processors.File;
+﻿using HCA.Core.Processors.File;
 using HCA.Core.Services;
-using HCA.Data.Entities;
 using HCA.Data.Repository;
-using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
 using HCA.Infrastructure.Logger;
-using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using HCA.Models.SQS;
-using Amazon.S3;
 using HCA.Infrastructure.Sqs;
 
 namespace HCA.Core.Processors;
@@ -23,6 +18,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
+    private readonly IFileRequestRepository _fileRequestRepository;
     private readonly ISqsPublisher _sqsPublisher;
     private readonly IOutputFileWriter _outputFileWriter;
 
@@ -30,12 +26,17 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     public BatchRequestProcessor(IAppLogger logger,
         IClientIdentityRequestRepository clientIdentityRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IRequestProcessLogRepository requestProcessLogRepository,IOutputFileWriter outputFileWriter, ISqsPublisher sqsPublisher)
+        IRequestProcessLogRepository requestProcessLogRepository,
+        IFileRequestRepository fileRequestRepository,
+        IOutputFileWriter outputFileWriter,
+        ISqsPublisher sqsPublisher
+        )
     {
         _logger = logger;
         _clientIdentityRequestRepository = clientIdentityRequestRepository;
         _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
         _requestProcessLogRepository = requestProcessLogRepository;
+        _fileRequestRepository = fileRequestRepository;
         _sqsPublisher = sqsPublisher;
         _outputFileWriter = outputFileWriter;
     }
@@ -48,8 +49,20 @@ public class BatchRequestProcessor : IBatchRequestProcessor
             var requestId = clientIdentityRequest?.RequestId;
             var batchNumber = clientIdentityRequest?.BatchNumber;
             _logger.LogInformation($"Started Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
-            await ProcessPostIdentityRequest(batchRequest);
-            _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+
+            var fileRequest = await _fileRequestRepository.GetSingleAsync(f => f.RequestId == requestId);
+
+            if (fileRequest?.ApiCallType == "VE Delete")
+            {
+                await ProcessDeleteIdentityRequest (batchRequest);
+                _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+            }
+            else
+            {
+                await ProcessPostIdentityRequest(batchRequest);
+                _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+            }
+
 
             if (requestId != null && IsFileRequestComplete(requestId))
             {
@@ -71,6 +84,18 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         return res;
     }
 
+    private async Task ProcessDeleteIdentityRequest(BatchProcessMessage batchRequest)
+    {
+        //int maxDegreeOfParallelism = 1;
+        var groupedRequests = GetGroupedRequests(batchRequest);
+        if (groupedRequests == null) return;
+        //await groupedRequests.ParallelForEachAsync((requests) => ProcessPostIdentityRequests(requests), maxDegreeOfParallelism);
+        foreach (var groupedRequest in groupedRequests)
+        {
+            await ProcessDeleteIdentityRequests(groupedRequest);
+        }
+    }
+
     private async Task ProcessPostIdentityRequest(BatchProcessMessage batchRequest)
     {
         //int maxDegreeOfParallelism = 1;
@@ -80,6 +105,43 @@ public class BatchRequestProcessor : IBatchRequestProcessor
         foreach(var groupedRequest in groupedRequests)
         {
             await ProcessPostIdentityRequests(groupedRequest);
+        }
+    }
+
+    private async Task ProcessDeleteIdentityRequests(IEnumerable<ClientIdentityRequest> requests)
+    {
+        var firstRequest = requests.First();
+        var trackingId = ClientIdentityRequestExtension.GetTrackingId(firstRequest.SourceSystemName, firstRequest.SourceSystemId);
+
+        _logger.LogInformation($"Processing request TrackingId: {trackingId}");
+        var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
+
+        if (!requests.Any())
+            return;
+
+        await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
+
+        var request = requests.First();
+        var deleteIdentityRequest = new DeleteClientIdentityRequest(trackingId)
+        {
+            Content = new Models.MuleSoft.Source(request.SourceSystemName, request.SourceSystemId)
+        };
+
+        try
+        {
+            var response = await _clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(deleteIdentityRequest, requestStatusUpdater);
+
+            if (null == response || response.Success == false)
+            {
+                await Update(requests, trackingId, RequestStatus.Failed, response?.Errors.JoinBy("|") ?? "", null);
+                return;
+            }
+            var linkIdsDeleted = response.Content.LinkIdsDeleted.Aggregate(string.Empty, (s1, s2) => $"{s1} {s2}");
+            await Update(requests, trackingId, RequestStatus.Success, "", linkIdsDeleted);
+        }
+        catch (Exception e)
+        {
+            await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
         }
     }
 
@@ -115,7 +177,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
             await Update(requests, trackingId, RequestStatus.Success, "", response.Content.LinkId);
         }
-        catch (HcaMuleSoftException e)
+        catch (Exception e)
         {
             await Update(requests, trackingId, RequestStatus.Failed, e.Message, null);
         }

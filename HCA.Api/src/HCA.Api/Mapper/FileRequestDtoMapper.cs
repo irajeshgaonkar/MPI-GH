@@ -1,5 +1,4 @@
-﻿using System;
-using HCA.Api.Dto;
+﻿using HCA.Api.Dto;
 using HCA.Models;
 using HCA.Models.Request;
 
@@ -80,27 +79,87 @@ public static class ClientIdentityDtoMapper
         return dtos;
     }
 
-    public static IEnumerable<ClientIdentityDto> MapToReportDto(IEnumerable<ClientIdentityModel> models)
+    public static IList<ClientIdentityDto> GetReportsDto(IEnumerable<ClientIdentityModel> models, bool showSensitiveData)
     {
-        var result = new List<ClientIdentityDto>();
+        var dtos = new List<ClientIdentityDto>();
 
         foreach (var model in models)
         {
-            var clientIdentity = new ClientIdentityDto()
+            var clientIdentityDto = new ClientIdentityDto()
             {
                 Id = model.Id,
                 MPILinkId = model.MpiLinkId ?? "",
                 SourceName = model.SourceSystemName,
                 SourceSystemId = model.SourceSystemId,
+                SourceSystemLastUpdate = model.SourceSystemUpdated,
                 FirstName = model.FirstName,
                 MiddleName = model.MiddleName ?? "",
-                LastName = model.LastName,
-                Gender = model.Gender
+                LastName = model.LastName ?? "",
+                Suffix = model.NameSuffix ?? "",
+                BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
+                Gender = model.Gender ?? "",
+                SSN = showSensitiveData ? model.SSN ?? "" : "*****",
+                ProtectecPopulationFlag = model.ProtectedPopulationFlag,
+                ProtectedPopulationType = model.ProtectedPopulationType ?? ""
             };
-
-            result.Add(clientIdentity);
+            dtos.Add(clientIdentityDto);
         }
-
-        return result;
+        return dtos;
     }
 }
+public static class CustomDataMappingDtoMapper
+{
+    public static CustomDataMappingDto GetDto(CustomDataMapping customData)
+    {
+        return new CustomDataMappingDto()
+        {
+            Id = customData.Id,
+            SourceSystemName = customData.SourceSystemName,
+            InputIndex = customData.InputIndex,
+            InputColumnName = customData.InputColumnName,
+            VeratoRequestPath = customData.VeratoRequestPath,
+            VeratoResponsePath = customData.VeratoResponsePath,
+            APIResponsePath = customData.APIResponsePath,
+            OutputIndex = customData.OutputIndex,
+            OutputColumnName = customData.OutputColumnName
+        };
+    }
+    public static IList<CustomDataMappingDto?> GetListDto(IEnumerable<CustomDataMapping?> customDatas)
+    {
+        var listDto = new List<CustomDataMappingDto?>();
+        foreach (CustomDataMapping customData in customDatas)
+        {
+            var fileDto = new CustomDataMappingDto()
+            {
+                Id = customData.Id,
+                SourceSystemName = customData.SourceSystemName,
+                InputIndex = customData.InputIndex,
+                InputColumnName = customData.InputColumnName,
+                VeratoRequestPath = customData.VeratoRequestPath,
+                VeratoResponsePath = customData.VeratoResponsePath,
+                APIResponsePath = customData.APIResponsePath,
+                OutputIndex = customData.OutputIndex,
+                OutputColumnName = customData.OutputColumnName
+            };
+            listDto.Add(fileDto);
+        };
+        return listDto;
+    }
+
+    public static CustomDataMapping MapDtoToEntity(CustomDataMappingDto customData)
+    {
+        return new CustomDataMapping()
+        {
+            Id = customData.Id,
+            SourceSystemName = customData.SourceSystemName,
+            InputIndex = customData.InputIndex,
+            InputColumnName = customData.InputColumnName,
+            VeratoRequestPath = customData.VeratoRequestPath,
+            VeratoResponsePath = customData.VeratoResponsePath,
+            APIResponsePath = customData.APIResponsePath,
+            OutputIndex = customData.OutputIndex,
+            OutputColumnName = customData.OutputColumnName
+        };
+    }
+}
+

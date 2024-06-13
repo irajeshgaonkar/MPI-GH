@@ -5,6 +5,8 @@
 /// </summary>
 public class Identity
 {
+
+   
     /// <summary>
     /// <see cref="Identity"/>
     /// </summary>
@@ -18,6 +20,7 @@ public class Identity
         Genders = new List<string>();
         DatesOfBirth = new List<string>();
         PhoneNumbers = new List<PhoneNumber>();
+        //CreateDates = new List<CreateDate>();
     }
 
     /// <summary>
@@ -67,5 +70,15 @@ public class Identity
     /// </summary>
     /// <example></example>
     public List<PhoneNumber> PhoneNumbers { get; set; }
+
+    /// <summary>
+    /// Collection of phone number <see cref="CreateDate"/>
+    /// </summary>
+    /// <example></example>
+  //  [JsonPropertyName("CreateDates")]
+    //public List<CreateDate> CreateDates { get; set; } = null;
+
+
+
 }
 

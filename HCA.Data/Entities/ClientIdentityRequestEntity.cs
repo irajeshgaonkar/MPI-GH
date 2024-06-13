@@ -257,5 +257,8 @@ public class ClientIdentityRequestEntity : BaseEntity
     [Column("retry_count")]
     [Required]
     public int RetryCount { get; set; }
+
+    [Column("custom_json")]
+    public string?  CustomJson { get; set; }
 }
 

@@ -1,11 +1,9 @@
 ﻿using HCA.Api.Constants;
-using HCA.Api.Dto;
 using HCA.Api.Filters;
 using HCA.Core.Services;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.DynamoDb;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 

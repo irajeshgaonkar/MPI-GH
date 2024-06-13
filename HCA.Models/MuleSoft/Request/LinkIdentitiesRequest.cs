@@ -20,3 +20,31 @@ public class LinkIdentitiesRequest : MuleSoftRequest
     public LinkingSources Content { get; set; }
 }
 
+public class DeleteIdentyRequest : MuleSoftRequest
+{
+    /// <summary>
+    /// <see cref="LinkIdentitiesRequest"/>
+    /// </summary>
+    /// <param name="trackingId">Tracking id for the request</param>
+    public DeleteIdentyRequest(string trackingId, DeleteIdentyRequestContent content) : base(trackingId)
+    {
+        Content = content;
+    }
+
+    /// <summary>
+    /// Linking Sources
+    /// </summary>
+    public DeleteIdentyRequestContent Content { get; set; }
+}
+
+public class DeleteIdentyRequestContent
+{
+
+    public DeleteIdentyRequestContent(Source source)
+    {
+        Source = source;
+    }
+
+    public Source Source { get; set; }
+}
+

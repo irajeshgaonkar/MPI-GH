@@ -4,17 +4,12 @@ using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
-using HCA.Data.Entities;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Response;
 using HCA.Models.SQS;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Net;
 using System.Security.Claims;
 
 namespace HCA.Api.Controllers
@@ -63,10 +58,10 @@ namespace HCA.Api.Controllers
             var (count, records) = await _reportsService.GetClientIdentityGroupedByLinkId(linkId, pagNumber, recordsPerPage, orderBy);
 
             var result = new Dictionary<string, IEnumerable<ClientIdentityDto>>();
-            
+            var showSensitiveData = HttpContext.CanShowSensitiveData();
             foreach (var record in records)
             {
-                result.Add(record.Key, ClientIdentityDtoMapper.MapToReportDto(record.Value));
+                result.Add(record.Key, ClientIdentityDtoMapper.GetReportsDto(record.Value, showSensitiveData));
             }
 
 

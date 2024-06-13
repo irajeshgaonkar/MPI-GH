@@ -177,6 +177,13 @@ public class ClientIdentityEntity : BaseEntity
     [Column("updated_date")]
     public DateTime? UpdatedDate { get; set; }
 
+
+    /// <summary>
+    /// CustomJson
+    /// </summary>
+    [Column("custom_json")]
+    public string? CustomJson { get; set; }
+
     /// <summary>
     /// Client Address Details
     /// </summary>
@@ -188,4 +195,12 @@ public class ClientIdentityEntity : BaseEntity
     /// </summary>
     //[ForeignKey("client_identity_id")]
     public List<ClientIdentityCommunicationEntity> Communications { get; set; }
+
+    /// <summary>
+    /// Set all dateTime elements to current DateTime
+    /// </summary>
+    public void SetAllDateTimesToNow()
+    {
+         UpdatedDate = SourceSystemUpdated = CreatedDate = DateTime.Now;
+    }
 }

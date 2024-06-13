@@ -1,6 +1,5 @@
 ﻿using HCA.Core.Processors;
 using HCA.Infrastructure.Exceptions;
-using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
@@ -87,11 +86,21 @@ namespace HCA.Core.Services
             var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>>
             {
                 [ ApiCallType.VEPost ] = PostIdentity,
+                [ApiCallType.DOH_VEPost] = DOH_PostIdentity,
                 [ ApiCallType.VELink ] = LinkIdentities,
+                [ ApiCallType.DOH_VELink] = DOH_LinkIdentities,
                 [ ApiCallType.VEUnLink ] = UnLinkIdentities,
+                [ ApiCallType.DOH_VEUnLink] = DOH_UnLinkIdentities,
                 [ ApiCallType.VEMerge ] = MergeIdentities,
+                [ ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
                 [ ApiCallType.VEUnMerge ] = UnMergeIdentities,
-                [ ApiCallType.VEDemographicSearch ] = DemographicSearch
+                [ ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
+                [ ApiCallType.VEDemographicSearch ] = DemographicSearch,
+                [ ApiCallType.DOH_VEDemographicSearch ] = DOH_DemographicSearch,
+                [ApiCallType.VEDemographicQuery] = DemographicQuery,
+                [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
+                [ApiCallType.VEDelete] = DeleteIdentity,
+                [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
             };
 
             return requestExecuters;
@@ -117,6 +126,27 @@ namespace HCA.Core.Services
             return response;
         }
 
+        private async Task<BaseResponse> DeleteIdentity(BaseRequest request)
+        {
+            var deleteIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDeleteIdentityRequest(deleteIdentityRequest);
+            var muleSoftResponse = await _muleSoftRepository.DeleteIdentity(muleSoftRequest);
+            var response = CreateResponse<DeleteClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request)
+        {
+            var deleteIdentityRequest = Cast<DOH_DeleteClientIdentityRequest>(request);
+            DeleteIdentyRequestContent content = new DeleteIdentyRequestContent(deleteIdentityRequest.Content.Source);
+            DeleteIdentyRequest muleSoftRequest = new DeleteIdentyRequest(deleteIdentityRequest.TrackingId, content);
+            var muleSoftResponse = await _muleSoftRepository.DOH_DeleteSourceIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_DeleteClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
         private async Task<BaseResponse> MergeIdentities(BaseRequest request)
         {
             var mergeClientIdentityRequest = Cast<MergeClientIdentityRequest>(request);
@@ -137,12 +167,64 @@ namespace HCA.Core.Services
             return response;
         }
 
+        private async Task<BaseResponse> DOH_LinkIdentities(BaseRequest request)
+        {
+            var linkIdentitiesRequest = Cast<DOH_LinkClientIdentityRequest>(request);
+            LinkIdentitiesRequest muleSoftRequest = new LinkIdentitiesRequest(linkIdentitiesRequest.TrackingId,linkIdentitiesRequest.Content);
+            var muleSoftResponse = await _muleSoftRepository.DOH_LinkIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_LinkClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_UnLinkIdentities(BaseRequest request)
+        {
+            var unLinkClientIdentityRequest = Cast<DOH_UnLinkClientIdentityRequest>(request);
+            UnLinkIdentitiesRequest muleSoftRequest = new(unLinkClientIdentityRequest.TrackingId, unLinkClientIdentityRequest.Content);
+            var muleSoftResponse = await _muleSoftRepository.DOH_UnLinkIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_UnLinkClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_MergeIdentities(BaseRequest request)
+        {
+            var mergeClientIdentityRequest = Cast<DOH_MergeClientIdentityRequest>(request);
+            MergeIdentitiesRequest muleSoftRequest = new(mergeClientIdentityRequest.TrackingId, mergeClientIdentityRequest.Content);
+            var muleSoftResponse = await _muleSoftRepository.DOH_MergeIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_MergeClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_UnMergeIdentities(BaseRequest request)
+        {
+            var unmergeClientIdentityRequest = Cast<DOH_UnMergeClientIdentityRequest>(request);
+            UnMergeIdentitiesRequest muleSoftRequest = new(unmergeClientIdentityRequest.TrackingId, unmergeClientIdentityRequest.Content);
+
+            var muleSoftResponse = await _muleSoftRepository.DOH_UnMergeIdentities(muleSoftRequest);
+            var response = CreateResponse<DOH_UnMergeClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
         private async Task<BaseResponse> PostIdentity(BaseRequest request)
         {
             var postidentityRequest = Cast<PostClientIdentityRequest>(request);
             var muleSoftRequest = _muleSoftRequestBuilder.BuildPostIdentityRequest(postidentityRequest);
             var muleSoftResponse = await _muleSoftRepository.PostIdentity(muleSoftRequest);
             var response = CreateResponse<PostClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_PostIdentity(BaseRequest request)
+        {
+            var postidentityRequest = Cast<DOH_PostClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_PostIdentityRequest(postidentityRequest);
+
+            var muleSoftResponse = await _muleSoftRepository.DOH_PostIdentity(muleSoftRequest);
+            var response = CreateResponse<DOH_PostClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }
@@ -154,6 +236,36 @@ namespace HCA.Core.Services
             var muleSoftResponse = await _muleSoftRepository.DemographicSearch(muleSoftRequest);
             var response = CreateResponse<DemographicSearchClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content.SearchResults;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_DemographicSearch(BaseRequest request)
+        {
+            var searchRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
+            var muleSoftRequest = new DemographicSearchRequest(searchRequest.TrackingId, searchRequest.Content);  //_muleSoftRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.CallMulesoft< DOH_DemographicSearchClientIdentityResponse>(MuleSoftUrls.DemographicSearch,muleSoftRequest);
+            //var response = CreateResponse<DOH_DemographicSearchClientIdentityResponse>(muleSoftResponse);
+            //response.Content = muleSoftResponse.Content;
+            return muleSoftResponse;
+        }
+
+        private async Task<BaseResponse> DemographicQuery(BaseRequest request)
+        {
+            var searchRequest = Cast<DemographicQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDemographicQueryRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.DemographicQuery(muleSoftRequest);
+            var response = CreateResponse<DemographicQueryClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_DemographicQuery(BaseRequest request)
+        {
+            var searchRequest = Cast<DOH_DemographicQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicQueryRequest(searchRequest);
+            var muleSoftResponse = await _muleSoftRepository.DOH_DemographicQuery(muleSoftRequest);
+            var response = CreateResponse<DOH_DemographicQueryClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
             return response;
         }
 

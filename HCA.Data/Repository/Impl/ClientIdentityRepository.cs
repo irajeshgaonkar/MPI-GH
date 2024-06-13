@@ -94,7 +94,7 @@ WHERE mpi_link_id IN
 
         var clientIdentitiesGroup = clientIdentities.GroupBy(c => c.MpiLinkId);
 
-        foreach(var group in clientIdentitiesGroup)
+        foreach (var group in clientIdentitiesGroup)
         {
             result.Add(group.Key, group.ToList());
         }
@@ -219,9 +219,29 @@ WHERE mpi_link_id IN
         UpdateMpiLinkId(clientIdenty, newMpiLinkId);
     }
 
+    public async Task DeleteMpiLinkId(string mpiLinkId)
+    {
+        var clientIdenty = await GetByMpiLinkId(mpiLinkId);
+        if (null == clientIdenty) return;
+        clientIdenty.IsDelete = true;
+        Update(clientIdenty);
+    }
+
     public async Task<ClientIdentityEntity?> GetBySource(string sourceSystemName, string sourceSystemId)
     {
         var identity = await GetSingleAsync(SourceSystemFilter(sourceSystemName, sourceSystemId), ClientIdentitiesInclude);
+        return identity;
+    }
+
+    public async Task<ClientIdentityEntity?> GetBySourceAll(string sourceSystemName, string sourceSystemId)
+    {
+        var identity = await GetSingleAsync(SourceSystemFilterAll(sourceSystemName, sourceSystemId), ClientIdentitiesInclude);
+        return identity;
+    }
+
+    public async Task<ClientIdentityEntity?> GetByMpiLinkId(string mpiLinkId)
+    {
+        var identity = await GetSingleAsync(c => c.MpiLinkId == mpiLinkId, ClientIdentitiesInclude);
         return identity;
     }
 
@@ -278,12 +298,17 @@ WHERE mpi_link_id IN
     private Expression<Func<ClientIdentityEntity, bool>> SourceSystemFilter(string sourceSystemName, string sourceSystemId)
         => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId && c.IsActive == true;
 
+    private Expression<Func<ClientIdentityEntity, bool>> SourceSystemFilterAll(string sourceSystemName, string sourceSystemId)
+        => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId;
+
+    // TODO: what does 'Upsert' mean? Perhaps 'assert'?
     public async Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity)
     {
-        var identity = await GetBySource(entity.SourceSystemName, entity.SourceSystemId);
+        var identity = await GetBySourceAll(entity.SourceSystemName, entity.SourceSystemId);
 
         if (identity == null)
         {
+            // TODO: this should probably be an error
             AddAsync(entity);
             return entity;
         }
@@ -301,6 +326,9 @@ WHERE mpi_link_id IN
         identity.SourceSystemUpdated = entity.SourceSystemUpdated;
         identity.UpdatedBy = entity.UpdatedBy;
         identity.UpdatedDate = entity.UpdatedDate;
+        identity.CustomJson = entity.CustomJson;
+        identity.IsActive = true;
+        identity.IsDelete = false;
 
         foreach (var address in entity.Addresses)
         {
@@ -313,6 +341,9 @@ WHERE mpi_link_id IN
             }
             else
             {
+
+                matchingAddress.IsActive = true;
+                matchingAddress.IsDelete = false;
                 foreach (var ac in address.AddressCommunications)
                 {
                     var communication = matchingAddress.AddressCommunications.FirstOrDefault(mac => mac.Communication.EmailType == ac.Communication.EmailType && mac.Communication.PhoneType == ac.Communication.PhoneType
@@ -328,6 +359,11 @@ WHERE mpi_link_id IN
 
                         matchingAddress.AddressCommunications.Add(addressCommunication);
                     }
+                    else
+                    {
+                        communication.IsActive = true;
+                        communication.IsDelete = false;
+                    }
                 }
             }
         }
@@ -341,6 +377,23 @@ WHERE mpi_link_id IN
         clientIdentityEntity.MpiLinkId = newMpiLinkId;
         foreach (var address in clientIdentityEntity.Addresses) address.MpiLinkId = newMpiLinkId;
         foreach (var communicaiton in clientIdentityEntity.Communications) communicaiton.MpiLinkId = newMpiLinkId;
+        Update(clientIdentityEntity);
+    }
+
+    public void DeleteClientIdentity(ClientIdentityEntity clientIdentityEntity)
+    {
+        clientIdentityEntity.IsDelete = true;
+        clientIdentityEntity.IsActive = false;
+        foreach (var address in clientIdentityEntity.Addresses)
+        {
+            address.IsDelete = true;
+            address.IsActive = false;
+        }
+        foreach (var communicaiton in clientIdentityEntity.Communications)
+        {
+            communicaiton.IsDelete = true;
+            communicaiton.IsActive = false;
+        }
         Update(clientIdentityEntity);
     }
 

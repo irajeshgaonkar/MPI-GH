@@ -29,7 +29,7 @@ public class Source
     /// Source system id
     /// </summary>
     /// <example>2133169982WA</example>
-    [Required(ErrorMessage = "Source system name is required")]
+    [Required(ErrorMessage = "Source id is required")]
     public string Id { get; set; }
 }
 

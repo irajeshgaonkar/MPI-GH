@@ -1,5 +1,4 @@
-﻿using System;
-namespace HCA.Models
+﻿namespace HCA.Models
 {
     public class S3Options
     {

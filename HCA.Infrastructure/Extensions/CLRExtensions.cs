@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Globalization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
+﻿using System.Collections.Concurrent;
 
 namespace HCA.Infrastructure.Extensions;
 

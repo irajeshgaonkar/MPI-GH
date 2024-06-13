@@ -1,15 +1,12 @@
-﻿using System;
-using HCA.Core.Mapper;
+﻿using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
 using HCA.Core.Processors.Sftp;
 using HCA.Core.Services;
 using HCA.Data;
-using HCA.Data.Entities;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Sqs;
 using HCA.Models;
-using HCA.Models.Request;
 using HCA.MuleSoft;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,11 +33,13 @@ public static class Startup
     {
         services
             .AddScoped<IClientIdentityService, ClientIdentityService>()
-            .AddScoped<INotificationService, NotificationService>()
             .AddScoped<IFileRequestService, FileRequestService>()
             .AddScoped<IUserRequestService, UserRequestService>()
+            .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>()
+            .AddScoped<ICustomDataMappingService, CustomDataMappingService>()
             .AddScoped<IReportsService, ReportService>()
-            .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>(); 
+            .AddScoped<IUserModifyRecordsService, UserModifyRecordsService>()
+            .AddScoped<IServiceAccountService, ServiceAccountService>(); 
 
         return services.AddProcessors();
     }
@@ -65,6 +64,8 @@ public static class Startup
             .AddScoped<IFileClientIdentityMapper, FileClientIdentityMapper>()
             .AddScoped<IFileRequestMapper, FileRequestMapper>()
             .AddScoped<IUserRequestMapper, UserRequestMapper>()
+            .AddScoped<ICustomDataMappingMapper, CustomDataMappingMapper>()
+            .AddScoped<IServiceAccountMapper, ServiceAccountMapper>()
             .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
     }
 

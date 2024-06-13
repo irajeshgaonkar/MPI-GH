@@ -1,14 +1,8 @@
-﻿using Amazon.S3;
-using HCA.Infrastructure.Logger;
+﻿using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sftp;
 using HCA.Models.Sftp;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Infrastructure.sftp
 {

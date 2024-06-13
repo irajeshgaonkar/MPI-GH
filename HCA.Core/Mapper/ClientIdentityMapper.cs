@@ -2,11 +2,11 @@
 using HCA.Data.Entities;
 using HCA.Infrastructure.Comparer;
 using HCA.Models;
-using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 
 namespace HCA.Core.Mapper;
 
+// TODO: Use AutoMapper
 public class ClientIdentityMapper
 {
     private static CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
@@ -32,8 +32,8 @@ public class ClientIdentityMapper
         result.Ssn = request.Ssn;
         result.Dob = valiDob ? dob : null;
         result.Gender = request.Gender;
-        result.ProtectedPopulationFlag = protectedPopulationFlag;
-        result.ProtectedPopulationType = request.ProtectedPopulationType ?? "";
+        result.ProtectedPopulationFlag = string.Equals("Y", request.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase);
+        result.ProtectedPopulationType = request.ProtectedPopulationType is not null ? string.Join(";", request.ProtectedPopulationType) : "";
         result.MpiUpdated = mpiUpdated;
         result.SourceSystemUpdated = sourceSystemUpdated;
         result.IsActive = true;
@@ -42,6 +42,7 @@ public class ClientIdentityMapper
         result.CreatedDate = DateTime.Now;
         result.UpdatedBy = "Batch File";
         result.UpdatedDate = DateTime.Now;
+        result.CustomJson = request.CustomJson;
 
         var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
         
@@ -49,29 +50,26 @@ public class ClientIdentityMapper
         {
             List<ClientIdentityAddressCommunicationEntity> addressCommunications = new List<ClientIdentityAddressCommunicationEntity>();
             var requestGroupedByCommunication = addressGroup.GroupBy(r => r, new ClientIdentityRequestCommunicationComparer());
+            ClientIdentityRequest addressRequest = addressGroup.First();
 
-            var address = new ClientIdentityAddressEntity();
-            var addressRequest = addressGroup.First();
-            address.MpiLinkId = result.MpiLinkId;
-            address.SourceSystemName = result.SourceSystemName;
-            address.SourceSystemId = result.SourceSystemId;
-            address.AddressType = addressRequest.AddressType ?? "";
-            address.AddressLine1 = addressRequest.AddressLine1;
-            address.AddressLine2 = addressRequest.AddressLine2;
-            address.AddressLine3 = addressRequest.AddressLine3;
-            address.City = addressRequest.City;
-            address.State = addressRequest.State;
-            address.ZipCode = addressRequest.ZipCode;
-            address.ZipFour = addressRequest.ZipFour;
-            address.ZipCode = addressRequest.ZipCode;
-            address.ZipFour = addressRequest.ZipFour;
-            address.SourceSystemUpdated = result.SourceSystemUpdated;
-            address.IsActive = true;
-            address.IsDelete = false;
-            address.CreatedBy = "Batch File";
-            address.CreatedDate = DateTime.Now;
-            address.UpdatedBy = "Batch File";
-            address.UpdatedDate = DateTime.Now;
+            var address = new ClientIdentityAddressEntity
+            {
+                ClientIdentity = result,
+                AddressType = addressRequest.AddressType ?? "",
+                AddressLine1 = addressRequest.AddressLine1,
+                AddressLine2 = addressRequest.AddressLine2,
+                AddressLine3 = addressRequest.AddressLine3,
+                City = addressRequest.City,
+                State = addressRequest.State,
+                ZipCode = addressRequest.ZipCode,
+                ZipFour = addressRequest.ZipFour,
+                IsActive = true,
+                IsDelete = false,
+                CreatedBy = "Batch File",
+                CreatedDate = DateTime.Now,
+                UpdatedBy = "Batch File",
+                UpdatedDate = DateTime.Now
+            };
             result.Addresses.Add(address);
 
             foreach (var communicationGroup in requestGroupedByCommunication)

@@ -11,3 +11,11 @@ public class UnLinkIdentitiesResponse : MuleSoftResponse
     public UnLinkIdentitiesResponseContent Content { get; set; }
 }
 
+public class DOH_UnLinkIdentitiesResponse : MuleSoftResponse
+{
+    /// <summary>
+    /// un linke identities response content <see cref="UnLinkIdentitiesResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}
+

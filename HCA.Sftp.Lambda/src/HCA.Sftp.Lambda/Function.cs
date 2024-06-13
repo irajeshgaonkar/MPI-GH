@@ -1,19 +1,7 @@
-﻿using System.Text.Json;
-using Amazon.CloudWatchEvents;
-using Amazon.Lambda.CloudWatchEvents;
-using Amazon.Lambda.Core;
-using Amazon.Lambda.SQSEvents;
+﻿using Amazon.Lambda.Core;
 using Amazon.S3;
 using HCA.Core;
-using HCA.Core.Processors;
-using HCA.Core.Processors.File;
 using HCA.Core.Processors.Sftp;
-using HCA.Data;
-using HCA.Infrastructure;
-using HCA.Infrastructure.Extensions;
-using HCA.Infrastructure.Logger;
-using HCA.Infrastructure.sftp;
-using HCA.Models.SQS;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

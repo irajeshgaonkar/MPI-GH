@@ -1,8 +1,6 @@
-﻿using System;
-using AutoMapper;
+﻿using AutoMapper;
 using HCA.Data.Entities;
 using HCA.FileProcessor.Models;
-using HCA.Models;
 using HCA.Models.Request;
 
 namespace HCA.Core.Mapper
@@ -19,6 +17,10 @@ namespace HCA.Core.Mapper
             CreateMap<FileRequestEntity, FileRequest>();
             CreateMap<ClientIdentityRequestEntity, FileClientIdentity>();
             CreateMap<FileClientIdentity, ClientIdentityRequestEntity>();
+            CreateMap<CustomDataMapping, CustomDataMappingEntity>();
+            CreateMap<CustomDataMappingEntity, CustomDataMapping>();
+            CreateMap<ServiceAccountEntity, ServiceAccount>();
+            CreateMap<ServiceAccount, ServiceAccountEntity>();
         }
     }
 }

@@ -12,10 +12,14 @@ public static class  MuleSoftUrls
 
     public const string UnLinkIdentities = "unlinkIdentities";
 
+    public const string DeleteIdentity = "deleteSourceIdentity";
+
     public const string MergeIdentities = "mergeIdentities";
 
     public const string UnMergeIdentitie = "unMergeIdentities";
 
     public const string DemographicSearch = "demographicsSearch";
+
+    public const string DemographicQuery = "demographicsQuery";
 }
 

@@ -6,11 +6,6 @@ using HCA.Infrastructure.Sftp;
 using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.Sftp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Core.Processors.Sftp;
 

@@ -2,11 +2,6 @@
 using HCA.Models.DynamoDb;
 using HCA.Models.Request;
 using HCA.Models.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HCA.Core.Processors
 {

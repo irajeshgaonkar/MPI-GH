@@ -1,5 +1,4 @@
-﻿using Amazon.DynamoDBv2.Model;
-using HCA.Models.DynamoDb;
+﻿using HCA.Models.DynamoDb;
 
 namespace HCA.Core.Services;
 

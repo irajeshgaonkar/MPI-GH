@@ -1,5 +1,5 @@
-﻿using System;
-using HCA.Data.Repository;
+﻿using HCA.Data.Repository;
+using HCA.Data.Repository.Impl;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +25,9 @@ public static class Startup
                 .AddScoped<IUserRequestRepository, UserRequestRepository>()
                 .AddScoped<IRequestProcessLogRepository, RequestProcessLogRepository>()
                 .AddScoped<IUserModifyRecordsRepository, UserModifyRecordsRepository>()
-                .AddScoped<ISftpFileTransferRepository, SftpFileTransferRepository>();
+                .AddScoped<ISftpFileTransferRepository, SftpFileTransferRepository>()
+                .AddScoped<ICustomDataMappingRepository, CustomDataMappingRepository>()
+                .AddScoped<IServiceAccountRepository, ServiceAccountRepository>()
+                .AddScoped<IIPConfigRepository,IPConfigRepository>();
     }
 }

@@ -5,10 +5,18 @@
 /// </summary>
 public class PostIdentityRequestContent
 {
-    public PostIdentityRequestContent(Identity identity)
+    public PostIdentityRequestContent(dynamic identity)
     {
-
         ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
+        //if (String.IsNullOrEmpty(ResponseIdentityFormatNames[].First()))
+        //{
+        //    ResponseIdentityFormatNames = new string[] { "GROUP_BY_SOURCE" };
+
+        //}
+        //else
+        //{
+        //    ResponseIdentityFormatNames = responseIdentityFormatNames;
+        //}
         Identity = identity;
     }
 
@@ -21,6 +29,28 @@ public class PostIdentityRequestContent
     /// <summary>
     /// Identity request object
     /// </summary>
-    public Identity Identity { get; set; }
+    public dynamic Identity { get; set; }
+}
+
+public class DOH_PostIdentityRequestContent
+{
+    public DOH_PostIdentityRequestContent(dynamic identity)
+    {
+        ResponseIdentityFormatNames = new string[] { "DEFAULT" };
+       
+        Identity = identity;
+    }
+
+
+    /// <summary>
+    /// Specifies the response identity format
+    /// </summary>
+    /// <remarks> Available values : DEFAULT, GROUP_BY_SOURCE </remarks>
+    public string[] ResponseIdentityFormatNames { get; set; }
+
+    /// <summary>
+    /// Identity request object
+    /// </summary>
+    public dynamic Identity { get; set; }
 }
 
