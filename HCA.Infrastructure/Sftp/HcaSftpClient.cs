@@ -52,7 +52,7 @@ namespace HCA.Infrastructure.sftp
         private Task DownloadFileAsync(SftpClient client, string path, MemoryStream memoryStream)
         {
             var task = Task.Factory.FromAsync(
-                client.BeginDownloadFile(path, memoryStream, (l) => Console.WriteLine("Downlaod completed")),
+                client.BeginDownloadFile(path, memoryStream, (l) => Console.WriteLine("Download completed")),
                 ar =>
                 {
                     try
