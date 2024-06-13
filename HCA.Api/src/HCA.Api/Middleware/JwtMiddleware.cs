@@ -1,10 +1,11 @@
 ﻿
 using HCA.Api.Constants;
+using HCA.Api.Extensions;
 using HCA.Api.Options;
+using HCA.Infrastructure.Logger;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Principal;
-using HCA.Api.Extensions;
 
 namespace HCA.Api.Middleware;
 
@@ -53,7 +54,6 @@ public class JwtMiddleware
         }
         catch (Exception ex)
         {
-            //// do nothing if jwt validation fails
             //// user is not attached to context so request won't have access to secure routes
         }
     }

@@ -5,9 +5,11 @@ using HCA.Data.Repository;
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
+using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sqs;
 using HCA.Models;
 using HCA.Models.Enums;
+using HCA.Models.Logging;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Request;
 using HCA.Models.MuleSoft.Response;
@@ -15,8 +17,11 @@ using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace HCA.Core.Services;
@@ -39,13 +44,19 @@ public class ClientIdentityService : IClientIdentityService
 
     private readonly IUserRequestMapper _userRequestMapper;
 
-    public ClientIdentityService( IUserRequestRepository userRequestRepository,
+    private readonly IAppLogger _logger;
+
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public ClientIdentityService(IUserRequestRepository userRequestRepository,
         IClientIdentityRequestExecutor clientIdentityRequestExecutor,
         IClientIdentityRepository clientIdentityRepository,
         IUserModifyRecordsRepository userModifyRecordsRepository,
         IRequestProcessLogRepository requestProcessLogRepository,
         IUserModifyRecordsService userModifyRecordsService,
-        ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper )
+        ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper,
+        IAppLogger logger, 
+        IHttpContextAccessor httpContextAccessor)
     {
         _userRequestRepository = userRequestRepository;
         _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
@@ -55,15 +66,41 @@ public class ClientIdentityService : IClientIdentityService
         _sqsPublisher = sqsPublisher;
         _userRequestMapper = userRequestMapper;
         _userModifyRecordsService = userModifyRecordsService;
+        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<(int, IEnumerable<ClientIdentityModel>)> GetAll( string currentUser, Dictionary<string, string> searchFilter, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "" )
     {
-        //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
-        var userModifyRecords = new List<int>();
-        var (count, entities) = await _clientIdentityRepository.GetAll( searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy );
-        var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
-        return (count, models);
+        try
+        {
+            //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
+            var userModifyRecords = new List<int>();
+            var (count, entities) = await _clientIdentityRepository.GetAll(searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
+            var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
+            return (count, models);
+        }
+        catch(Exception ex)
+        {
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(GetAll),
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(GetAll)}-Failed",
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(ex, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
     }
 
     public async Task<dynamic?> PostIdentities( IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
@@ -85,78 +122,200 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId= trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(PostIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_PostIdentities( DOH_PostClientIdentityRequest request, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        string strIdentities = request.Content.Identity.ToString();
-        Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-
-        if ( !string.Equals( request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( request.TrackingId, "Source system mismatch." );
-        }
-
-        string trackingId = request.TrackingId
-                            ?? ClientIdentityRequestExtension.GetTrackingId( identity, ApiCallType.DOH_VEPost );
-
-        DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new( trackingId )
-        {
-            SourceSystem = request.SourceSystem,
-            Agency = request.Agency,
-            protectedPopulation = request.protectedPopulation
-        };
-        if( strIdentities.ToLower().Contains( "null" ) )
-        {
-            // Replace null values with empty strings and get modified JSON string 
-            dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
-
-            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
-
-            DOH_PostIdentityRequestContent postIdentityRequestContent = new( modifiedJsonElement )
-            {
-                ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames
-            };
-            dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
-        }
-        else
-        {
-            dOH_PostClientIdentityRequest.Content = request.Content;
-        }
-
-
-        UserRequestEntity userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            string strIdentities = request.Content.Identity.ToString();
+            Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
+
+            if (!string.Equals(request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.VELink, userRequestEntity );
+                return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
+            }
+
+            string trackingId = request.TrackingId
+                                ?? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost);
+
+            DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
+            {
+                SourceSystem = request.SourceSystem,
+                Agency = request.Agency,
+                protectedPopulation = request.protectedPopulation
+            };
+            if (strIdentities.ToLower().Contains("null"))
+            {
+                // Replace null values with empty strings and get modified JSON string 
+                dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                DOH_PostIdentityRequestContent postIdentityRequestContent = new(modifiedJsonElement)
+                {
+                    ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames
+                };
+                dOH_PostClientIdentityRequest.Content = postIdentityRequestContent;
+            }
+            else
+            {
+                dOH_PostClientIdentityRequest.Content = request.Content;
+            }
+
+
+            userRequestEntity = CreateUserRequest(dOH_PostClientIdentityRequest, ApiCallType.DOH_VEPost, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VELink, userRequestEntity);
                 return trackingId;
             }
 
-            return await DOH_PostIdentities( userRequestEntity, dOH_PostClientIdentityRequest );
+            return await DOH_PostIdentities(userRequestEntity, dOH_PostClientIdentityRequest);
         }
-        catch( HcaBadRequestException e )
+        catch ( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_PostIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
-
-
 
     private JsonElement? ConvertJObjectToJsonElement( JObject jObject )
     {
@@ -216,7 +375,6 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-
     public async Task<dynamic?> LinkIdentities( LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
         var trackingId = $"{ApiCallType.VEUnLink.GetStringValue()}-{linkingSources.Source.GetTrackingId(linkingSources.LinkToSource)}";
@@ -236,11 +394,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(LinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -264,11 +484,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnLinkIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -292,11 +574,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(MergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -320,11 +664,73 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(UnMergeIdentities)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -347,6 +753,49 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicSearch)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicSearch)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
@@ -369,276 +818,609 @@ public class ClientIdentityService : IClientIdentityService
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicQuery)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DemographicQuery)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_DemographicSearch( DOH_DemographicsSearchRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
+        UserRequestEntity userRequestEntity = new();
         // TODO: empty string init not required; logic can be simplified (also extracted to shared logic)
         var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( filter.Trackingid)) && (filter.Trackingid.Length >= 1) )
-        {
-            trackingId = filter.Trackingid.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
-        }
-        if( filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == "") )
-        {
-            filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
-        }
-
-        string strIdentities = filter.content.identity.ToString();
-
-        DOH_DemographicsSearchRequest dOH_DemographicQueryRequest = new DOH_DemographicsSearchRequest();
-
-        // TODO: dedup internal logic, and look into deduping global logic
-        dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-        dOH_DemographicQueryRequest.Agency = filter.Agency;
-        if( strIdentities.ToLower().Contains( "null" ) )
-        {
-            // Replace null values with empty strings and get modified JSON string 
-            dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
-
-            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
-
-            ContentSearch content = new ContentSearch();
-            content.identity = modifiedJsonElement;
-            content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
-            content.matchScoreThreshold = filter.content.matchScoreThreshold;
-            content.maxSearchResults = filter.content.maxSearchResults;
-
-            dOH_DemographicQueryRequest.content = content;
-        }
-        else
-        {
-            dOH_DemographicQueryRequest.content = filter.content;
-        }
-
-        var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
-
         try
         {
-            if( processType == ProcessType.Async )
+            if (!(string.IsNullOrEmpty(filter.Trackingid)) && (filter.Trackingid.Length >= 1))
             {
-                await PublishMessageToSqs( ApiCallType.VEDemographicSearch, userRequestEntity );
+                trackingId = filter.Trackingid.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+            }
+            if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+            {
+                filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+            }
+
+            string strIdentities = filter.content.identity.ToString();
+
+            DOH_DemographicsSearchRequest dOH_DemographicQueryRequest = new DOH_DemographicsSearchRequest();
+
+            // TODO: dedup internal logic, and look into deduping global logic
+            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_DemographicQueryRequest.Agency = filter.Agency;
+            if (strIdentities.ToLower().Contains("null"))
+            {
+                // Replace null values with empty strings and get modified JSON string 
+                dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                ContentSearch content = new ContentSearch();
+                content.identity = modifiedJsonElement;
+                content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+                content.matchScoreThreshold = filter.content.matchScoreThreshold;
+                content.maxSearchResults = filter.content.maxSearchResults;
+
+                dOH_DemographicQueryRequest.content = content;
+            }
+            else
+            {
+                dOH_DemographicQueryRequest.content = filter.content;
+            }
+
+            userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.VEDemographicSearch, currentUser, trackingId, notificationOptions);
+            
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEDemographicSearch, userRequestEntity);
                 return trackingId;
             }
 
-            return await DOH_DemographicSearch( userRequestEntity, dOH_DemographicQueryRequest );
+            return await DOH_DemographicSearch(userRequestEntity, dOH_DemographicQueryRequest);
         }
-        catch( HcaMuleSoftException e )
+        catch ( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicSearch)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DemographicSearch),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicSearch)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
+            throw;
+        }
+
     }
 
     public async Task<dynamic?> DOH_DemographicQuery( DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions ) //,string responseIdentityFormatNames = "DEFAULT")
     {
+        UserRequestEntity userRequestEntity = new();
+        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new();
         var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( filter.Trackingid )) && (filter.Trackingid.Length >= 1) )
-        {
-            trackingId = filter.Trackingid.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
-
-        }
-        if( filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == "") )
-        {
-            filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
-        }
-
-        string strIdentities = filter.content.identity.ToString();
-
-        DOH_DemographicQueryRequest dOH_DemographicQueryRequest = new DOH_DemographicQueryRequest();
-        if( strIdentities.ToLower().Contains( "null" ) )
-        {
-            // Replace null values with empty strings and get modified JSON string 
-            dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
-
-            JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
-
-            Content content = new Content();
-            content.identity = modifiedJsonElement;
-            content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
-
-            dOH_DemographicQueryRequest.content = content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
-        }
-        else
-        {
-            dOH_DemographicQueryRequest.content = filter.content;
-            dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
-            dOH_DemographicQueryRequest.Agency = filter.Agency;
-        }
-
-
-        var userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
 
         try
-        {
-            if( processType == ProcessType.Async )
+        {            
+            if (!(string.IsNullOrEmpty(filter.Trackingid)) && (filter.Trackingid.Length >= 1))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEDemographicQuery, userRequestEntity );
+                trackingId = filter.Trackingid.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+
+            }
+            if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+            {
+                filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+            }
+
+            string strIdentities = filter.content.identity.ToString();
+
+            if (strIdentities.ToLower().Contains("null"))
+            {
+                // Replace null values with empty strings and get modified JSON string 
+                dynamic modifiedJson = ReplaceNullValues(filter.content.identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                Content content = new Content();
+                content.identity = modifiedJsonElement;
+                content.responseIdentityFormatNames = filter.content.responseIdentityFormatNames;
+
+                dOH_DemographicQueryRequest.content = content;
+                dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+                dOH_DemographicQueryRequest.Agency = filter.Agency;
+            }
+            else
+            {
+                dOH_DemographicQueryRequest.content = filter.content;
+                dOH_DemographicQueryRequest.SourceSystem = filter.SourceSystem;
+                dOH_DemographicQueryRequest.Agency = filter.Agency;
+            }
+
+            userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDemographicQuery, userRequestEntity);
                 return trackingId;
             }
 
-            return await DOH_DemographicQuery( userRequestEntity, dOH_DemographicQueryRequest );
+            return await DOH_DemographicQuery(userRequestEntity, dOH_DemographicQueryRequest);
         }
         catch( HcaMuleSoftException e )
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
+            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
+                TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_LinkIdentities( DOH_LinkingSources linkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if (!string.Equals(linkingSources.content.LinkToSource.Name, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(linkingSources.TrackingId, "LinkToSource and Source do not match.");
-        }
-        if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.LinkToSource.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(linkingSources.TrackingId, "Calling SourceSystem and LinkToSource do not match.");
-        }
-        if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(linkingSources.TrackingId, "Calling SourceSystem and Source do not match.");
-        }
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( linkingSources.TrackingId)) && (linkingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = linkingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VELink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId( linkingSources.content.LinkToSource )}";
-        }
-        var userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.DOH_VELink, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(linkingSources.content.LinkToSource.Name, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VELink, userRequestEntity );
+                return ErrorResponseBuilder(linkingSources.TrackingId, "LinkToSource and Source do not match.");
+            }
+            if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.LinkToSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(linkingSources.TrackingId, "Calling SourceSystem and LinkToSource do not match.");
+            }
+            if (!string.Equals(linkingSources.SourceSystem, linkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(linkingSources.TrackingId, "Calling SourceSystem and Source do not match.");
+            }
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(linkingSources.TrackingId)) && (linkingSources.TrackingId.Length >= 1))
+            {
+                trackingId = linkingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VELink.GetStringValue()}-{linkingSources.content.Source.GetTrackingId(linkingSources.content.LinkToSource)}";
+            }
+            userRequestEntity = CreateUserRequest(linkingSources, ApiCallType.DOH_VELink, currentUser, trackingId, notificationOptions);
+            
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VELink, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, linkingSources.LinkToSource, linkingSources.Source);
-            return await DOH_LinkIdentities( userRequestEntity, linkingSources );
+            return await DOH_LinkIdentities(userRequestEntity, linkingSources);
         }
-        catch( HcaBadRequestException e )
+        catch ( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = linkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_LinkIdentities)}-Failed",
+                TrackingId = linkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = linkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_LinkIdentities)}-Failed",
+                TrackingId = linkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = linkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_LinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_LinkIdentities)}-Failed",
+                TrackingId = linkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_UnLinkIdentities( DOH_UnLinkingSources unLinkingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if (!string.Equals(unLinkingSources.content.UnlinkFromSource.Name, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(unLinkingSources.TrackingId, "UnlinkFromSource and Source do not match.");
-        }
-        if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.UnlinkFromSource.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(unLinkingSources.TrackingId, "SourceSystem and UnlinkFromSource do not match.");
-        }
-        if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(unLinkingSources.TrackingId, "SourceSystem and Source do not match.");
-        }
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( unLinkingSources.TrackingId)) && (unLinkingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = unLinkingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId( unLinkingSources.content.UnlinkFromSource )}";
-        }
-        var userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.DOH_VEUnLink, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(unLinkingSources.content.UnlinkFromSource.Name, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEUnLink, userRequestEntity );
+                return ErrorResponseBuilder(unLinkingSources.TrackingId, "UnlinkFromSource and Source do not match.");
+            }
+            if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.UnlinkFromSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unLinkingSources.TrackingId, "SourceSystem and UnlinkFromSource do not match.");
+            }
+            if (!string.Equals(unLinkingSources.SourceSystem, unLinkingSources.content.Source.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unLinkingSources.TrackingId, "SourceSystem and Source do not match.");
+            }
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(unLinkingSources.TrackingId)) && (unLinkingSources.TrackingId.Length >= 1))
+            {
+                trackingId = unLinkingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEUnLink.GetStringValue()}-{unLinkingSources.content.Source.GetTrackingId(unLinkingSources.content.UnlinkFromSource)}";
+            }
+            userRequestEntity = CreateUserRequest(unLinkingSources, ApiCallType.DOH_VEUnLink, currentUser, trackingId, notificationOptions);
+            
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEUnLink, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, unLinkingSources.UnlinkFromSource, unLinkingSources.Source);
-            return await DOH_UnLinkIdentities( userRequestEntity, unLinkingSources );
+            return await DOH_UnLinkIdentities(userRequestEntity, unLinkingSources);
         }
-        catch( HcaBadRequestException e )
+        catch ( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unLinkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnLinkIdentities)}-Failed",
+                TrackingId = unLinkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unLinkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnLinkIdentities)}-Failed",
+                TrackingId = unLinkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unLinkingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnLinkIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnLinkIdentities)}-Failed",
+                TrackingId = unLinkingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_MergeIdentities( DOH_MergingSources mergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if( !string.Equals( mergingSources.content.ToSurviveSource.Name, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ) )
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "ToSurviveSource and ToRetireSource do not match." );
-        }
-        if( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToSurviveSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "SourceSystem and ToSurviveSource do not match." );
-        }
-        if ( !string.Equals( mergingSources.SourceSystem, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( mergingSources.TrackingId, "SourceSystem and ToRetireSource do not match." );
-        }
-
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( mergingSources.TrackingId)) && (mergingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = mergingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId( mergingSources.content.ToRetireSource )}";
-        }
-        var userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(mergingSources.content.ToSurviveSource.Name, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEMerge, userRequestEntity );
+                return ErrorResponseBuilder(mergingSources.TrackingId, "ToSurviveSource and ToRetireSource do not match.");
+            }
+            if (!string.Equals(mergingSources.SourceSystem, mergingSources.content.ToSurviveSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(mergingSources.TrackingId, "SourceSystem and ToSurviveSource do not match.");
+            }
+            if (!string.Equals(mergingSources.SourceSystem, mergingSources.content.ToRetireSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(mergingSources.TrackingId, "SourceSystem and ToRetireSource do not match.");
+            }
+
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(mergingSources.TrackingId)) && (mergingSources.TrackingId.Length >= 1))
+            {
+                trackingId = mergingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEMerge.GetStringValue()}-{mergingSources.content.ToSurviveSource.GetTrackingId(mergingSources.content.ToRetireSource)}";
+            }
+            userRequestEntity = CreateUserRequest(mergingSources, ApiCallType.DOH_VEMerge, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
-            return await DOH_MergeIdentities( userRequestEntity, mergingSources );
+            return await DOH_MergeIdentities(userRequestEntity, mergingSources);
         }
-        catch( HcaBadRequestException e )
+        catch (HcaBadRequestException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch (HcaMuleSoftException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = mergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_MergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_MergeIdentities)}-Failed",
+                TrackingId = mergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
@@ -648,90 +1430,220 @@ public class ClientIdentityService : IClientIdentityService
 
     public async Task<dynamic?> DOH_UnMergeIdentities( DOH_UnMergingSources unMergingSources, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if ( !string.Equals( unMergingSources.content.UnmergeFromSource.Name, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "UnmergeFromSource and UnmergeSource do not match." );
-        }
-        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeFromSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "SourceSystem and UnmergeFromSource do not match." );
-        }
-        if ( !string.Equals( unMergingSources.SourceSystem, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase ))
-        {
-            return ErrorResponseBuilder( unMergingSources.TrackingId, "SourceSystem and UnmergeSource do not match." );
-        }
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( unMergingSources.TrackingId)) && (unMergingSources.TrackingId.Length >= 1) )
-        {
-            trackingId = unMergingSources.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId( unMergingSources.content.UnmergeSource )}";
-        }
-
-        var userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(unMergingSources.content.UnmergeFromSource.Name, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEUnMerge, userRequestEntity );
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "UnmergeFromSource and UnmergeSource do not match.");
+            }
+            if (!string.Equals(unMergingSources.SourceSystem, unMergingSources.content.UnmergeFromSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "SourceSystem and UnmergeFromSource do not match.");
+            }
+            if (!string.Equals(unMergingSources.SourceSystem, unMergingSources.content.UnmergeSource.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                return ErrorResponseBuilder(unMergingSources.TrackingId, "SourceSystem and UnmergeSource do not match.");
+            }
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(unMergingSources.TrackingId)) && (unMergingSources.TrackingId.Length >= 1))
+            {
+                trackingId = unMergingSources.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEUnMerge.GetStringValue()}-{unMergingSources.content.UnmergeSource.GetTrackingId(unMergingSources.content.UnmergeSource)}";
+            }
+
+            userRequestEntity = CreateUserRequest(unMergingSources, ApiCallType.DOH_VEUnMerge, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEUnMerge, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, unMergingSources.UnmergeSource, unMergingSources.UnmergeFromSource);
-            return await DOH_UnMergeIdentities( userRequestEntity, unMergingSources );
+            return await DOH_UnMergeIdentities(userRequestEntity, unMergingSources);
         }
-        catch( HcaBadRequestException e )
+        catch (HcaBadRequestException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch (HcaMuleSoftException e)
         {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = unMergingSources.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_UnMergeIdentities),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_UnMergeIdentities)}-Failed",
+                TrackingId = unMergingSources.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
 
     public async Task<dynamic?> DOH_DeleteSourceIdentity( DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
-        if (!string.Equals(deleteSourceIdentity.SourceSystem, deleteSourceIdentity.Content.Source.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResponseBuilder(deleteSourceIdentity.TrackingId, "SourceSystem and Source do not match.");
-        }
-        var trackingId = string.Empty;
-        if( !(string.IsNullOrEmpty( deleteSourceIdentity.TrackingId )) && (deleteSourceIdentity.TrackingId.Length >= 1) )
-        {
-            trackingId = deleteSourceIdentity.TrackingId.ToString();
-        }
-        else
-        {
-            trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.Content.Source.GetTrackingId( deleteSourceIdentity.Content.Source )}";
-        }
-        var userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
-
+        UserRequestEntity userRequestEntity = new();
         try
         {
-            if( processType == ProcessType.Async )
+            if (!string.Equals(deleteSourceIdentity.SourceSystem, deleteSourceIdentity.Content.Source.Name, StringComparison.OrdinalIgnoreCase))
             {
-                await PublishMessageToSqs( ApiCallType.DOH_VEDelete, userRequestEntity );
+                return ErrorResponseBuilder(deleteSourceIdentity.TrackingId, "SourceSystem and Source do not match.");
+            }
+            var trackingId = string.Empty;
+            if (!(string.IsNullOrEmpty(deleteSourceIdentity.TrackingId)) && (deleteSourceIdentity.TrackingId.Length >= 1))
+            {
+                trackingId = deleteSourceIdentity.TrackingId.ToString();
+            }
+            else
+            {
+                trackingId = $"{ApiCallType.DOH_VEDelete.GetStringValue()}-{deleteSourceIdentity.Content.Source.GetTrackingId(deleteSourceIdentity.Content.Source)}";
+            }
+            userRequestEntity = CreateUserRequest(deleteSourceIdentity, ApiCallType.DOH_VEDelete, currentUser, trackingId, notificationOptions);
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEDelete, userRequestEntity);
                 return trackingId;
             }
 
             //await RemoveUserModifyRecords(currentUser, mergingSources.ToSurviveSource, mergingSources.ToRetireSource);
 
-            return await DOH_DeleteSourceIdentity( userRequestEntity, deleteSourceIdentity );
+            return await DOH_DeleteSourceIdentity(userRequestEntity, deleteSourceIdentity);
         }
-        catch( HcaBadRequestException e )
+        catch ( HcaBadRequestException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = deleteSourceIdentity.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DeleteSourceIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DeleteSourceIdentity)}-Failed",
+                TrackingId = deleteSourceIdentity.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
         catch( HcaMuleSoftException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = deleteSourceIdentity.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DeleteSourceIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DeleteSourceIdentity)}-Failed",
+                TrackingId = deleteSourceIdentity.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = deleteSourceIdentity.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_DeleteSourceIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DeleteSourceIdentity)}-Failed",
+                TrackingId = deleteSourceIdentity.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
             throw;
         }
     }
@@ -763,7 +1675,8 @@ public class ClientIdentityService : IClientIdentityService
             protectedPopulation = request.protectedPopulation,
             SourceSystem = request.SourceSystem,
             Agency = request.Agency,
-            Content = request.Content
+            Content = request.Content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
@@ -862,7 +1775,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content
+            Content = filter.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
@@ -961,7 +1875,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content
+            Content = filter.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
@@ -1080,7 +1995,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = linkingSources.SourceSystem,
             Agency = linkingSources.Agency,
-            Content = linkingSources.content
+            Content = linkingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
@@ -1095,7 +2011,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = unLinkingSources.SourceSystem,
             Agency = unLinkingSources.Agency,
-            Content = unLinkingSources.content
+            Content = unLinkingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
@@ -1111,7 +2028,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = mergingSources.SourceSystem,
             Agency = mergingSources.Agency,
-            Content = mergingSources.content
+            Content = mergingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
@@ -1126,7 +2044,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = deleteSourceIdentity.SourceSystem,
             Agency = deleteSourceIdentity.Agency,
-            Content = deleteSourceIdentity.Content
+            Content = deleteSourceIdentity.Content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
@@ -1141,7 +2060,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             SourceSystem = unMergingSources.SourceSystem,
             Agency = unMergingSources.Agency,
-            Content = unMergingSources.content
+            Content = unMergingSources.content,
+            Caller = ServiceLayer.API.ToString()
         };
         var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
         UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
@@ -1210,6 +2130,21 @@ public class ClientIdentityService : IClientIdentityService
 
         if( source2Id != null )
             await _userModifyRecordsService.RemoveModify( userName, source2Id ?? 0 );
+    }
+
+    /// <summary>
+    /// Get Role claim for user in context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static string GetUserRoles(HttpContext context)
+    {
+        if (context.User != null && context.User.Claims.Any(c => c.Type == ClaimTypes.Role))
+        {
+            return context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+        }
+
+        return string.Empty;
     }
 
 }

@@ -1,4 +1,7 @@
-﻿using HCA.Data.Repository;
+﻿using HCA.Api.Extensions;
+using HCA.Data.Repository;
+using HCA.Infrastructure.Logger;
+using HCA.Models.Logging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
@@ -12,9 +15,12 @@ namespace HCA.Api.Filters
     {
         private readonly IIPConfigRepository _iPConfigRepository;
 
-        public IPValidationFilter(IIPConfigRepository iPConfigRepository)
+        private readonly IAppLogger _logger;
+
+        public IPValidationFilter(IIPConfigRepository iPConfigRepository, IAppLogger logger)
         {
             _iPConfigRepository = iPConfigRepository;
+            _logger = logger;
         }
 
         public async Task OnActionExecutionAsync( ActionExecutingContext context, ActionExecutionDelegate next )
@@ -57,12 +63,69 @@ namespace HCA.Api.Filters
             catch (JsonException e)
             {
                 // TODO: swap this to a unauthorized error/result once systems are online
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = context.HttpContext.GetCurrentUser(),
+                    Agency = "",
+                    Role = context.HttpContext.GetUserRoles(),
+                    FunctionName = nameof(IPValidationFilter),
+                    ErrorMessage = e.Message,
+                    StackTrace = e.StackTrace,
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{HCA.Models.Logging.Constants.LogPrefix_API}-{nameof(IPValidationFilter)}-Failed",
+                    TrackingId = "",
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
                 context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. JsonException Error: "+ e.Message );
             }
             catch (InvalidOperationException e) {
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = context.HttpContext.GetCurrentUser(),
+                    Agency = "",
+                    Role = context.HttpContext.GetUserRoles(),
+                    FunctionName = nameof(IPValidationFilter),
+                    ErrorMessage = e.Message,
+                    StackTrace = e.StackTrace,
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{HCA.Models.Logging.Constants.LogPrefix_API}-{nameof(IPValidationFilter)}-Failed",
+                    TrackingId = "",
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
                 context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Likely database IP list error: "+ e.Message );
             }
-            catch (Exception e ){ 
+            catch (Exception e ){
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = context.HttpContext.GetCurrentUser(),
+                    Agency = "",
+                    Role = context.HttpContext.GetUserRoles(),
+                    FunctionName = nameof(IPValidationFilter),
+                    ErrorMessage = e.Message,
+                    StackTrace = e.StackTrace,
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{HCA.Models.Logging.Constants.LogPrefix_API}-{nameof(IPValidationFilter)}-Failed",
+                    TrackingId = "",
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
                 context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown error: "+ e.Message );
             }
         }

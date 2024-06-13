@@ -7,6 +7,7 @@ using HCA.Core.Services;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
+using HCA.Models.Logging;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
@@ -14,6 +15,7 @@ using HCA.Models.Request.DOH;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace HCA.Api.Controllers
@@ -283,11 +285,36 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = filter.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_DemographicQuery),
+                    ErrorMessage = String.Join(",",errorMessage),
+                    ErrorCode = "400"
+                };              
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_DemographicQuery)}-Failed",
+                    TrackingId = filter.Trackingid,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+                
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, filter.Trackingid);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
             }
+
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             //var responseIdentityFormatNames = filter.content.responseIdentityFormatNames.ToString();
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
@@ -311,7 +338,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-demographicSearch")]
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), filter.Trackingid);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = filter.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_DemographicSearch),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_DemographicSearch)}-Failed",
+                    TrackingId = filter.Trackingid,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, filter.Trackingid);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 filter.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -341,7 +392,30 @@ namespace HCA.Api.Controllers
         {
             //As not going with Asyn logic removed this and passing nulls -- Naresh 2024-02-01
             //var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), request.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = request.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_PostIdentity),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_PostIdentity)}-Failed",
+                    TrackingId = request.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, request.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 request.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -370,7 +444,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-link")]
         public async Task<IActionResult> DOH_Link([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_Link),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_Link)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -398,7 +496,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-unlink")]
         public async Task<IActionResult> DOH_UnLink([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_UnLink),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_UnLink)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -426,7 +548,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-merge")]
         public async Task<IActionResult> DOH_Merge([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_Merge),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_Merge)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -454,7 +600,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-unmerge")]
         public async Task<IActionResult> DOH_UnMerge([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_UnMerge),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_UnMerge)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
@@ -483,7 +653,31 @@ namespace HCA.Api.Controllers
         [HttpPost("DOH-delete")]
         public async Task<IActionResult> DOH_Delete([FromBody] DOH_DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
         {
-            if (!ModelState.IsValid) return BuildOkObjectResultWith400Error(GetErrorMessages(ModelState), value.TrackingId);
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = value.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_Delete),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_Delete)}-Failed",
+                    TrackingId = value.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, value.TrackingId);
+            }
             if (HttpContext.Items["SourceSystem"] != null)
             {
                 value.SourceSystem = HttpContext.Items["SourceSystem"].ToString();
