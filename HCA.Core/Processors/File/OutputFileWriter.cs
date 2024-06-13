@@ -80,5 +80,3 @@ public class OutputFileWriter : IOutputFileWriter
         }
     }
 }
-
-
