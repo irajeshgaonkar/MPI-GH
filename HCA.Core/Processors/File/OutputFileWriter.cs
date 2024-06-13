@@ -76,7 +76,7 @@ public class OutputFileWriter : IOutputFileWriter
         catch(Exception e)
         {
             _logger.LogError(e);
-            _logger.LogInformation($"Error transfering the file {inputFileName}");
+            _logger.LogInformation($"Error transferring the file {inputFileName}");
         }
     }
 }
