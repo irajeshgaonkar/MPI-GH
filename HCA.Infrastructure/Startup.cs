@@ -32,6 +32,7 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddSftp(this IServiceCollection services, IConfiguration configuration)
         {
+            // TODO: change to secrets load
             var sftpOptions = configuration.GetSection("SftpOptions").Get<SftpOptions>();
 
             services.AddSingleton(sftpOptions);
