@@ -1,15 +1,27 @@
-﻿{
-  "Information": [
-    "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands added to the .NET Core CLI.",
-    "To learn more about the Lambda commands with the .NET Core CLI execute the following command at the command line in the project root directory.",
-    "dotnet lambda help",
-    "All the command line options for the Lambda command can be specified in this file."
-  ],
-  "profile": "",
-  "region": "",
-  "configuration": "Release",
-  "function-runtime": "dotnet6",
-  "function-memory-size": 256,
-  "function-timeout": 30,
-  "function-handler": "HCA.Sftp.Lambda::HCA.Sftp.Lambda.Function::FunctionHandler"
+
+{
+    "Information" : [
+        "This file provides default values for the deployment wizard inside Visual Studio and the AWS Lambda commands added to the .NET Core CLI.",
+        "To learn more about the Lambda commands with the .NET Core CLI execute the following command at the command line in the project root directory.",
+        "dotnet lambda help",
+        "All the command line options for the Lambda command can be specified in this file."
+    ],
+    "profile"     : "MPI-Dev",
+    "region"      : "us-west-2",
+    "configuration" : "Release",
+    "function-runtime" : "dotnet6",
+    "function-memory-size" : 512,
+    "function-timeout"     : 900,
+    "function-handler"     : "HCA.Sftp.Lambda::HCA.Sftp.Lambda.Function::FunctionHandler",
+    "framework"            : "net6.0",
+    "function-name"        : "mpi-sftp",
+    "function-description" : "Checks MFT regularly for new batch files and loads them.",
+    "package-type"         : "Zip",
+    "function-role"        : "arn:aws:iam::999557465535:role/aws-elasticbeanstalk-mpi",
+    "function-architecture" : "x86_64",
+    "function-subnets"      : "subnet-05942b54a5301d35b,subnet-09344ae4f697e2939",
+    "function-security-groups" : "sg-04063aba5be941829",
+    "tracing-mode"             : "PassThrough",
+    "environment-variables"    : "\"SftpAllowedFileTypes\"=\"[ \".csv\" ]\";\"SftpPaths\"=\"[ \"Dev/HCA/BHDS\", \"Dev/HCA/ProviderOne\", \"Dev/DOH\" ]\";\"SftpDestinationFolder\"=\"Inbound\";\"PARAMETERS_SECRETS_EXTENSION_LOG_LEVEL\"=\"debug\";\"SftpSourceFolder\"=\"Outbound\";\"SftpHost\"=\"mft-test.wa.gov\"",
+    "image-tag"                : ""
 }
