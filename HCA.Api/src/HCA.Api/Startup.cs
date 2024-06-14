@@ -9,6 +9,7 @@ using System.Reflection;
 
 namespace HCA.Api;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class Startup
 {
     public Startup(IConfiguration configuration)
@@ -23,6 +24,7 @@ public class Startup
         get
         {
             var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+            // TODO: check if can be removed?
             var fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
             return basePath;
         }
@@ -82,10 +84,13 @@ public class Startup
         //        .AddScoped<ISourceSystemValidator, SourceSystemValidator>();
     }
 
+
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        if (env.IsDevelopment())
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
+        if( env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
