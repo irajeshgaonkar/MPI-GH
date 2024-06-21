@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace HCA.Infrastructure.SecretsManager
 {
-    internal class AmazonSecretsManagerConfigurationProvider : ConfigurationProvider
+    public class AmazonSecretsManagerConfigurationProvider : ConfigurationProvider
     {
         private readonly string _region;
         private readonly string _secretName;
