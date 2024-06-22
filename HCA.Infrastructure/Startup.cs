@@ -11,6 +11,8 @@ using HCA.Infrastructure.sftp;
 using HCA.Infrastructure.Sftp;
 using HCA.Infrastructure.S3;
 using HCA.Infrastructure.JObjectHelper;
+using System.Text.Json;
+using HCA.Infrastructure.SecretsManager;
 
 namespace HCA.Infrastructure
 {
@@ -33,7 +35,10 @@ namespace HCA.Infrastructure
         public static IServiceCollection AddSftp(this IServiceCollection services, IConfiguration configuration)
         {
             // TODO: change to secrets load
-            var sftpOptions = configuration.GetSection("SftpOptions").Get<SftpOptions>();
+            //SftpOptions sftpOptions = configuration.GetSection("sftp").Get<SftpOptions>();
+            string sftpSecret = AmazonSecretsManager.GetSecret().Result;
+            SftpOptions sftpOptions = JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
+                                      ?? throw new ArgumentException("Sftp secret load issue");
 
             services.AddSingleton(sftpOptions);
             services.AddScoped<ISftpToS3FileTransferClient, SftpToS3FileTransferClient>();
