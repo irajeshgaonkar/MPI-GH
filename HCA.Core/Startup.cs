@@ -25,7 +25,7 @@ public static class Startup
         services.AddAutoMapper();
         services.AddFileProcessors();
         services.AddSqs(configuration);
-        services.AddSftp(configuration);
+        services.AddSftp();
         return services;
     }
 

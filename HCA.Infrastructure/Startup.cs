@@ -32,9 +32,7 @@ namespace HCA.Infrastructure
         }
 
 
-#pragma warning disable IDE0060 // Remove unused parameter
-        public static IServiceCollection AddSftp( this IServiceCollection services, IConfiguration configuration )
-#pragma warning restore IDE0060 // Remove unused parameter
+        public static IServiceCollection AddSftp( this IServiceCollection services )
         {
             // TODO: change to secrets load
             //SftpOptions sftpOptions = configuration.GetSection("sftp").Get<SftpOptions>();
