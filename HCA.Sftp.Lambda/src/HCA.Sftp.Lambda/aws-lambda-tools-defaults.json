@@ -22,6 +22,6 @@
     "function-subnets"      : "subnet-05942b54a5301d35b,subnet-09344ae4f697e2939",
     "function-security-groups" : "sg-04063aba5be941829",
     "tracing-mode"             : "PassThrough",
-    "environment-variables"    : "\"SftpAllowedFileTypes\"=\"[ \".csv\" ]\";\"SftpPaths\"=\"[ \"Dev/HCA/BHDS\", \"Dev/HCA/ProviderOne\", \"Dev/DOH\" ]\";\"SftpDestinationFolder\"=\"Inbound\";\"PARAMETERS_SECRETS_EXTENSION_LOG_LEVEL\"=\"debug\";\"SftpSourceFolder\"=\"Outbound\";\"SftpHost\"=\"mft-test.wa.gov\"",
+    "environment-variables"    : "",
     "image-tag"                : ""
 }

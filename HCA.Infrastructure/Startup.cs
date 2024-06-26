@@ -38,7 +38,7 @@ namespace HCA.Infrastructure
             //SftpOptions sftpOptions = configuration.GetSection("sftp").Get<SftpOptions>();
             string sftpSecret = AmazonSecretsManager.GetSecret().Result;
             SftpOptions sftpOptions = JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
-                                      ?? throw new ArgumentException("Sftp secret load issue");
+                                      ?? throw new ArgumentException("Sftp secret load issue.");
 
             services.AddSingleton(sftpOptions);
             services.AddScoped<ISftpToS3FileTransferClient, SftpToS3FileTransferClient>();
