@@ -52,8 +52,11 @@ public class SftpProcessor : ISftpProcessor
         foreach(var file in filesInPath)
         {
             var fileExtension = GetFileExtension(file.Name);
-            if (!_sftpOptions.AllowedFileTypes.Any(c => c == fileExtension)) continue;
-            
+            if( !_sftpOptions.AllowedFileTypes.Any( c => c == fileExtension ) )
+            {
+                continue;
+            }
+
             if (!filesInDatabase.Any(f => f.FileName == file.Name))
             {
                 filesToTransfer.Add(file);
