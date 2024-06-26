@@ -25,11 +25,11 @@ namespace HCA.Infrastructure.SecretsManager
             {
                 response = await client.GetSecretValueAsync( request );
             }
-            catch( Exception e )
+            catch( Exception )
             {
                 // For a list of the exceptions thrown, see
                 // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-                throw e;
+                throw;
             }
 
             return response.SecretString;
