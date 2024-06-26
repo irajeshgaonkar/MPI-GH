@@ -6,6 +6,7 @@ namespace HCA.Infrastructure.SecretsManager
 {
     public static class AmazonSecretsManager
     {
+        // TODO: wrapper that returns the json object? Possibly as individual classes in infrastructure
         public static async Task<string> GetSecret()
         {
             string secretName = "sftp";

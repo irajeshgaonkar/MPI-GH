@@ -34,8 +34,7 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddSftp( this IServiceCollection services )
         {
-            // TODO: change to secrets load
-            //SftpOptions sftpOptions = configuration.GetSection("sftp").Get<SftpOptions>();
+            // TODO: clean this up a bit?
             string sftpSecret = AmazonSecretsManager.GetSecret().Result;
             SftpOptions sftpOptions = JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
                                       ?? throw new ArgumentException("Sftp secret load issue.");
