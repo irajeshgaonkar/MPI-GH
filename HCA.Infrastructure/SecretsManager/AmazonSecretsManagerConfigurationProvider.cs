@@ -1,5 +1,5 @@
-﻿using Amazon.SecretsManager.Model;
-using Amazon.SecretsManager;
+﻿using Amazon.SecretsManager;
+using Amazon.SecretsManager.Model;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 
@@ -18,23 +18,23 @@ namespace HCA.Infrastructure.SecretsManager
 
         public override void Load()
         {
-            var secret = GetSecret();
+            string secret = GetSecret();
 
             Data = JsonSerializer.Deserialize<Dictionary<string, string>>( secret );
         }
 
         private string GetSecret()
         {
-            var request = new GetSecretValueRequest
+            GetSecretValueRequest request = new GetSecretValueRequest
             {
                 SecretId = _secretName,
                 VersionStage = "AWSCURRENT" // VersionStage defaults to AWSCURRENT if unspecified.
             };
 
-            using( var client =
+            using( AmazonSecretsManagerClient client =
             new AmazonSecretsManagerClient( Amazon.RegionEndpoint.GetBySystemName( _region ) ) )
             {
-                var response = client.GetSecretValueAsync(request).Result;
+                GetSecretValueResponse response = client.GetSecretValueAsync(request).Result;
 
                 string secretString;
                 if( response.SecretString != null )
@@ -43,8 +43,8 @@ namespace HCA.Infrastructure.SecretsManager
                 }
                 else
                 {
-                    var memoryStream = response.SecretBinary;
-                    var reader = new StreamReader(memoryStream);
+                    MemoryStream memoryStream = response.SecretBinary;
+                    StreamReader reader = new StreamReader(memoryStream);
                     secretString =
             System.Text.Encoding.UTF8
                 .GetString( Convert.FromBase64String( reader.ReadToEnd() ) );

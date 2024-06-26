@@ -1,6 +1,6 @@
-﻿using Amazon.SecretsManager.Model;
+﻿using Amazon;
 using Amazon.SecretsManager;
-using Amazon;
+using Amazon.SecretsManager.Model;
 
 namespace HCA.Infrastructure.SecretsManager
 {

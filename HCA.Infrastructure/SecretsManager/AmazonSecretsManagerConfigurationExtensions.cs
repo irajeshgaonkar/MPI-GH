@@ -15,7 +15,7 @@ namespace HCA.Infrastructure.SecretsManager
             string region,
             string secretName )
         {
-            var configurationSource =
+            AmazonSecretsManagerConfigurationSource configurationSource =
             new AmazonSecretsManagerConfigurationSource(region, secretName);
 
             return configurationBuilder.Add( configurationSource as IConfigurationSource );
@@ -28,9 +28,6 @@ namespace HCA.Infrastructure.SecretsManager
         /// <param name="configurationBuilder">The <see cref="IConfigurationBuilder"/> to add to.</param>
         /// <returns>The <see cref="IConfigurationBuilder"/>.</returns>
         public static IConfigurationBuilder AddAmazonSecretsManager( this IConfigurationBuilder configurationBuilder,
-    string secretName )
-        {
-            return AddAmazonSecretsManager( configurationBuilder, "us-west-2", secretName );
-        }
+    string secretName ) => AddAmazonSecretsManager( configurationBuilder, "us-west-2", secretName );
     }
 }
