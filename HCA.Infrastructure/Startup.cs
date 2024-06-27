@@ -34,12 +34,7 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddSftp( this IServiceCollection services )
         {
-            // TODO: clean this up a bit?
-            string sftpSecret = AmazonSecretsManager.GetSecret().Result;
-            SftpOptions sftpOptions = JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
-                                      ?? throw new ArgumentException("Sftp secret load issue.");
-
-            services.AddSingleton(sftpOptions);
+            services.AddSingleton(AmazonSecretsManager.GetSftpOptions());
             services.AddScoped<ISftpToS3FileTransferClient, SftpToS3FileTransferClient>();
             services.AddScoped<IS3ToSftpFileTransferClient, S3ToSftpFileTransferClient>();
             services.AddScoped<IHcaSftpClient, HcaSftpClient>();

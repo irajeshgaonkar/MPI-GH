@@ -1,15 +1,23 @@
 ﻿using Amazon;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
+using HCA.Infrastructure.Sftp;
+using System.Text.Json;
 
 namespace HCA.Infrastructure.SecretsManager
 {
     public static class AmazonSecretsManager
     {
-        // TODO: wrapper that returns the json object? Possibly as individual classes in infrastructure
-        public static async Task<string> GetSecret()
+        public static SftpOptions GetSftpOptions()
         {
-            string secretName = "sftp";
+            string sftpSecret = AmazonSecretsManager.GetSecret("sftp").Result;
+            return JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
+                                      ?? throw new ArgumentException("Sftp secret load issue.");
+        }
+
+        // TODO: wrapper that returns the json object? Possibly as individual classes in infrastructure
+        public static async Task<string> GetSecret( string secretName )
+        {
             string region = "us-west-2";
 
             IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(region));
