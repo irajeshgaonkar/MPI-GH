@@ -15,6 +15,11 @@ namespace HCA.Infrastructure.SecretsManager
                                       ?? throw new ArgumentException("Sftp secret load issue.");
         }
 
+        /// <summary>
+        /// Retrieve a secret from AWS Secret Manager based on secret name.
+        /// </summary>
+        /// <param name="secretName"></param>
+        /// <returns>Secret value as a string.</returns>
         // TODO: wrapper that returns the json object? Possibly as individual classes in infrastructure
         public static async Task<string> GetSecret( string secretName )
         {
