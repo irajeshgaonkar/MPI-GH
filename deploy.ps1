@@ -4,7 +4,7 @@
 Foolproof steps!
 1. Verify branch, code, access tokens in appsettings.json
 2. Check aws CLI access (necessary for upload step)
-3. run .\deploy.ps1 [dev|test|prod]
+3. run .\deploy.ps1 [dev|Integration|Int|test|prod]
 4. The script Builds, zips, deploys
 5. If your aws CLI isn't set up correctly, can manually go to [codeDirectory]mpi_api\Release - .zips will be there and can be manually uploaded
 
@@ -46,7 +46,7 @@ $environmentToProfile = @{
 $ErrorActionPreference = "Stop"
 
 # TODO: Pull in appsettings.json dynamically
-dotnet publish -f net6.0 -c Release
+dotnet publish -f net8.0 -c Release
 $result = $? -and -not $LASTEXITCODE
 if (-not ($result)) {
     Write-Error "Code build/publish error."
@@ -69,7 +69,7 @@ foreach ($project in $projectsToLambdas.Keys) {
         Remove-Item $zipName -verbose
     }
 
-    $publishFolder = "$project\src\$project\bin\Release\net6.0\publish"
+    $publishFolder = "$project\src\$project\bin\Release\net8.0\publish"
     # todo make parallel (see experimental branch)
     Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
     Write-Verbose "Zipped $project to $zipName"
