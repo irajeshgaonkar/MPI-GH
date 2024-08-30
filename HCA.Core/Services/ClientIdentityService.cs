@@ -18,7 +18,6 @@ using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Http;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
@@ -882,7 +881,7 @@ public class ClientIdentityService : IClientIdentityService
                 trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
             }
 
-            if (filter.content.responseIdentityFormatNames.IsNullOrEmpty())
+            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0)
             {
                 filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
@@ -994,7 +993,7 @@ public class ClientIdentityService : IClientIdentityService
                 trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
             }
-            if (filter.content.responseIdentityFormatNames.IsNullOrEmpty())
+            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0)
             {
                 filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
@@ -1667,7 +1666,7 @@ public class ClientIdentityService : IClientIdentityService
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        if( request.Content.ResponseIdentityFormatNames.IsNullOrEmpty() )
+        if(request.Content.ResponseIdentityFormatNames == null || request.Content.ResponseIdentityFormatNames.Length == 0)
         {
             request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
         }
