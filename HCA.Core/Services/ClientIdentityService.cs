@@ -18,6 +18,7 @@ using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
@@ -880,9 +881,10 @@ public class ClientIdentityService : IClientIdentityService
             {
                 trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
             }
-            if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+
+            if (filter.content.responseIdentityFormatNames.IsNullOrEmpty())
             {
-                filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+                filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
 
             string strIdentities = filter.content.identity.ToString();
@@ -992,9 +994,9 @@ public class ClientIdentityService : IClientIdentityService
                 trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
             }
-            if (filter.content.responseIdentityFormatNames == null || (filter.content.responseIdentityFormatNames != null && filter.content.responseIdentityFormatNames[0] == ""))
+            if (filter.content.responseIdentityFormatNames.IsNullOrEmpty())
             {
-                filter.content.responseIdentityFormatNames = new string[] { "DEFAULT" };
+                filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
 
             string strIdentities = filter.content.identity.ToString();
@@ -1665,9 +1667,9 @@ public class ClientIdentityService : IClientIdentityService
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        if( request.Content.ResponseIdentityFormatNames == null || (request.Content.ResponseIdentityFormatNames != null && request.Content.ResponseIdentityFormatNames[0] == "") )
+        if( request.Content.ResponseIdentityFormatNames.IsNullOrEmpty() )
         {
-            request.Content.ResponseIdentityFormatNames = new string[] { "DEFAULT" };
+            request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
         }
 
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
@@ -1679,9 +1681,21 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        FilterPostResponse(request, response);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        //Filter and update success if the Verato request succeeds.
+        //Otherwise return the meaningfull error message returned back by Verato
+        if (response.Success)
+        {
+            FilterPostResponse(request, response);
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        }
+        else
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
+        }
+
         return response;
     }
 
@@ -1781,9 +1795,18 @@ public class ClientIdentityService : IClientIdentityService
 
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
 
-        FilterSearchResponse(filter, response);
+        //Filter and update success if the verato request succeeds.
+        //Otherwise return the meaningfull error message returned back by Verato
+        if (response.Success)
+        {
+            FilterSearchResponse(filter, response);
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        }
+        else
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
+        }
 
         return response;
     }
@@ -1879,10 +1902,20 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
 
-        FilterQueryResponse(filter, response);    
+        //Filter and update success if the verato request succeeds.
+        //Otherwise return the meaningfull error message returned back by Verato
+        if (response.Success)
+        {
+            FilterQueryResponse(filter, response);
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        }
+        else
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
+        }
 
         return response;
     }
