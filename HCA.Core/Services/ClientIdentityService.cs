@@ -1835,8 +1835,15 @@ public class ClientIdentityService : IClientIdentityService
             }
         }
 
-        jsonObject["searchResults"] = filteredResults;
-        response.Content = ConvertJObjectToJsonElement( jsonObject );
+        if (filteredResults == null || filteredResults.Count < 1)
+        {
+            response.Message = "No identity found.";
+        }
+        else
+        {
+            jsonObject["searchResults"] = filteredResults;
+            response.Content = ConvertJObjectToJsonElement(jsonObject);
+        }
     }
 
     // TODO: check if shared logic can be extracted
@@ -1977,8 +1984,14 @@ public class ClientIdentityService : IClientIdentityService
             }
         }
         
-
-        response.Content = ConvertJObjectToJsonElement( jsonObject );
+        if(jsonObject == null || jsonObject.Count < 1)
+        {
+            response.Message = "No identity found.";
+        }
+        else
+        {
+            response.Content = ConvertJObjectToJsonElement(jsonObject);
+        }
     }
 
     private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities( UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources )
