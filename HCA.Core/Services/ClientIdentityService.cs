@@ -1839,11 +1839,9 @@ public class ClientIdentityService : IClientIdentityService
         {
             response.Message = "No identity found.";
         }
-        else
-        {
-            jsonObject["searchResults"] = filteredResults;
-            response.Content = ConvertJObjectToJsonElement(jsonObject);
-        }
+
+        jsonObject["searchResults"] = filteredResults;
+        response.Content = ConvertJObjectToJsonElement(jsonObject);
     }
 
     // TODO: check if shared logic can be extracted
@@ -1988,10 +1986,8 @@ public class ClientIdentityService : IClientIdentityService
         {
             response.Message = "No identity found.";
         }
-        else
-        {
-            response.Content = ConvertJObjectToJsonElement(jsonObject);
-        }
+
+        response.Content = ConvertJObjectToJsonElement(jsonObject);
     }
 
     private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities( UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources )
