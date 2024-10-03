@@ -30,9 +30,9 @@
     public class ContentSearch
     {
         /// <summary>
-        /// 
+        /// Defaults to 'DEFAULT'
         /// </summary>
-        public string[] responseIdentityFormatNames { get; set; }
+        public string[] responseIdentityFormatNames { get; set; } = ["DEFAULT"];
         /// <summary>
         /// 
         /// </summary>
