@@ -881,7 +881,8 @@ public class ClientIdentityService : IClientIdentityService
                 trackingId = $"{ApiCallType.VEDemographicSearch.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
             }
 
-            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0)
+            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0
+                || filter.content.responseIdentityFormatNames.Any(view => string.IsNullOrWhiteSpace(view)))
             {
                 filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
@@ -993,7 +994,8 @@ public class ClientIdentityService : IClientIdentityService
                 trackingId = $"{ApiCallType.DOH_VEDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
             }
-            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0)
+            if (filter.content.responseIdentityFormatNames == null || filter.content.responseIdentityFormatNames.Length == 0
+                || filter.content.responseIdentityFormatNames.Any(view => string.IsNullOrWhiteSpace(view)))
             {
                 filter.content.responseIdentityFormatNames = ["DEFAULT"];
             }
@@ -1666,7 +1668,8 @@ public class ClientIdentityService : IClientIdentityService
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        if(request.Content.ResponseIdentityFormatNames == null || request.Content.ResponseIdentityFormatNames.Length == 0)
+        if(request.Content.ResponseIdentityFormatNames == null || request.Content.ResponseIdentityFormatNames.Length == 0
+            || request.Content.ResponseIdentityFormatNames.Any(view => string.IsNullOrWhiteSpace(view)))
         {
             request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
         }
