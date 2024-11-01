@@ -200,7 +200,18 @@ public class ClientIdentityService : IClientIdentityService
             string strIdentities = request.Content.Identity.ToString();
             Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
 
-            if (!string.Equals(request.SourceSystem, identity.Sources[0].Name, StringComparison.OrdinalIgnoreCase))
+            //If there are no sources in Identity request
+            //Or Sources are missing Name, we will not be able to match the source system
+            if (identity?.Sources.Count == 0)
+            {
+                return ErrorResponseBuilder(request.TrackingId, "Identity Sources can not be Null or Empty");
+            }
+            if(identity != null && identity.Sources.Any(s => string.IsNullOrWhiteSpace(s.Name)))
+            {
+                return ErrorResponseBuilder(request.TrackingId, $"Identity Source Name can not be Null or Empty");
+            }
+
+            if (!string.Equals(request.SourceSystem, identity?.Sources[0]?.Name, StringComparison.OrdinalIgnoreCase))
             {
                 return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
             }
@@ -243,57 +254,13 @@ public class ClientIdentityService : IClientIdentityService
 
             return await DOH_PostIdentities(userRequestEntity, dOH_PostClientIdentityRequest);
         }
-        catch ( HcaBadRequestException e )
-        {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.Message );
-            var exceptionCustomProperties = new ExceptionCustomProperties
-            {
-                User = currentUser,
-                Agency = request.Agency,
-                Role = GetUserRoles(_httpContextAccessor.HttpContext),
-                FunctionName = nameof(DOH_PostIdentities),
-                ErrorMessage = e.Message,
-                StackTrace = e.StackTrace,
-                ErrorCode = "500"
-            };
-            var errorLogItem = new LogItem()
-            {
-                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
-                TrackingId = request.TrackingId,
-                Layer = ServiceLayer.API.ToString(),
-                ExceptionCustomProperties = exceptionCustomProperties
-            };
-
-            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
-            throw;
-        }
-        catch( HcaMuleSoftException e )
-        {
-            UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
-            var exceptionCustomProperties = new ExceptionCustomProperties
-            {
-                User = currentUser,
-                Agency = request.Agency,
-                Role = GetUserRoles(_httpContextAccessor.HttpContext),
-                FunctionName = nameof(DOH_PostIdentities),
-                ErrorMessage = e.Message,
-                StackTrace = e.StackTrace,
-                ErrorCode = "500"
-            };
-            var errorLogItem = new LogItem()
-            {
-                Name = $"{Constants.LogPrefix_API}-{nameof(DOH_PostIdentities)}-Failed",
-                TrackingId = request.TrackingId,
-                Layer = ServiceLayer.API.ToString(),
-                ExceptionCustomProperties = exceptionCustomProperties
-            };
-
-            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
-            throw;
-        }
         catch (Exception e)
         {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            if(userRequestEntity.Id > 0)
+            {
+                UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            }
+
             var exceptionCustomProperties = new ExceptionCustomProperties
             {
                 User = currentUser,
