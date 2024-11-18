@@ -77,7 +77,7 @@ public class Startup
         services.AddHttpContextAccessor();
 
         services.AddScoped<IPValidationFilter>();
-
+        services.AddScoped<ValidateIdentityFilter>();
         //?Todo: !Refactor
         //services
         //        .AddScoped<ISessionService, SessionService>()

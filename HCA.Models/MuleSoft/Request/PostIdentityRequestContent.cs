@@ -1,4 +1,6 @@
-﻿namespace HCA.Models.MuleSoft.Request;
+﻿using System.Text.Json.Serialization;
+
+namespace HCA.Models.MuleSoft.Request;
 
 /// <summary>
 /// Post Identity Request Content
@@ -37,7 +39,7 @@ public class DOH_PostIdentityRequestContent
     public DOH_PostIdentityRequestContent(dynamic identity)
     {
         ResponseIdentityFormatNames = new string[] { "DEFAULT" };
-       
+
         Identity = identity;
     }
 
@@ -51,6 +53,7 @@ public class DOH_PostIdentityRequestContent
     /// <summary>
     /// Identity request object
     /// </summary>
+    [JsonPropertyName("identity")]
     public dynamic Identity { get; set; }
 }
 

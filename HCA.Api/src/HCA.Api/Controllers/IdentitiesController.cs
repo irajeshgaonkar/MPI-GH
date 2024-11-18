@@ -282,6 +282,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
+        [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("DOH-demographicQuery")]
         public async Task<IActionResult> DOH_DemographicQuery([FromBody] DOH_DemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
         {
@@ -335,6 +336,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
+        [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("DOH-demographicSearch")]
         public async Task<IActionResult> DOH_DemographicSearch([FromBody] DOH_DemographicsSearchRequest filter,  [FromQuery] string? processingOptions = null)    //[FromQuery] int pagNumber = 0, [FromQuery] int recordsPerPage = 20,
         {
@@ -387,6 +389,7 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
         [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
+        [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("DOH-post")]
         public async Task<IActionResult> DOH_PostIdentity([FromBody] DOH_PostClientIdentityRequest request, [FromQuery] string? processingOptions = null)
         {

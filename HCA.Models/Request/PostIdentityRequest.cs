@@ -1,4 +1,5 @@
-﻿using HCA.Models.Enums;
+﻿using System.Text.Json.Serialization;
+using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Request;
 
@@ -71,6 +72,8 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     /// 
     /// </summary>
     public string? IpAddress { get; set; }
+
+    [JsonPropertyName("content")]
     public DOH_PostIdentityRequestContent Content { get; set; }
 }
 
