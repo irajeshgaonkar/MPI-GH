@@ -213,7 +213,10 @@ public class ClientIdentityService : IClientIdentityService
 
             if (!string.Equals(request.SourceSystem, identity?.Sources[0]?.Name, StringComparison.OrdinalIgnoreCase))
             {
-                return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
+                if(!string.Equals(request.SourceSystem, identity?.Sources[0].Name.Split('.')[0], StringComparison.OrdinalIgnoreCase))
+                {
+                    return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
+                }
             }
 
             string trackingId = request.TrackingId
@@ -1690,7 +1693,7 @@ public class ClientIdentityService : IClientIdentityService
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             foreach( var source in identityGroupedBySource )
             {
-                if( source["source"]["name"].ToString().ToLower() == request.SourceSystem.ToLower() )
+                if (IsMatchingSourceSystem(source["source"]["name"]?.ToString(), request.SourceSystem))
                 {
                     sources.Add( source );
                 }
@@ -1710,7 +1713,7 @@ public class ClientIdentityService : IClientIdentityService
             JArray sources = new();
             foreach( var source in SourceArray )
             {
-                if( source["name"].ToString().ToLower() == request.SourceSystem.ToLower() )
+                if( IsMatchingSourceSystem(source["name"]?.ToString(), request.SourceSystem ))
                 {
                     sources.Add( source );
                 }
@@ -1723,6 +1726,20 @@ public class ClientIdentityService : IClientIdentityService
             }
         }
         response.Content = ConvertJObjectToJsonElement( jsonObjectResponse );
+    }
+
+    private static bool IsMatchingSourceSystem(string? sourceSystemFromResponse, string? sourceSystemFromRequest)
+    {
+        if(string.Equals(sourceSystemFromRequest, sourceSystemFromResponse, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        else if(string.Equals(sourceSystemFromRequest, sourceSystemFromResponse?.Split('.')[0], StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<LinkIdentitiesResponseContent?> LinkIdentities( UserRequestEntity userRequestEntity, LinkingSources linkingSources )
@@ -1821,7 +1838,7 @@ public class ClientIdentityService : IClientIdentityService
         JArray sources = new();
         foreach( var source in identityGroupedBySourceArray )
         {
-            if( source["name"].ToString().ToLower() == filter.SourceSystem.ToLower() )
+            if( IsMatchingSourceSystem(source["name"]?.ToString(), filter.SourceSystem))
             {
                 sources.Add( source );
             }
@@ -1839,7 +1856,7 @@ public class ClientIdentityService : IClientIdentityService
         JArray sources = new();
         foreach( var source in identityGroupedBySourceArray )
         {
-            if( source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower() )
+            if( IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
             {
                 sources.Add( source );
             }
@@ -1908,7 +1925,7 @@ public class ClientIdentityService : IClientIdentityService
                 JArray sources = new();
                 foreach (var source in identityGroupedBySource)
                 {
-                    if (source["source"]["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
                     {
                         sources.Add(source);
                     }
@@ -1933,7 +1950,7 @@ public class ClientIdentityService : IClientIdentityService
                 JArray sources = new();
                 foreach (var source in SourceArray)
                 {
-                    if (source["name"].ToString().ToLower() == filter.SourceSystem.ToLower())
+                    if (IsMatchingSourceSystem(source["name"]?.ToString(), filter.SourceSystem))
                     {
                         sources.Add(source);
                     }

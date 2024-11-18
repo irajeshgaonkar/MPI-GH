@@ -21,5 +21,15 @@ namespace HCA.Data.Repository.Impl
         {
             return (await _hcaDbContext.IpAddresses.SingleAsync( ip => ip.IpAddress==ipAddress )).SourceSystem;
         }
+
+        /// <summary>
+        /// Get all Source systems with matching IP Address
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <returns>List of source systems</returns>
+        public async Task<List<string>> GetSourceSystemsFromIPAsync(string ipAddress)
+        {
+            return await _hcaDbContext.IpAddresses.Where(ip => ip.IpAddress == ipAddress).Select(a => a.SourceSystem).ToListAsync();
+        }
     }
 }

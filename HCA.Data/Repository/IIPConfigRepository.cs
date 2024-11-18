@@ -8,5 +8,7 @@ namespace HCA.Data.Repository
         Task<bool> IsIPAddressTrustedAsync(string sourceSystem, string ipAddress);
 
         Task<string> GetSourceSystemFromIp( string ipAddress );
+
+        Task<List<string>> GetSourceSystemsFromIPAsync(string ipAddress);
     }
 }
