@@ -9,6 +9,7 @@ namespace HCA.Core.Services;
 
 public interface IClientIdentityService
 {
+    // TODO: review if some of this can be de-duped. Possibly combine string currentUser, ProcessType processType, NotificationOptions? notificationOptions into an object?
     Task<dynamic?> PostIdentities(IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
     
     Task<dynamic?> DOH_PostIdentities(DOH_PostClientIdentityRequest identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
@@ -41,4 +42,5 @@ public interface IClientIdentityService
 
     Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
+    Task<dynamic?>  DOH_EnrichDemographicQuery(DOH_EnrichDemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 }

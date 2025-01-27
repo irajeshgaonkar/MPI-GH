@@ -55,3 +55,29 @@ public class DOH_DemographicQueryClientIdentityRequest : BaseRequest
     public string Agency { get; set; }
     public Content Content { get; set; }
 }
+
+/// <summary>
+/// 
+/// </summary>
+public class DOH_EnrichDemographicQueryClientIdentityRequest : BaseRequest
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="trackingId"></param>
+    public DOH_EnrichDemographicQueryClientIdentityRequest(string trackingId) : base(ApiCallType.DOH_VEEnrichDemographicQuery, trackingId)
+    {
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string SourceSystem { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public string Agency { get; set; }
+    /// <summary>
+    /// 
+    /// </summary>
+    public ContentEnrich Content { get; set; }
+}

@@ -21,5 +21,7 @@ public static class  MuleSoftUrls
     public const string DemographicSearch = "demographicsSearch";
 
     public const string DemographicQuery = "demographicsQuery";
+
+    public const string EnrichDemographicQuery = "enrich";
 }
 

@@ -76,4 +76,11 @@ public interface IMuleSoftRequestBuilder
     /// <param name="request">Demographic search request <see cref="DemographicQueryClientIdentityRequest"/></param>
     /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
     PostIdentityRequest BuildDOH_DemographicQueryRequest(DOH_DemographicQueryClientIdentityRequest request);
+
+    /// <summary>
+    /// Enrich Demographic query request builder
+    /// </summary>
+    /// <param name="request">Demographic search request <see cref="DOH_EnrichDemographicQueryClientIdentityRequest"/></param>
+    /// <returns>return post identity request for mulesoft <see cref="PostIdentityRequest"/></returns>
+    PostIdentityRequest BuildDOH_EnrichDemographicQueryRequest(DOH_EnrichDemographicQueryClientIdentityRequest request);
 }

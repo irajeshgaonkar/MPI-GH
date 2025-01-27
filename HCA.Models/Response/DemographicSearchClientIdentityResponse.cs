@@ -42,3 +42,14 @@ public class DOH_DemographicQueryClientIdentityResponse : BaseResponse
 
     public IList<Identity> Result { get; set; }
 }
+
+/// <summary>
+/// 
+/// </summary>
+public class DOH_EnrichDemographicQueryClientIdentityResponse : BaseResponse
+{
+    /// <summary>
+    /// collection of search results <see cref="PostIdentityResponseContent"/>
+    /// </summary>
+    public dynamic Content { get; set; }
+}

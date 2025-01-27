@@ -691,8 +691,58 @@ namespace HCA.Api.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Enrich Demographic query appends third-party detailed demographic and lifesytle attribute that matches the demographic data provided in the web service request.
+        /// </summary>
+        /// <param name="filter">Filter condition for search</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Get client identity response", typeof(DOH_EnrichDemographicQueryRequest))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [ServiceFilter(typeof(IPValidationFilter))]
+        [HttpPost("DOH-enrichDemographicQuery")]
+        public async Task<IActionResult> DOH_EnrichDemographicQuery([FromBody] DOH_EnrichDemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = filter?.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(DOH_EnrichDemographicQuery),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(DOH_EnrichDemographicQuery)}-Failed",
+                    TrackingId = filter?.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, filter?.TrackingId);
+            }
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                filter.SourceSystem = HttpContext.Items?["SourceSystem"]?.ToString();
+            }
+
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var enrichQueryResult = await _clientIdentityService.DOH_EnrichDemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            return Ok(enrichQueryResult);
+        }
+
         private static List<string> GetErrorMessages(ModelStateDictionary modelState) => modelState.Values.SelectMany(e => e.Errors).Select(em => em.ErrorMessage).ToList();
-        private static OkObjectResult BuildOkObjectResultWith400Error(List<string> message, string? trackingid = "") => new(new { errorCode = "400", Message = String.Join(",",message), Success = false, TrackingId = trackingid });
+        private static OkObjectResult BuildOkObjectResultWith400Error(List<string> message, string? TrackingId = "") => new(new { errorCode = "400", Message = String.Join(",",message), Success = false, TrackingId = TrackingId });
 
         #endregion
     }

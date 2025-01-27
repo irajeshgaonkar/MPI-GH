@@ -91,6 +91,13 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
     }
 
+    public PostIdentityRequest BuildDOH_EnrichDemographicQueryRequest(DOH_EnrichDemographicQueryClientIdentityRequest request)
+    {
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.Identity);
+        postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
+        return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
+    }
+
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)
     {
         var identity = BuildIdentity(request);

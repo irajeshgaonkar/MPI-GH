@@ -68,6 +68,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
             [ApiCallType.VEDemographicQuery] = DemographicQuery,
             [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
+            [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
             [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
         };
 
@@ -654,6 +655,19 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
             throw;
         }
+    }
+
+    private async Task<BaseResponse> DOH_EnrichDemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_EnrichDemographicQueryClientIdentityRequest>(request);
+
+        var response = await _muleSoftRequestExecuter.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+        if(response != null && response.Success)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Error processing the request");
     }
 
     private async Task UpdatePostIdentitiesNotification(PostClientIdentityRequest request, PostClientIdentityResponse? response)

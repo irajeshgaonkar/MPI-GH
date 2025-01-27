@@ -100,7 +100,8 @@ namespace HCA.Core.Services
                 [ApiCallType.VEDemographicQuery] = DemographicQuery,
                 [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
                 [ApiCallType.VEDelete] = DeleteIdentity,
-                [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
+                [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity,
+                [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery
             };
 
             return requestExecuters;
@@ -265,6 +266,16 @@ namespace HCA.Core.Services
             var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_DemographicQueryRequest(searchRequest);
             var muleSoftResponse = await _muleSoftRepository.DOH_DemographicQuery(muleSoftRequest);
             var response = CreateResponse<DOH_DemographicQueryClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> DOH_EnrichDemographicQuery(BaseRequest request)
+        {
+            var queryEnrichRequest = Cast<DOH_EnrichDemographicQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.BuildDOH_EnrichDemographicQueryRequest(queryEnrichRequest);
+            var muleSoftResponse = await _muleSoftRepository.DOH_EnrichDemographicQuery(muleSoftRequest);
+            var response = CreateResponse<DOH_EnrichDemographicQueryClientIdentityResponse>(muleSoftResponse);
             response.Content = muleSoftResponse.Content;
             return response;
         }

@@ -27,6 +27,8 @@ public interface IMuleSoftRepository
 
     Task<DOH_DemoGraphicQueryResponse> DOH_DemographicQuery(PostIdentityRequest request);
 
+    Task<DOH_DemoGraphicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request);
+
     /// <summary>
     /// MuleSoft link identities api call
     /// </summary>

@@ -18,6 +18,7 @@ using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
@@ -994,7 +995,9 @@ public class ClientIdentityService : IClientIdentityService
                 dOH_DemographicQueryRequest.Agency = filter.Agency;
             }
 
+
             userRequestEntity = CreateUserRequest(dOH_DemographicQueryRequest, ApiCallType.DOH_VEDemographicQuery, currentUser, trackingId, notificationOptions);
+
 
             if (processType == ProcessType.Async)
             {
@@ -1048,6 +1051,85 @@ public class ClientIdentityService : IClientIdentityService
             {
                 Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_DemographicQuery)}-Failed",
                 TrackingId = filter.Trackingid,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> DOH_EnrichDemographicQuery(DOH_EnrichDemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        UserRequestEntity userRequestEntity = new();
+        DOH_EnrichDemographicQueryRequest dOH_EnrichDemographicQueryRequest = new();
+        var trackingId = string.Empty;
+
+        try
+        {
+            trackingId = !string.IsNullOrEmpty(filter.TrackingId)
+                ? filter.TrackingId.ToString()
+                : $"{ApiCallType.DOH_VEEnrichDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+
+            if (filter.Content.ResponseIdentityFormatNames.IsNullOrEmpty() || filter.Content.ResponseIdentityFormatNames.Any(format => format.IsNullOrEmpty()))
+            {
+                filter.Content.ResponseIdentityFormatNames = ["DEFAULT"];
+            }
+
+            string strIdentities = filter.Content.Identity.ToString();
+
+            if (strIdentities.Contains("null", StringComparison.CurrentCultureIgnoreCase))
+            {
+                dynamic modifiedJson = ReplaceNullValues(filter.Content.Identity.ToString());
+
+                ContentEnrich content = new()
+                {
+                    Identity = ConvertJObjectToJsonElement(modifiedJson),
+                    ResponseIdentityFormatNames = filter.Content.ResponseIdentityFormatNames
+                };
+
+                dOH_EnrichDemographicQueryRequest.Content = content;
+            }
+            else
+            {
+                dOH_EnrichDemographicQueryRequest.Content = filter.Content;
+            }
+
+            dOH_EnrichDemographicQueryRequest.SourceSystem = filter.SourceSystem;
+            dOH_EnrichDemographicQueryRequest.Agency = filter.Agency;
+
+
+            userRequestEntity = CreateUserRequest(dOH_EnrichDemographicQueryRequest, ApiCallType.DOH_VEEnrichDemographicQuery, currentUser, trackingId, notificationOptions);
+
+
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.DOH_VEEnrichDemographicQuery, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DOH_EnrichDemographicQuery(userRequestEntity, dOH_EnrichDemographicQueryRequest);
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = filter.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DOH_EnrichDemographicQuery),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(DOH_EnrichDemographicQuery)}-Failed",
+                TrackingId = filter.TrackingId,
                 Layer = ServiceLayer.API.ToString(),
                 ExceptionCustomProperties = exceptionCustomProperties
             };
@@ -1911,6 +1993,24 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
+    private async Task<dynamic?> DOH_EnrichDemographicQuery(UserRequestEntity userRequestEntity, DOH_EnrichDemographicQueryRequest filter)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+        var enrichDemographicSearhRequest = new DOH_EnrichDemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            SourceSystem = filter.SourceSystem,
+            Agency = filter.Agency,
+            Content = filter.Content,
+            Caller = ServiceLayer.API.ToString()
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(enrichDemographicSearhRequest, requestStatusUpdater);
+
+        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+
+        return response;
+    }
+
     private void FilterQueryResponse( DOH_DemographicQueryRequest filter, DOH_DemographicQueryClientIdentityResponse? response )
     {
         JObject jsonObject = JObject.Parse(response.Content.ToString());
@@ -2165,11 +2265,11 @@ public class ClientIdentityService : IClientIdentityService
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    private static string GetUserRoles(HttpContext context)
+    private static string? GetUserRoles(HttpContext? context)
     {
-        if (context.User != null && context.User.Claims.Any(c => c.Type == ClaimTypes.Role))
+        if (context?.User != null && context.User.Claims.Any(c => c.Type == ClaimTypes.Role))
         {
-            return context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+            return context?.User?.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
 
         return string.Empty;
