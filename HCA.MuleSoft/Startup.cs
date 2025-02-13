@@ -16,7 +16,6 @@ public static class Startup
         return services
             .AddScoped<IMuleSoftRequestBuilder, MuleSoftRequestBuilder>()
             .AddScoped<IMuleSoftRepository, MuleSoftRepository>()
-            .AddScoped<IHttpAdapter, HttpAdapter>()
             .AddScoped<IDelayCaculator, ExponentialDelayCalculator>();
     }
 }

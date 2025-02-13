@@ -1,18 +1,21 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using HCA.Infrastructure.Logger;
+﻿using System.Net;
 using Amazon.Lambda.Core;
-using HCA.Infrastructure.Security.Tokens;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using HCA.Infrastructure.Http;
+using HCA.Infrastructure.JObjectHelper;
+using HCA.Infrastructure.Logger;
+using HCA.Infrastructure.S3;
+using HCA.Infrastructure.SecretsManager;
 using HCA.Infrastructure.Security.Contracts;
 using HCA.Infrastructure.Security.Hashing;
-using Microsoft.Extensions.Configuration;
+using HCA.Infrastructure.Security.Tokens;
 using HCA.Infrastructure.sftp;
-using HCA.Infrastructure.Sftp;
-using HCA.Infrastructure.S3;
-using HCA.Infrastructure.JObjectHelper;
-using System.Text.Json;
-using HCA.Infrastructure.SecretsManager;
+using HCA.Models.MuleSoft;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Polly;
+using Polly.Retry;
 
 namespace HCA.Infrastructure
 {
@@ -31,6 +34,31 @@ namespace HCA.Infrastructure
                     .AddScoped<IAppLogger, ConsoleAppAppLogger>();
         }
 
+        public static IServiceCollection AddMuleSoftOptions(this IServiceCollection services, IConfiguration configuration)
+        {
+            var muleSoftOptions = configuration.GetSection("MuleSoft").Get<MuleSoftOptions>() ?? 
+                throw new InvalidOperationException("MuleSoft configuration is missing or invalid.");
+
+            // Register the options as a singleton service
+            return services.AddSingleton(muleSoftOptions);
+        }
+
+        public static IServiceCollection AddHttpClients(this IServiceCollection services, IConfiguration configuration)
+        {
+            var muleSoftOptions = configuration.GetSection("MuleSoft").Get<MuleSoftOptions>() ??
+                throw new InvalidOperationException("MuleSoft configuration is missing or invalid.");
+
+            services.AddHttpClient<MuleSoftHttpClient>(client =>
+            {
+                client.BaseAddress = new Uri(muleSoftOptions.BaseUrl);
+            }).AddPolicyHandler(GetRetryPolicy());
+
+            services.AddHttpClient<TokenHttpClient>(client =>
+            {
+            }).AddPolicyHandler(GetRetryPolicy());
+
+            return services;
+        }
 
         public static IServiceCollection AddSftp( this IServiceCollection services )
         {
@@ -72,6 +100,22 @@ namespace HCA.Infrastructure
 
             return services;
         }
+
+        /// <summary>
+        /// Defines and returns a retry policy for HTTP requests, with exponential backoff.
+        /// This policy retries requests in case of HttpRequestException or when the response status is 404 (Not Found) 
+        /// or 500 (Internal Server Error), using an exponential backoff strategy.
+        /// </summary>
+        private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return Polly.Policy.Handle<HttpRequestException>()  // Handle any HttpRequestException (e.g., network errors)
+                .OrResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.NotFound || r.StatusCode == HttpStatusCode.InternalServerError) // Retry on 404 or 500 status codes
+                .WaitAndRetryAsync(
+                    3,  // Retry up to 3 times
+                    attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)) // Exponential backoff: 2^attempt seconds (e.g., 2, 4, 8 seconds, etc.)
+                );
+        }
+
     }
 
 }

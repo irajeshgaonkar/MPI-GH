@@ -21,6 +21,8 @@ public static class Startup
         services.AddDbContext(configuration);
         services.AddRepositories();
         services.AddMuleSoft(configuration);
+        services.AddMuleSoftOptions(configuration);
+        services.AddHttpClients(configuration);
         services.AddServices();
         services.AddAutoMapper();
         services.AddFileProcessors();
