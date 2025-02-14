@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -11,15 +11,15 @@
     <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Amazon.Lambda.Core" Version="2.2.0" />
-    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.3.0" />
-    <PackageReference Include="Amazon.Lambda.SQSEvents" Version="2.1.0" />
-    <PackageReference Include="Amazon.S3" Version="0.24.0" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.9.23" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.5.0" />
+    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.4.4" />
+    <PackageReference Include="Amazon.Lambda.SQSEvents" Version="2.2.0" />
+    <PackageReference Include="Amazon.S3" Version="0.34.0" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Microsoft.Extensions.Configuration" />
