@@ -69,7 +69,6 @@ public class MuleSoftRepository(IAppLogger appLogger, MuleSoftHttpClient muleSof
     public async Task<UnMergeIdentitiesResponse> UnMergeIdentities(UnMergeIdentitiesRequest request)
         => await Execute<UnMergeIdentitiesResponse>(MuleSoftUrls.UnMergeIdentitie, request);
 
-
     public async Task<DOH_UnMergeIdentitiesResponse> DOH_UnMergeIdentities(UnMergeIdentitiesRequest request)
        => await Execute<DOH_UnMergeIdentitiesResponse>(MuleSoftUrls.UnMergeIdentitie, request);
 
@@ -84,20 +83,20 @@ public class MuleSoftRepository(IAppLogger appLogger, MuleSoftHttpClient muleSof
     public async Task<T> CallMulesoft<T>(string requestUrl, MuleSoftRequest? request)
        => await Execute<T>(requestUrl, request);
 
-
     private async Task<T> Execute<T>(string requestUrl, MuleSoftRequest? request)
     {
         var sw = new Stopwatch();
         _appLogger.LogInformation($"started processing mulesoft request {request?.TrackingId}");
         var httpRequestMessage = await GetHttpRequestMessage(requestUrl, request);
         sw.Start();
-        var httpesponse = await _muleSoftHttpClient.SendAsync(httpRequestMessage);
+        var httpResponse = await _muleSoftHttpClient.SendAsync(httpRequestMessage);
         sw.Stop();
         _appLogger.LogInformation($"completed processing mulesoft request {request?.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
-        var response = await httpesponse.Deserialize<T>();
+        var response = await httpResponse.Deserialize<T>();
 
-        if (null == response)
-            throw new HcaMuleSoftException("Error occured while posting request to MuleSoft");
+        if( null == response ) {
+            throw new HcaMuleSoftException("Error occurred while posting request to MuleSoft");
+        }
 
         return response;
     }
