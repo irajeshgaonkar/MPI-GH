@@ -82,6 +82,5 @@ namespace HCA.Infrastructure.Http
 
             return _token;
         }
-
     }
 }
