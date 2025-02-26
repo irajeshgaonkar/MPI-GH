@@ -17,5 +17,4 @@
         /// </summary>
         public AdOptions AdOptions { get; set; }
     }
-
 }

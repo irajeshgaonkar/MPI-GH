@@ -35,5 +35,4 @@
         /// </summary>
         public string Scope { get; set; }
     }
-
 }
