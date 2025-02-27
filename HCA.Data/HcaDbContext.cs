@@ -56,7 +56,7 @@ public class HcaDbContext : DbContext
 
     public DbSet<ServiceAccountEntity> ServiceAccounts { get; set; }
 
-    public DbSet<IpAddressesEntity> IpAddresses { get; set; }
+    public DbSet<OnboardedSystemEntity> OnboardedSystem { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

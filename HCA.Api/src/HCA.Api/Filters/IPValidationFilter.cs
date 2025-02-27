@@ -13,13 +13,13 @@ namespace HCA.Api.Filters
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public class IPValidationFilter : IAsyncActionFilter
     {
-        private readonly IIPConfigRepository _iPConfigRepository;
+        private readonly IOnboardedSystemRepository _onboardedSystemRepository;
 
         private readonly IAppLogger _logger;
 
-        public IPValidationFilter(IIPConfigRepository iPConfigRepository, IAppLogger logger)
+        public IPValidationFilter(IOnboardedSystemRepository onboardedSystemRepository, IAppLogger logger)
         {
-            _iPConfigRepository = iPConfigRepository;
+            _onboardedSystemRepository = onboardedSystemRepository;
             _logger = logger;
         }
 
@@ -43,7 +43,8 @@ namespace HCA.Api.Filters
                     return;
                 }
 
-                var sourceSystems = await _iPConfigRepository.GetSourceSystemsFromIPAsync(ipAddress);
+                var sourceSystems = await _onboardedSystemRepository.GetActiveSourceSystemsByIPAsync(ipAddress);
+
                 // If there are no Source Systems for incoming IP - Block it.
                 if(sourceSystems.Count == 0)
                 {
