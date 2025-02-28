@@ -122,6 +122,9 @@ WHERE mpi_link_id IN
 
             switch (filterKey)
             {
+                //TODO: Convert ToLower() to use proper collation for case-insensitive comparisons
+                //https://learn.microsoft.com/en-us/ef/core/miscellaneous/collations-and-case-sensitivity#explicit-collations-and-indexes
+
                 case "fname":
                     searchQuery = searchQuery.And(() => c => c.FirstName.ToLower().StartsWith(filterValue));
                     break;

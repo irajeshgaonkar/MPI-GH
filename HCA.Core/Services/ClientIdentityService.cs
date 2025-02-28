@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace HCA.Core.Services;
 
@@ -1719,9 +1720,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = identities.ToList()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+        var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<dynamic?> DOH_PostIdentities( UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request )
@@ -1746,17 +1759,21 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_PostClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
-        //Filter and update success if the Verato request succeeds.
-        //Otherwise return the meaningfull error message returned back by Verato
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
         if (response.Success)
         {
             FilterPostResponse(request, response);
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         }
-        else
-        {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
-        }
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
     }
@@ -1840,9 +1857,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = linkingSources
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+        var response = await _clientIdentityRequestExecutor.Execute<LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<List<PostIdentityResponseContent>?> DemographicSearch( UserRequestEntity userRequestEntity, Identity filter )
@@ -1853,9 +1882,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = filter
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+        var response = await _clientIdentityRequestExecutor.Execute<DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<dynamic?> DOH_DemographicSearch( UserRequestEntity userRequestEntity, DOH_DemographicsSearchRequest filter )
@@ -1872,17 +1913,21 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
-        //Filter and update success if the verato request succeeds.
-        //Otherwise return the meaningfull error message returned back by Verato
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
         if (response.Success)
         {
             FilterSearchResponse(filter, response);
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         }
-        else
-        {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
-        }
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
     }
@@ -1966,9 +2011,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = filter
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+        var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     // TODO: use inheritance to dedup filter/sourceSystem logic
@@ -1986,17 +2043,21 @@ public class ClientIdentityService : IClientIdentityService
         var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
-        //Filter and update success if the verato request succeeds.
-        //Otherwise return the meaningfull error message returned back by Verato
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
         if (response.Success)
         {
             FilterQueryResponse(filter, response);
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
         }
-        else
-        {
-            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, response.Message);
-        }
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
     }
@@ -2012,9 +2073,19 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(enrichDemographicSearhRequest, requestStatusUpdater);
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(enrichDemographicSearhRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
 
-        UpdateProcessStatus(userRequestEntity, RequestStatus.Success, "Request Processed Successfully");
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
     }
@@ -2093,9 +2164,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = unLinkingSources
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+        var response = await _clientIdentityRequestExecutor.Execute<UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<MergeIdentitiesResponseContent?> MergeIdentities( UserRequestEntity userRequestEntity, MergingSources mergingSources )
@@ -2106,9 +2189,22 @@ public class ClientIdentityService : IClientIdentityService
         {
             Content = mergingSources
         };
-        var response = await _clientIdentityRequestExecutor.Execute<MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+
+        var response = await _clientIdentityRequestExecutor.Execute<MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<UnMergeIdentitiesResponseContent?> UnMergeIdentities( UserRequestEntity userRequestEntity, UnMergingSources unMergingSources )
@@ -2119,9 +2215,22 @@ public class ClientIdentityService : IClientIdentityService
         {
             Content = unMergingSources
         };
-        var response = await _clientIdentityRequestExecutor.Execute<UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
-        return response?.Content;
+
+        var response = await _clientIdentityRequestExecutor.Execute<UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     private async Task<dynamic?> DOH_LinkIdentities( UserRequestEntity userRequestEntity, DOH_LinkingSources linkingSources )
@@ -2135,8 +2244,20 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_LinkClientIdentityResponse>(linkIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
         return response;
     }
 
@@ -2151,8 +2272,20 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnLinkClientIdentityResponse>(unLinkClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
         return response;
     }
 
@@ -2167,8 +2300,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = mergingSources.content,
             Caller = ServiceLayer.API.ToString()
         };
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_MergeClientIdentityResponse>(mergeClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
         return response;
     }
 
@@ -2183,8 +2329,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = deleteSourceIdentity.Content,
             Caller = ServiceLayer.API.ToString()
         };
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DeleteClientIdentityResponse>(deleteClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
         return response;
     }
 
@@ -2199,8 +2358,21 @@ public class ClientIdentityService : IClientIdentityService
             Content = unMergingSources.content,
             Caller = ServiceLayer.API.ToString()
         };
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater);
-        UpdateProcessStatus( userRequestEntity, RequestStatus.Success, "Request Processed Successfully" );
+
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_UnMergeClientIdentityResponse>(unMergeClientIdentityRequest, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        // Determine request status and message based on the response
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        // Update the response in the user request entity
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        // Update the process status
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
         return response;
     }
 
