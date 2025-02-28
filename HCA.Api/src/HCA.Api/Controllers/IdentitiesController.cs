@@ -262,6 +262,13 @@ namespace HCA.Api.Controllers
             if (filter.LastName.IsNotEmpty()) searchFilter.Add("LName", filter.LastName);
             if (filter.Ssn.IsNotEmpty()) searchFilter.Add("Ssn", filter.Ssn);
             if (filter.Email.IsNotEmpty()) searchFilter.Add("Email", filter.Email);
+            if (filter.Contact.IsNotEmpty()) searchFilter.Add("Contact", filter.Contact);
+            if (filter.DateOfBirth.IsNotEmpty()) searchFilter.Add("DateOfBirth", filter.DateOfBirth);
+            if (filter.AddressLine1.IsNotEmpty()) searchFilter.Add("AddressLine1", filter.AddressLine1);
+            if (filter.AddressLine2.IsNotEmpty()) searchFilter.Add("AddressLine2", filter.AddressLine2);
+            if (filter.City.IsNotEmpty()) searchFilter.Add("City", filter.City);
+            if (filter.State.IsNotEmpty()) searchFilter.Add("State", filter.State);
+            if (filter.Zip.IsNotEmpty()) searchFilter.Add("Zip", filter.Zip);
             if (filter.LinkId.IsNotEmpty()) searchFilter.Add("MpiLinkId", filter.LinkId);
             if (filter.SourceSystemId.IsNotEmpty()) searchFilter.Add("SourceId", filter.SourceSystemId);
             return searchFilter;
@@ -771,6 +778,41 @@ namespace HCA.Api.Controllers
         /// </summary>
         /// <example></example>
         public string Email { get; set; }
+
+        /// <summary>
+        /// DateOfBirth
+        /// </summary>
+        public string DateOfBirth { get; set; }
+
+        /// <summary>
+        /// Contact
+        /// </summary>
+        public string Contact { get; set; }
+
+        /// <summary>
+        /// AddressLine1
+        /// </summary>
+        public string AddressLine1 { get; set; }
+
+        /// <summary>
+        /// AddressLine2
+        /// </summary>
+        public string AddressLine2 { get; set; }
+
+        /// <summary>
+        /// Address city
+        /// </summary>
+        public string City { get; set; }
+
+        /// <summary>
+        /// Address Sate
+        /// </summary>
+        public string State { get; set; }
+
+        /// <summary>
+        /// Address Zip
+        /// </summary>
+        public string Zip { get; set; }
 
         /// <summary>
         /// Social Security Number
