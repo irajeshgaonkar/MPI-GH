@@ -28,6 +28,7 @@ public static class Startup
                 .AddScoped<ISftpFileTransferRepository, SftpFileTransferRepository>()
                 .AddScoped<ICustomDataMappingRepository, CustomDataMappingRepository>()
                 .AddScoped<IServiceAccountRepository, ServiceAccountRepository>()
-                .AddScoped<IOnboardedSystemRepository, OnboardedSystemRepository>();
+                .AddScoped<IOnboardedSystemRepository, OnboardedSystemRepository>()
+                .AddScoped<IAppRoleMappingRepository, AppRoleMappingRepository>(); ;
     }
 }

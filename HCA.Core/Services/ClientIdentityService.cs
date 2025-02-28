@@ -1,4 +1,6 @@
-﻿using HCA.Core.Mapper;
+﻿using System.Security.Claims;
+using System.Text.Json;
+using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Data.Entities;
 using HCA.Data.Repository;
@@ -21,32 +23,21 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Net;
-using System.Security.Claims;
-using System.Text.Json;
 
 namespace HCA.Core.Services;
 
 public class ClientIdentityService : IClientIdentityService
 {
     private readonly IUserRequestRepository _userRequestRepository;
-
     private readonly IUserModifyRecordsService _userModifyRecordsService;
-
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
-
     private readonly IClientIdentityRepository _clientIdentityRepository;
-
     private readonly IUserModifyRecordsRepository _userModifyRecordsRepository;
-
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
-
+    private static IAppRoleMappingRepository _appRoleMappingRepository;
     private readonly ISqsPublisher _sqsPublisher;
-
     private readonly IUserRequestMapper _userRequestMapper;
-
     private readonly IAppLogger _logger;
-
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public ClientIdentityService(IUserRequestRepository userRequestRepository,
@@ -55,6 +46,7 @@ public class ClientIdentityService : IClientIdentityService
         IUserModifyRecordsRepository userModifyRecordsRepository,
         IRequestProcessLogRepository requestProcessLogRepository,
         IUserModifyRecordsService userModifyRecordsService,
+        IAppRoleMappingRepository appRoleMappingRepository,
         ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper,
         IAppLogger logger, 
         IHttpContextAccessor httpContextAccessor)
@@ -67,6 +59,7 @@ public class ClientIdentityService : IClientIdentityService
         _sqsPublisher = sqsPublisher;
         _userRequestMapper = userRequestMapper;
         _userModifyRecordsService = userModifyRecordsService;
+        _appRoleMappingRepository = appRoleMappingRepository;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -75,8 +68,14 @@ public class ClientIdentityService : IClientIdentityService
     {
         try
         {
-            //var userModifyRecords = (await _userModifyRecordsRepository.GetAllAsync(r => r.UserName == currentUser)).Select(t => t.ClientIdentityId).ToList();
             var userModifyRecords = new List<int>();
+
+            var sourceSystemScopes = await GetSourceSysteAccessFromContext(_httpContextAccessor.HttpContext);
+            if (!sourceSystemScopes.Item1)
+            {
+                searchFilter.Add("SourceSystemNames", string.Join(',', sourceSystemScopes.Item2));
+            }
+
             var (count, entities) = await _clientIdentityRepository.GetAll(searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
             var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
             return (count, models);
@@ -2282,6 +2281,34 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Get Source System Access from context
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    private static async Task<(bool, List<string>)> GetSourceSysteAccessFromContext(HttpContext? context)
+    {
+        var groups = context?.User.FindAll(ClaimTypes.GroupSid).Select(c => c.Value).ToList();
+        if (groups != null)
+        {
+            var roles = await _appRoleMappingRepository.GetAppRoleMappingsAsync(groups);
+            if (roles != null)
+            {
+                if (roles.Any(role => (role.AppRole.AppRoleName == AppRole.MPIAdmin.ToString())
+                || (role.AppRole.AppRoleName == AppRole.MPIReader.ToString())))
+                {
+                    return (true, new List<string>());
+                }
+                else
+                {
+                    return (false, roles.Select(role => role.System.SourceSystemName).ToList());
+                }
+            }
+        }
+
+        return (false, new List<string>());
     }
 
 }

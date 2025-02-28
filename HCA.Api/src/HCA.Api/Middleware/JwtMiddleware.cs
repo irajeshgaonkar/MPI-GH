@@ -46,6 +46,15 @@ public class JwtMiddleware
             if (isAdmin == true) roles.Add(Roles.Admin);
             var identity = new ClaimsIdentity(Claims.Token);
             var claims = new List<Claim>() { new Claim(ClaimTypes.NameIdentifier, email)};
+
+            if (groups != null)
+            {
+                foreach (var group in groups)
+                {
+                    claims.Add(new Claim(ClaimTypes.GroupSid, group));
+                }
+            }
+
             identity.AddClaims(claims);
             var user = new GenericPrincipal(identity, roles.ToArray());
             context.User = user;

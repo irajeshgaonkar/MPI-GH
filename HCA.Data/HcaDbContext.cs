@@ -58,6 +58,10 @@ public class HcaDbContext : DbContext
 
     public DbSet<OnboardedSystemEntity> OnboardedSystem { get; set; }
 
+    public DbSet<AppRolesEntity> AppRoles { get; set; }
+
+    public DbSet<AppRoleMappingEntity> AppRoleMappings { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -100,6 +104,12 @@ public class HcaDbContext : DbContext
            .HasOne(ac => ac.Communication)
            .WithMany(c => c.AddressCommunications)
            .HasForeignKey(ac => ac.ClientIdentityCommunicationId);
+
+        modelBuilder.Entity<AppRoleMappingEntity>()
+             .HasOne(m => m.AppRole)
+             .WithMany(r => r.AppRolesMappings)
+             .HasForeignKey(m => m.RoleId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<IntReturn>().HasNoKey();
 

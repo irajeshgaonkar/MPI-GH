@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using HCA.Data.Entities;
+using HCA.Data.Extensions;
 using HCA.Data.Repository.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
@@ -102,109 +103,102 @@ WHERE mpi_link_id IN
         return Task.FromResult((count, result));
     }
 
-    public async Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(Dictionary<string, string> searchFilter, List<int>? userModifyRecords = null, int pageNumber = 0, int recordsPerPage = 10, string orderBy = "")
+    public async Task<(int, IEnumerable<ClientIdentityEntity>)> GetAll(
+        Dictionary<string, string> searchFilter,
+        List<int>? userModifyRecords = null,
+        int pageNumber = 0,
+        int recordsPerPage = 10,
+        string orderBy = "")
     {
-        if (userModifyRecords == null) userModifyRecords = new List<int>();
+        userModifyRecords ??= [];
         var skip = pageNumber * recordsPerPage;
-        Expression<Func<ClientIdentityEntity, bool>> searchQuery = (c) => c.IsActive == true;
+        Expression<Func<ClientIdentityEntity, bool>> searchQuery = c => c.IsActive;
 
-        string filterFirstColumn = string.Empty;
-        string filterSecondColumn = string.Empty;
-        string filterFirstValue = string.Empty;
-        string filterSecondValue = string.Empty;
-
-        int i = 0;
-
-        foreach (var key in searchFilter.Keys)
+        // Build the filters dynamically from the searchFilter dictionary
+        foreach (var filter in searchFilter)
         {
-            if (i == 0)
+            var filterKey = filter.Key.ToLower();
+            var filterValue = filter.Value.ToLower();
+
+            switch (filterKey)
             {
-                filterFirstColumn = key;
-                filterFirstValue = searchFilter[key].ToLower();
-            }
+                case "fname":
+                    searchQuery = searchQuery.And(() => c => c.FirstName.ToLower().StartsWith(filterValue));
+                    break;
+                case "lname":
+                    searchQuery = searchQuery.And(() => c => c.LastName.ToLower().StartsWith(filterValue));
+                    break;
+                case "ssn":
+                    searchQuery = searchQuery.And(() => c => c.Ssn != null && c.Ssn.ToLower().StartsWith(filterValue));
+                    break;
+                case "sourceid":
+                    searchQuery = searchQuery.And(() => c => c.SourceSystemId.ToLower().StartsWith(filterValue));
+                    break;
+                case "mpilinkid":
+                    searchQuery = searchQuery.And(() => c => c.MpiLinkId.ToLower().StartsWith(filterValue));
+                    break;
+                case "email":
+                    searchQuery = searchQuery.And(() => c => c.Communications
+                        .Any(cc => cc.EmailAddress.ToLower().StartsWith(filterValue)));
+                    break;
 
-            if (i == 1)
-            {
-                filterSecondColumn = key;
-                filterSecondValue = searchFilter[key].ToLower();
-            }
+                case "contact":
+                    searchQuery = searchQuery.And(() => c => c.Communications
+                        .Any(cc => cc.PhoneNumber.ToLower().StartsWith(filterValue)));
+                    break;
 
-            i++;
-        }
+                case "dateofbirth":
+                    searchQuery = searchQuery.And(() => c => c.Dob != null && c.Dob == DateOnly.FromDateTime(Convert.ToDateTime(filterValue)));
+                    break;
 
-        if (filterFirstColumn != string.Empty && filterSecondColumn == string.Empty)
-        {
-            if (filterFirstColumn == "FName") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue);
-            if (filterFirstColumn == "LName") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue);
-            if (filterFirstColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue);
-            if (filterFirstColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue);
-            if (filterFirstColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue);
-            if (filterFirstColumn == "Email") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null;
-        }
+                case "addressline1":
+                    searchQuery = searchQuery.And(() => c => c.Addresses
+                        .Any(cc => cc.AddressLine1.ToLower().StartsWith(filterValue)));
+                    break;
 
-        if (filterFirstColumn != string.Empty && filterSecondColumn != string.Empty)
-        {
-            if (filterFirstColumn == "FName")
-            {
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Email") searchQuery = (c) => c.IsActive == true && c.FirstName.ToLower().StartsWith(filterFirstValue) && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterSecondValue)) != null;
-            }
+                case "addressline2":
+                    searchQuery = searchQuery.And(() => c => c.Addresses
+                        .Any(cc => cc.AddressLine2 != null && cc.AddressLine2.ToLower().StartsWith(filterValue)));
+                    break;
 
-            if (filterFirstColumn == "LName")
-            {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue) && c.FirstName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Email") searchQuery = (c) => c.IsActive == true && c.LastName.ToLower().StartsWith(filterFirstValue) && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterSecondValue)) != null;
-            }
+                case "city":
+                    searchQuery = searchQuery.And(() => c => c.Addresses
+                        .Any(cc => cc.City.ToLower().StartsWith(filterValue)));
+                    break;
+                case "state":
+                    searchQuery = searchQuery.And(() => c => c.Addresses
+                        .Any(cc => cc.State.ToLower().StartsWith(filterValue)));
+                    break;
+                case "zip":
+                    searchQuery = searchQuery.And(() => c => c.Addresses
+                        .Any(cc => cc.ZipCode.ToLower().StartsWith(filterValue)));
+                    break;
 
-            if (filterFirstColumn == "Ssn")
-            {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue) && c.FirstName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Email") searchQuery = (c) => c.IsActive == true && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterFirstValue) && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterSecondValue)) != null;
-            }
+                case "sourcesystemnames":
+                    var scopes = filterValue.Split(',');
+                    searchQuery = searchQuery.And(() => c => scopes.Any(s => c.SourceSystemName.ToLower() == s));
+                    break;
 
-            if (filterFirstColumn == "SourceId")
-            {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue) && c.FirstName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue) && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Email") searchQuery = (c) => c.IsActive == true && c.SourceSystemId.ToLower().StartsWith(filterFirstValue) && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterSecondValue)) != null;
-            }
+                // Add more filters here as needed
 
-            if (filterFirstColumn == "MpiLinkId")
-            {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue) && c.FirstName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue) && c.LastName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue) && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue) && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Email") searchQuery = (c) => c.IsActive == true && c.MpiLinkId.ToLower().StartsWith(filterFirstValue) && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterSecondValue)) != null;
-            }
-
-            if (filterFirstColumn == "Email")
-            {
-                if (filterSecondColumn == "FName") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null && c.FirstName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "LName") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null && c.LastName.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "Ssn") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null && c.Ssn != null && c.Ssn.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "SourceId") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null && c.SourceSystemId.ToLower().StartsWith(filterSecondValue);
-                if (filterSecondColumn == "MpiLinkId") searchQuery = (c) => c.IsActive == true && c.Communications.FirstOrDefault(cc => cc.EmailAddress.ToLower().StartsWith(filterFirstValue)) != null && c.MpiLinkId.ToLower().StartsWith(filterSecondValue);
+                default:
+                    // Handle unknown filters, or skip them
+                    break;
             }
         }
 
+        // Handle ordering
         var orderByQuery = OrderBy(orderBy) ?? DefaultOrderBy;
+
+        // Retrieve data
         var clientIdentityEntities = await GetAllAsync(searchQuery, ClientIdentitiesInclude, orderByQuery, skip, recordsPerPage);
         var result = clientIdentityEntities.ToList();
         var count = Count(searchQuery);
-        return (count, clientIdentityEntities.ToList());
+
+        return (count, result);
     }
+
+
 
     public async Task<IEnumerable<ClientIdentityEntity>> GetAllByQuery(Expression<Func<ClientIdentityEntity, bool>> query)
     {
