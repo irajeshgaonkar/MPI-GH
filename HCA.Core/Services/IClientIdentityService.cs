@@ -3,6 +3,7 @@ using HCA.Models.Enums;
 using HCA.Models.MuleSoft;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
+using HCA.Models.Response;
 using HCA.Models.SQS;
 
 namespace HCA.Core.Services;
@@ -43,4 +44,6 @@ public interface IClientIdentityService
     Task<dynamic?> DOH_DeleteSourceIdentity(DOH_DeleteClientIdentityRequest deleteSourceIdentity, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<dynamic?>  DOH_EnrichDemographicQuery(DOH_EnrichDemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
+
+    Task<IdentityExistsResponse?> IdentityExistsAsync(IdentityExistsRequest request, string currentUser, NotificationOptions? notificationOptions);
 }

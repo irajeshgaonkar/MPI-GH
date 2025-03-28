@@ -96,5 +96,8 @@ namespace HCA.Data.Entities
         /// </summary>
         [Column("enable_notification")]
         public bool? EnableNotification { get; set; }
+
+        public virtual ICollection<DataShareMappingEntity> SourceSystemMappings { get; set; } 
+        public virtual ICollection<DataShareMappingEntity> AllowedSystemMappings { get; set; }
     }
 }

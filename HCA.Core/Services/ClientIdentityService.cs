@@ -36,6 +36,7 @@ public class ClientIdentityService : IClientIdentityService
     private readonly IUserModifyRecordsRepository _userModifyRecordsRepository;
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
     private static IAppRoleMappingRepository _appRoleMappingRepository;
+    private readonly IDataShareMappingRepository _dataShareMappingRepository;
     private readonly ISqsPublisher _sqsPublisher;
     private readonly IUserRequestMapper _userRequestMapper;
     private readonly IAppLogger _logger;
@@ -48,6 +49,7 @@ public class ClientIdentityService : IClientIdentityService
         IRequestProcessLogRepository requestProcessLogRepository,
         IUserModifyRecordsService userModifyRecordsService,
         IAppRoleMappingRepository appRoleMappingRepository,
+        IDataShareMappingRepository dataShareMappingRepository,
         ISqsPublisher sqsPublisher, IUserRequestMapper userRequestMapper,
         IAppLogger logger, 
         IHttpContextAccessor httpContextAccessor)
@@ -61,6 +63,7 @@ public class ClientIdentityService : IClientIdentityService
         _userRequestMapper = userRequestMapper;
         _userModifyRecordsService = userModifyRecordsService;
         _appRoleMappingRepository = appRoleMappingRepository;
+        _dataShareMappingRepository = dataShareMappingRepository;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -946,6 +949,141 @@ public class ClientIdentityService : IClientIdentityService
             throw;
         }
 
+    }
+
+    public async Task<IdentityExistsResponse?> IdentityExistsAsync(IdentityExistsRequest request, string currentUser, NotificationOptions? notificationOptions)
+    {
+        UserRequestEntity userRequestEntity = new();
+        DOH_DemographicQueryRequest demographicsQueryRequest = new();
+        var trackingId = string.Empty;
+
+        try
+        {
+            if( string.IsNullOrEmpty( request.TrackingId ) || request.TrackingId.Length < 1 )
+            {
+                trackingId = $"{ApiCallType.VEIdentityExists.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
+            }
+            else 
+            {
+                trackingId = request.TrackingId.ToString();
+            }
+
+            if(string.IsNullOrEmpty(request.SourceSystem))
+            {
+                throw new HcaBadRequestException("SourceSystem is required.");
+            }
+
+            string strIdentities = request.Content.Identity.ToString();
+
+            if (strIdentities.Contains("null", StringComparison.CurrentCultureIgnoreCase))
+            {
+                // Replace null values with empty strings and get modified JSON string
+                dynamic modifiedJson = ReplaceNullValues(request.Content.Identity.ToString());
+
+                JsonElement modifiedJsonElement = ConvertJObjectToJsonElement(modifiedJson);
+
+                Content content = new()
+                {
+                    identity = modifiedJsonElement
+                };
+
+                demographicsQueryRequest.content = content;
+            }
+            else
+            {
+                demographicsQueryRequest.content = new Content() { identity = request.Content.Identity};
+            }
+
+            demographicsQueryRequest.SourceSystem = request.SourceSystem;
+            demographicsQueryRequest.Agency = request.Agency;
+
+            userRequestEntity = CreateUserRequest(demographicsQueryRequest, ApiCallType.VEIdentityExists, currentUser, trackingId, notificationOptions);
+
+            var allowedSystemsQueryTask = _dataShareMappingRepository.GetAllowedDataShareMappingForSourceSystemAsync(request.SourceSystem);
+            var demographicsQueryTask = DOH_DemographicQuery(userRequestEntity, demographicsQueryRequest, filterQueryResponse: false);
+
+            // Wait for both tasks to complete
+            await Task.WhenAll(allowedSystemsQueryTask, demographicsQueryTask);
+
+            var allowedSystems = allowedSystemsQueryTask.Result;
+
+            //Add source system to allowed system with full data sharing level.
+            allowedSystems.Add(new DataShareMapping { AllowedSystemName = request.SourceSystem, DataSharingLevel = DataSharingLevel.Full.ToString() });
+
+            if (demographicsQueryTask.Result is not DOH_DemographicQueryClientIdentityResponse demographicsQueryResult)
+            {
+                throw new Exception("Failed to retrieve demographics query result.");
+            }
+
+            bool identityExistsInAllowedSystems = IdentityExists(demographicsQueryResult, allowedSystems);
+
+            var identityExistsResponse = new IdentityExistsResponse
+            {
+                TrackingId = trackingId,
+                AuditId = demographicsQueryResult.AuditId,
+                Content = new IdentityExistsContent() { Exists = identityExistsInAllowedSystems },
+                Success = true,
+                Message = identityExistsInAllowedSystems ? "Identity found." : "No identity found."
+
+            };
+
+            return identityExistsResponse;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Agency = request.Agency,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(IdentityExistsAsync),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Models.Logging.Constants.LogPrefix_API}-{nameof(IdentityExistsAsync)}-Failed",
+                TrackingId = request.TrackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Check if identity exists in allowed systems
+    /// </summary>
+    /// <param name="demographicsQueryResponse"></param>
+    /// <param name="allowedSystems"></param>
+    /// <returns></returns>
+    private static bool IdentityExists(DOH_DemographicQueryClientIdentityResponse demographicsQueryResponse, List<DataShareMapping> allowedSystems) 
+    {
+        JObject demographicsQueryContent = JObject.Parse(demographicsQueryResponse?.Content?.ToString());
+
+        if( demographicsQueryContent == null || demographicsQueryContent.Count <= 0 ) 
+        {
+            return false;
+        }
+        if( demographicsQueryContent["identity"]?["sources"] is not JArray SourceArray )
+        {
+            return false;
+        }
+        foreach( var source in SourceArray ) 
+        {
+            if( allowedSystems.Any( allowedSystem => allowedSystem.AllowedSystemName.Equals( source["name"]?.ToString(), StringComparison.OrdinalIgnoreCase ) ) ) 
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task<dynamic?> DOH_DemographicQuery( DOH_DemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions ) //,string responseIdentityFormatNames = "DEFAULT")
@@ -2029,7 +2167,7 @@ public class ClientIdentityService : IClientIdentityService
     }
 
     // TODO: use inheritance to dedup filter/sourceSystem logic
-    private async Task<dynamic?> DOH_DemographicQuery( UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter )
+    private async Task<dynamic?> DOH_DemographicQuery( UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter, bool filterQueryResponse = true )
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
@@ -2048,7 +2186,7 @@ public class ClientIdentityService : IClientIdentityService
             ? (RequestStatus.Success, "Request Processed Successfully")
             : (RequestStatus.Failed, response.Message);
 
-        if (response.Success)
+        if (response.Success && filterQueryResponse)
         {
             FilterQueryResponse(filter, response);
         }

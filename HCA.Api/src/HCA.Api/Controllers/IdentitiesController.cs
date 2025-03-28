@@ -12,6 +12,7 @@ using HCA.Models.MuleSoft;
 using HCA.Models.MuleSoft.Response;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
+using HCA.Models.Response;
 using HCA.Models.SQS;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -328,6 +329,61 @@ namespace HCA.Api.Controllers
             var searchResult = await _clientIdentityService.DOH_DemographicQuery(filter, HttpContext.GetCurrentUser(), processType, notificationOptions);
             //    if (searchResult == null) return NoContent();
             return Ok(searchResult);
+        }
+
+        /// <summary>
+        /// Asynchronously checks if an identity exists based on the provided request data.
+        /// and configured allowed systems with data sharing
+        /// It then returns an appropriate response based on the result.
+        /// </summary>
+        /// <param name="request">The request object containing the identity check details (from the request body)</param>
+        /// <param name="processingOptions"></param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Get identity exists response", typeof(IdentityExistsResponse))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
+        [ServiceFilter(typeof(IPValidationFilter))]
+        [ServiceFilter(typeof(ValidateIdentityFilter))]
+        [HttpPost("exists")]
+        public async Task<IActionResult> IdentityExistsAsync([FromBody] IdentityExistsRequest request, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+
+                var exceptionCustomProperties = new ExceptionCustomProperties
+                {
+                    User = HttpContext.GetCurrentUser(),
+                    Agency = request.Agency,
+                    Role = HttpContext.GetUserRoles(),
+                    FunctionName = nameof(IdentityExistsAsync),
+                    ErrorMessage = String.Join(",", errorMessage),
+                    ErrorCode = "400"
+                };
+                var errorLogItem = new LogItem()
+                {
+                    Name = $"{Models.Logging.Constants.LogPrefix_API}{nameof(IdentityExistsAsync)}-Failed",
+                    TrackingId = request.TrackingId,
+                    Layer = ServiceLayer.API.ToString(),
+                    ExceptionCustomProperties = exceptionCustomProperties
+                };
+
+                _logger.LogCritical(JsonConvert.SerializeObject(errorLogItem));
+
+                return BuildOkObjectResultWith400Error(errorMessage, request.TrackingId);
+            }
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                request.SourceSystem = HttpContext.Items["SourceSystem"]?.ToString();
+            }
+
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+
+            var identityExistsResult = await _clientIdentityService.IdentityExistsAsync(request, HttpContext.GetCurrentUser(), notificationOptions);
+
+            return Ok(identityExistsResult);
         }
 
         /// <summary>

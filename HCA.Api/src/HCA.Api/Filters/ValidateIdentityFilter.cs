@@ -58,7 +58,7 @@ namespace HCA.Api.Filters {
                 CheckAllBasicAttributes();
 
                 if( validationMessages.Count > 0 ) {
-                    trackingId = jsonObject?["Trackingid"]?.ToString();
+                    trackingId = jsonObject?["TrackingId"]?.ToString();
                     var message = $"One or more validation errors occurred. {string.Join('|', validationMessages)}";
 
                     var exceptionCustomProperties = new ExceptionCustomProperties

@@ -58,6 +58,8 @@ public class HcaDbContext : DbContext
 
     public DbSet<OnboardedSystemEntity> OnboardedSystem { get; set; }
 
+    public DbSet<DataShareMappingEntity> DataShareMappings { get; set; }
+
     public DbSet<AppRolesEntity> AppRoles { get; set; }
 
     public DbSet<AppRoleMappingEntity> AppRoleMappings { get; set; }
@@ -110,6 +112,18 @@ public class HcaDbContext : DbContext
              .WithMany(r => r.AppRolesMappings)
              .HasForeignKey(m => m.RoleId)
                  .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DataShareMappingEntity>()
+            .HasOne(d => d.SourceSystem)
+            .WithMany(s => s.SourceSystemMappings)
+            .HasForeignKey(d => d.SourceSystemId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<DataShareMappingEntity>()
+            .HasOne(d => d.AllowedSystem)
+            .WithMany(a => a.AllowedSystemMappings)
+            .HasForeignKey(d => d.AllowedSystemId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<IntReturn>().HasNoKey();
 

@@ -55,4 +55,7 @@ public enum ApiCallType
     
     [StringValue("VE Delete")]
     DOH_VEDelete,
+
+    [StringValue("VE Identity Exists")]
+    VEIdentityExists,
 }

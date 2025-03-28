@@ -29,6 +29,7 @@ public static class Startup
                 .AddScoped<ICustomDataMappingRepository, CustomDataMappingRepository>()
                 .AddScoped<IServiceAccountRepository, ServiceAccountRepository>()
                 .AddScoped<IOnboardedSystemRepository, OnboardedSystemRepository>()
-                .AddScoped<IAppRoleMappingRepository, AppRoleMappingRepository>(); ;
+                .AddScoped<IDataShareMappingRepository, DataShareMappingRepository>()
+                .AddScoped<IAppRoleMappingRepository, AppRoleMappingRepository>();
     }
 }
