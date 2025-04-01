@@ -1,4 +1,7 @@
-﻿namespace HCA.Models.Request.DOH
+﻿
+using System.Text.Json.Serialization;
+
+namespace HCA.Models.Request.DOH
 {
     /// <summary>
     /// IdentityExists request
@@ -27,6 +30,7 @@
         /// <summary>
         /// content of the identity request
         /// </summary>
+        [JsonPropertyName("content")]
         public IdentityExistsRequestContent Content { get; set; }
     }
 
@@ -38,6 +42,7 @@
         /// <summary>
         /// search identity content
         /// </summary>
+        [JsonPropertyName("identity")]
         public dynamic Identity { get; set; }
     }
 }
