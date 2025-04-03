@@ -1015,6 +1015,19 @@ public class ClientIdentityService : IClientIdentityService
                 throw new Exception("Failed to retrieve demographics query result.");
             }
 
+            if(!demographicsQueryResult.Success)
+            {
+                return new IdentityExistsResponse
+                {
+                    TrackingId = trackingId,
+                    AuditId = demographicsQueryResult.AuditId,
+                    Content = demographicsQueryResult.Content,
+                    Success = demographicsQueryResult.Success,
+                    Message = demographicsQueryResult.Message
+
+                };
+            }
+
             bool identityExistsInAllowedSystems = IdentityExists(demographicsQueryResult, allowedSystems);
 
             var identityExistsResponse = new IdentityExistsResponse
