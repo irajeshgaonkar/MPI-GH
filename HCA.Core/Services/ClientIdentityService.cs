@@ -2325,84 +2325,79 @@ public class ClientIdentityService : IClientIdentityService
             {
                 // Source
                 var source = group["source"];
-                if (source != null)
+                if( source != null )
                 {
-                    ((JArray)identity["sources"])?.Add(source);
+                    ((JArray)identity["sources"])?.Add( source );
                 }
 
                 // Names
-                foreach (var item in group["names"] ?? new JArray())
-                {
-                    var name = item["name"];
-                    if (name != null)
-                        names.Add(name);
-                }
+                InsertGroupedItem( names, group, "names", "name" );
 
                 // DOBs
-                foreach (var item in group["datesOfBirth"] ?? new JArray())
+                foreach( var item in group["datesOfBirth"] ?? new JArray() )
                 {
                     var dob = item["dateOfBirth"];
-                    if (dob != null)
-                        dobs.Add(dob);
+                    if( dob != null )
+                        dobs.Add( dob );
                 }
 
                 // SSNs
-                foreach (var item in group["ssns"] ?? new JArray())
+                foreach( var item in group["ssns"] ?? new JArray() )
                 {
                     var ssn = item["ssn"];
-                    if (ssn != null)
-                        ssns.Add(ssn);
+                    if( ssn != null )
+                        ssns.Add( ssn );
                 }
 
                 // Addresses
-                foreach (var item in group["addresses"] ?? new JArray())
+                foreach( var item in group["addresses"] ?? new JArray() )
                 {
                     var addr = item["address"];
-                    if (addr != null)
-                        addresses.Add(addr);
+                    if( addr != null )
+                        addresses.Add( addr );
                 }
 
                 // Genders
-                foreach (var item in group["genders"] ?? new JArray())
+                foreach( var item in group["genders"] ?? new JArray() )
                 {
                     var gender = item["gender"];
-                    if (gender != null)
-                        genders.Add(gender);
+                    if( gender != null )
+                        genders.Add( gender );
                 }
 
                 // Emails
-                foreach (var item in group["emails"] ?? new JArray())
+                foreach( var item in group["emails"] ?? new JArray() )
                 {
                     var email = item["email"];
-                    if (email != null)
-                        emails.Add(email);
+                    if( email != null )
+                        emails.Add( email );
                 }
 
                 // Phone Numbers
-                foreach (var item in group["phoneNumbers"] ?? new JArray())
+                foreach( var item in group["phoneNumbers"] ?? new JArray() )
                 {
                     var phone = item["phoneNumber"];
-                    if (phone != null)
-                        phones.Add(phone);
+                    if( phone != null )
+                        phones.Add( phone );
                 }
 
                 // Dynamic custom.* handling
-                foreach (var property in group.Children<JProperty>())
+                foreach( var property in group.Children<JProperty>() )
                 {
-                    if (property.Name.StartsWith("custom."))
+                    if( property.Name.StartsWith( "custom." ) )
                     {
                         var customArray = property.Value as JArray;
-                        if (customArray != null)
+                        if( customArray != null )
                         {
-                            foreach (var item in customArray)
+                            foreach( var item in customArray )
                             {
                                 var innerValue = item[property.Name];
-                                if (innerValue != null)
+                                if( innerValue != null )
                                 {
-                                    if (!customFields.ContainsKey(property.Name))
+                                    if( !customFields.ContainsKey( property.Name ) )
                                         customFields[property.Name] = new JArray();
 
-                                    customFields[property.Name].Add(innerValue);
+                                    customFields[property.Name].Add( innerValue );
                                 }
                             }
                         }
@@ -2436,6 +2431,18 @@ public class ClientIdentityService : IClientIdentityService
             };
 
             return defaultResponse;
+        }
+    }
+
+    private static void InsertGroupedItem( JArray names, JToken group, string groupName, string itemName )
+    {
+        foreach( var item in group[groupName] ?? new JArray() )
+        {
+            var name = item[itemName];
+            if( name != null )
+            {
+                names.Add( name );
+            }
         }
     }
 
