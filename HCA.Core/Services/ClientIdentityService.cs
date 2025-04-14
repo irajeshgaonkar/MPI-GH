@@ -24,6 +24,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Linq;
 
 namespace HCA.Core.Services;
 
@@ -2252,13 +2253,12 @@ public class ClientIdentityService : IClientIdentityService
         if(jsonObject !=null && jsonObject.Count > 0 && identityGroupedBySource != null)
         {
             JArray sources = [];
-            foreach (var source in identityGroupedBySource)
+            foreach( var source in identityGroupedBySource.Where(
+                source => IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), filter.SourceSystem ) ) ) 
             {
-                if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
-                {
-                    sources.Add(source);
-                }
+                sources.Add( source );
             }
+
             if (sources != null && sources.Count > 0)
             {
                 jsonObject["identityGroupedBySource"] = sources;
