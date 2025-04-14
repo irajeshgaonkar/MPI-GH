@@ -24,7 +24,6 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using System.Linq;
 
 namespace HCA.Core.Services;
 
@@ -224,8 +223,8 @@ public class ClientIdentityService : IClientIdentityService
                 }
             }
 
-            string trackingId = request.TrackingId
-                                ?? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost);
+            string trackingId = string.IsNullOrWhiteSpace(request.TrackingId)
+                                ? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost): request.TrackingId;
 
             DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
             {
@@ -1893,18 +1892,15 @@ public class ClientIdentityService : IClientIdentityService
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
-        if(request.Content.ResponseIdentityFormatNames == null || request.Content.ResponseIdentityFormatNames.Length == 0
-            || request.Content.ResponseIdentityFormatNames.Any(view => string.IsNullOrWhiteSpace(view)))
-        {
-            request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
-        }
+        // Always send the verato request with the GROUP_BY_SOURCE response identity format name
+        DOH_PostIdentityRequestContent content = new(request.Content.Identity) {ResponseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
 
         var linkIdentityRequest = new DOH_PostClientIdentityRequest(userRequestEntity.TrackingId)
         {
             protectedPopulation = request.protectedPopulation,
             SourceSystem = request.SourceSystem,
             Agency = request.Agency,
-            Content = request.Content,
+            Content = content,
             Caller = ServiceLayer.API.ToString()
         };
 
@@ -1941,49 +1937,39 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         JObject jsonObjectResponse = JObject.Parse(responseContent);
-
+        JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
         JArray newArray = new();
 
-        if( request.Content.ResponseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
+        if (jsonObjectResponse != null && jsonObjectResponse.Count > 0 && identityGroupedBySource != null)
         {
-            JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
             JArray sources = new();
-            // TODO: null checks/validation/strong typing
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            foreach( var source in identityGroupedBySource )
+
+            foreach (var source in identityGroupedBySource)
             {
-                if (IsMatchingSourceSystem(source["source"]["name"]?.ToString(), request.SourceSystem))
+                if (source != null && IsMatchingSourceSystem(source["source"]["name"]?.ToString(), request.SourceSystem))
                 {
-                    sources.Add( source );
+                    sources.Add(source);
                 }
             }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-            if( sources != null && sources.Count > 0 )
+            if (sources != null && sources.Count > 0)
             {
                 jsonObjectResponse["identityGroupedBySource"] = sources;
-                newArray.Add( jsonObjectResponse );
-            }
-        }
-        else
-        {
-            // TODO: null checks/validation/strong typing
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            JArray? SourceArray = jsonObjectResponse["linkIdentity"]["sources"] as JArray;
-            JArray sources = new();
-            foreach( var source in SourceArray )
-            {
-                if( IsMatchingSourceSystem(source["name"]?.ToString(), request.SourceSystem ))
+
+                if (request.Content.ResponseIdentityFormatNames[0].ToString().Equals("DEFAULT", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    sources.Add( source );
+
+                    jsonObjectResponse["linkIdentity"] = TransformGroupedToDefault(jsonObjectResponse);
+                    jsonObjectResponse.Remove("identityGroupedBySource");
+
                 }
             }
-            if( sources != null && sources.Count > 0 )
+            else
             {
-                jsonObjectResponse["linkIdentity"]["sources"] = sources;
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                newArray.Add( jsonObjectResponse );
+                jsonObjectResponse = null;
             }
+
         }
+
         response.Content = ConvertJObjectToJsonElement( jsonObjectResponse );
     }
 
