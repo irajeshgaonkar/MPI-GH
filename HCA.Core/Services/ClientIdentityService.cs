@@ -2182,12 +2182,15 @@ public class ClientIdentityService : IClientIdentityService
     // TODO: use inheritance to dedup filter/sourceSystem logic
     private async Task<dynamic?> DOH_DemographicQuery( UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter, bool filterQueryResponse = true )
     {
+        // Always send the verato request with the GROUP_BY_SOURCE response identity format name
+        Content content = new Content() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
+
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
         var demographicSearhRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content,
+            Content = content,
             Caller = ServiceLayer.API.ToString()
         };
 
@@ -2243,68 +2246,197 @@ public class ClientIdentityService : IClientIdentityService
 
     private void FilterQueryResponse( DOH_DemographicQueryRequest filter, DOH_DemographicQueryClientIdentityResponse? response )
     {
-        JObject jsonObject = JObject.Parse(response.Content.ToString());
+        JObject? jsonObject = JObject.Parse(response?.Content.ToString());
         JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
 
-        JArray newArray = new();
-
-        if(jsonObject !=null && jsonObject.Count > 0 )
+        if(jsonObject !=null && jsonObject.Count > 0 && identityGroupedBySource != null)
         {
-            if (filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE")
+            JArray sources = [];
+            foreach (var source in identityGroupedBySource)
             {
-                JArray sources = new();
-                foreach (var source in identityGroupedBySource)
+                if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
                 {
-                    if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
-                    {
-                        sources.Add(source);
-                    }
+                    sources.Add(source);
                 }
-                if (sources != null && sources.Count > 0)
+            }
+            if (sources != null && sources.Count > 0)
+            {
+                jsonObject["identityGroupedBySource"] = sources;
+
+                if (filter.content.responseIdentityFormatNames[0].ToString().Equals("DEFAULT", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    jsonObject["identityGroupedBySource"] = sources;
-                    newArray.Add(jsonObject);
-                }
-                else
-                {
-                    jsonObject = null;
-                    newArray.Add(jsonObject);
+
+                    jsonObject["identity"] = TransformGroupedToDefault(jsonObject);
+                    jsonObject.Remove("identityGroupedBySource");
 
                 }
-
-
             }
             else
             {
-                JArray SourceArray = (JArray)jsonObject["identity"]["sources"];
-                JArray sources = new();
-                foreach (var source in SourceArray)
-                {
-                    if (IsMatchingSourceSystem(source["name"]?.ToString(), filter.SourceSystem))
-                    {
-                        sources.Add(source);
-                    }
-                }
-                if (sources != null && sources.Count > 0)
-                {
-                    jsonObject["identity"]["sources"] = sources;
-                    newArray.Add(jsonObject);
-                }
-                else
-                {
-                    jsonObject = null;
-                    newArray.Add(jsonObject);
-
-                }
+                jsonObject = null;
             }
         }
-        
+
         if(jsonObject == null || jsonObject.Count < 1)
         {
             response.Message = "No identity found.";
         }
 
         response.Content = ConvertJObjectToJsonElement(jsonObject);
+    }
+
+    /// <summary>
+    /// Transform the grouped response to the default format.
+    /// </summary>
+    /// <param name="groupedResponse"></param>
+    /// <returns>identity response in default format</returns>
+    private static JObject TransformGroupedToDefault(JObject groupedResponse)
+    {
+        var identityGroups = groupedResponse["identityGroupedBySource"] as JArray;
+
+        if(identityGroups == null || identityGroups.Count == 0)
+        {
+            return new JObject
+            {
+                ["content"] = null
+            };
+        }
+        else
+        {
+            var identity = new JObject
+            {
+                ["linkId"] = groupedResponse["linkId"],
+                ["sources"] = new JArray()
+            };
+
+            //Core attributes
+            var names = new JArray();
+            var dobs = new JArray();
+            var ssns = new JArray();
+            var addresses = new JArray();
+            var genders = new JArray();
+            var emails = new JArray();
+            var phones = new JArray();
+
+            //custom attributes
+            var customFields = new Dictionary<string, JArray>();
+
+            foreach (var group in identityGroups)
+            {
+                // Source
+                var source = group["source"];
+                if (source != null)
+                {
+                    ((JArray)identity["sources"])?.Add(source);
+                }
+
+                // Names
+                foreach (var item in group["names"] ?? new JArray())
+                {
+                    var name = item["name"];
+                    if (name != null)
+                        names.Add(name);
+                }
+
+                // DOBs
+                foreach (var item in group["datesOfBirth"] ?? new JArray())
+                {
+                    var dob = item["dateOfBirth"];
+                    if (dob != null)
+                        dobs.Add(dob);
+                }
+
+                // SSNs
+                foreach (var item in group["ssns"] ?? new JArray())
+                {
+                    var ssn = item["ssn"];
+                    if (ssn != null)
+                        ssns.Add(ssn);
+                }
+
+                // Addresses
+                foreach (var item in group["addresses"] ?? new JArray())
+                {
+                    var addr = item["address"];
+                    if (addr != null)
+                        addresses.Add(addr);
+                }
+
+                // Genders
+                foreach (var item in group["genders"] ?? new JArray())
+                {
+                    var gender = item["gender"];
+                    if (gender != null)
+                        genders.Add(gender);
+                }
+
+                // Emails
+                foreach (var item in group["emails"] ?? new JArray())
+                {
+                    var email = item["email"];
+                    if (email != null)
+                        emails.Add(email);
+                }
+
+                // Phone Numbers
+                foreach (var item in group["phoneNumbers"] ?? new JArray())
+                {
+                    var phone = item["phoneNumber"];
+                    if (phone != null)
+                        phones.Add(phone);
+                }
+
+                // Dynamic custom.* handling
+                foreach (var property in group.Children<JProperty>())
+                {
+                    if (property.Name.StartsWith("custom."))
+                    {
+                        var customArray = property.Value as JArray;
+                        if (customArray != null)
+                        {
+                            foreach (var item in customArray)
+                            {
+                                var innerValue = item[property.Name];
+                                if (innerValue != null)
+                                {
+                                    if (!customFields.ContainsKey(property.Name))
+                                        customFields[property.Name] = new JArray();
+
+                                    customFields[property.Name].Add(innerValue);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add all to identity
+            identity["names"] = names;
+            identity["datesOfBirth"] = dobs;
+            identity["ssns"] = ssns;
+            identity["addresses"] = addresses;
+            identity["genders"] = genders;
+            identity["emails"] = emails;
+            identity["phoneNumbers"] = phones;
+
+            // Assign custom fields
+            foreach (var custom in customFields)
+            {
+                identity[custom.Key] = custom.Value;
+            }
+
+            // Build final object
+            var defaultResponse = new JObject
+            {
+                ["content"] = new JObject
+                {
+                    ["linkId"] = groupedResponse["linkId"],
+                    ["identity"] = identity
+                }
+            };
+
+            return defaultResponse;
+        }
     }
 
     private async Task<UnLinkIdentitiesResponseContent?> UnLinkIdentities( UserRequestEntity userRequestEntity, UnLinkingSources unLinkingSources )
