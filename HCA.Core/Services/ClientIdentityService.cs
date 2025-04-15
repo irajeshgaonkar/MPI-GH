@@ -2365,45 +2365,25 @@ public class ClientIdentityService : IClientIdentityService
             InsertGroupedItem( names, group, "names", "name" );
 
             //DOBs
-            InsertGroupedItem(dobs, group, "datesOfBirth", "dateOfBirth");
+            InsertGroupedItem( dobs, group, "datesOfBirth", "dateOfBirth" );
 
             //SSNs
-            InsertGroupedItem(ssns, group, "ssns", "ssn");
+            InsertGroupedItem( ssns, group, "ssns", "ssn" );
 
             //Addresses
-            InsertGroupedItem(addresses, group, "addresses", "address");
+            InsertGroupedItem( addresses, group, "addresses", "address" );
 
             //Genders
-            InsertGroupedItem(genders, group, "genders", "gender");
+            InsertGroupedItem( genders, group, "genders", "gender" );
 
             //Emails
-            InsertGroupedItem(emails, group, "emails", "email");
+            InsertGroupedItem( emails, group, "emails", "email" );
 
             //Phone Numbers
-            InsertGroupedItem(phones, group, "phoneNumbers", "phoneNumber");
+            InsertGroupedItem( phones, group, "phoneNumbers", "phoneNumber" );
 
             // Dynamic custom.* handling
-            foreach ( var property in group.Children<JProperty>() )
-            {
-                if( property.Name.StartsWith( "custom." ) )
-                {
-                    var customArray = property.Value as JArray;
-                    if( customArray != null )
-                    {
-                        foreach( var item in customArray )
-                        {
-                            var innerValue = item[property.Name];
-                            if( innerValue != null )
-                            {
-                                if( !customFields.ContainsKey( property.Name ) )
-                                    customFields[property.Name] = new JArray();
-
-                                customFields[property.Name].Add( innerValue );
-                            }
-                        }
-                    }
-                }
-            }
+            InsertCustomFields( customFields, group );
         }
 
         // Add all to identity
@@ -2441,6 +2421,31 @@ public class ClientIdentityService : IClientIdentityService
                     ["identity"] = identity
                 }
             };
+        }
+    }
+
+    private static void InsertCustomFields( Dictionary<string, JArray> customFields, JToken group )
+    {
+        foreach( var property in group.Children<JProperty>() )
+        {
+            if( property.Name.StartsWith( "custom." ) )
+            {
+                var customArray = property.Value as JArray;
+                if( customArray != null )
+                {
+                    foreach( var item in customArray )
+                    {
+                        var innerValue = item[property.Name];
+                        if( innerValue != null )
+                        {
+                            if( !customFields.ContainsKey( property.Name ) )
+                                customFields[property.Name] = new JArray();
+
+                            customFields[property.Name].Add( innerValue );
+                        }
+                    }
+                }
+            }
         }
     }
 
