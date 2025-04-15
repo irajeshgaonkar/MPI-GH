@@ -2187,12 +2187,12 @@ public class ClientIdentityService : IClientIdentityService
     private async Task<DemographicQueryResponseContent?> DemographicQuery( UserRequestEntity userRequestEntity, Identity filter )
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
-        var demographicSearhRequest = new DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
+        var demographicSearchRequest = new DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
         {
             Content = filter
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+        var response = await _clientIdentityRequestExecutor.Execute<DemographicQueryClientIdentityResponse>(demographicSearchRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
         // Determine request status and message based on the response
