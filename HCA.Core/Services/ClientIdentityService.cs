@@ -2053,11 +2053,15 @@ public class ClientIdentityService : IClientIdentityService
     private async Task<dynamic?> DOH_DemographicSearch( UserRequestEntity userRequestEntity, DOH_DemographicsSearchRequest filter )
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+
+        // Always send the verato request with the GROUP_BY_SOURCE response identity format name
+        ContentSearch content = new() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
+
         var demographicSearhRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
-            Content = filter.content,
+            Content = content,
             Caller = ServiceLayer.API.ToString()
         };
 
@@ -2118,23 +2122,43 @@ public class ClientIdentityService : IClientIdentityService
     }
 
     // TODO: check if shared logic can be extracted
-    private static void FilterSearchResultsDefault( DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item )
+    private static void FilterSearchResultsDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
     {
-        JArray identityGroupedBySourceArray = (JArray)item["identity"]["sources"];
+
+        JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
         JArray sources = new();
-        foreach( var source in identityGroupedBySourceArray )
+        foreach (var source in identityGroupedBySourceArray)
         {
-            if( IsMatchingSourceSystem(source["name"]?.ToString(), filter.SourceSystem))
+            if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
             {
-                sources.Add( source );
+                sources.Add(source);
             }
         }
-        if( sources != null && sources.Count > 0 )
+        if (sources != null && sources.Count > 0)
         {
-            item["identity"]["sources"] = sources;
-            filteredResults.Add( item );
+            var identityJObject = new JObject
+            {
+                ["identityGroupedBySource"] = sources,
+                ["linkId"] = item["linkId"]
+            };
+
+            item["identityGroupedBySource"]?.Replace(TransformGroupedToDefault(identityJObject, true));
+
+            var grouped = item["identityGroupedBySource"]?["identity"];
+            if (grouped != null)
+            {
+                // Promote identity
+                item["identity"] = grouped.DeepClone();
+            }
+
+            filteredResults.Add(item);
+            foreach (var result in filteredResults.OfType<JObject>())
+            {
+                result.Remove("identityGroupedBySource");
+            }
         }
     }
+
 
     private static void FilterSearchResultsGroupBySource( DOH_DemographicsSearchRequest filter, JArray newArray, JToken item )
     {
@@ -2289,7 +2313,7 @@ public class ClientIdentityService : IClientIdentityService
     /// </summary>
     /// <param name="groupedResponse"></param>
     /// <returns>identity response in default format</returns>
-    private static JObject TransformGroupedToDefault(JObject groupedResponse)
+    private static JObject TransformGroupedToDefault(JObject groupedResponse, bool isTransformationForSearch = false)
     {
         var identityGroups = groupedResponse["identityGroupedBySource"] as JArray;
 
@@ -2332,56 +2356,26 @@ public class ClientIdentityService : IClientIdentityService
                 // Names
                 InsertGroupedItem( names, group, "names", "name" );
 
-                // DOBs
-                foreach( var item in group["datesOfBirth"] ?? new JArray() )
-                {
-                    var dob = item["dateOfBirth"];
-                    if( dob != null )
-                        dobs.Add( dob );
-                }
+                //DOBs
+                InsertGroupedItem(dobs, group, "datesOfBirth", "dateOfBirth");
 
-                // SSNs
-                foreach( var item in group["ssns"] ?? new JArray() )
-                {
-                    var ssn = item["ssn"];
-                    if( ssn != null )
-                        ssns.Add( ssn );
-                }
+                //SSNs
+                InsertGroupedItem(ssns, group, "ssns", "ssn");
 
-                // Addresses
-                foreach( var item in group["addresses"] ?? new JArray() )
-                {
-                    var addr = item["address"];
-                    if( addr != null )
-                        addresses.Add( addr );
-                }
+                //Addresses
+                InsertGroupedItem(addresses, group, "addresses", "address");
 
-                // Genders
-                foreach( var item in group["genders"] ?? new JArray() )
-                {
-                    var gender = item["gender"];
-                    if( gender != null )
-                        genders.Add( gender );
-                }
+                //Genders
+                InsertGroupedItem(genders, group, "genders", "gender");
 
-                // Emails
-                foreach( var item in group["emails"] ?? new JArray() )
-                {
-                    var email = item["email"];
-                    if( email != null )
-                        emails.Add( email );
-                }
+                //Emails
+                InsertGroupedItem(emails, group, "emails", "email");
 
-                // Phone Numbers
-                foreach( var item in group["phoneNumbers"] ?? new JArray() )
-                {
-                    var phone = item["phoneNumber"];
-                    if( phone != null )
-                        phones.Add( phone );
-                }
+                //Phone Numbers
+                InsertGroupedItem(phones, group, "phoneNumbers", "phoneNumber");
 
                 // Dynamic custom.* handling
-                foreach( var property in group.Children<JProperty>() )
+                foreach ( var property in group.Children<JProperty>() )
                 {
                     if( property.Name.StartsWith( "custom." ) )
                     {
@@ -2419,17 +2413,28 @@ public class ClientIdentityService : IClientIdentityService
                 identity[custom.Key] = custom.Value;
             }
 
-            // Build final object
-            var defaultResponse = new JObject
+            if (isTransformationForSearch)
             {
-                ["content"] = new JObject
+                return new JObject
                 {
+
                     ["linkId"] = groupedResponse["linkId"],
                     ["identity"] = identity
-                }
-            };
 
-            return defaultResponse;
+                };
+            }
+            else
+            {
+                return new JObject
+                {
+                    ["content"] = new JObject
+                    {
+                        ["linkId"] = groupedResponse["linkId"],
+                        ["identity"] = identity
+                    }
+                };
+            }
+
         }
     }
 
