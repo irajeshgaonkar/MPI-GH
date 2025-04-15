@@ -2107,6 +2107,11 @@ public class ClientIdentityService : IClientIdentityService
             {
                 FilterSearchResultDefault( filter, filteredResults, item );
             }
+
+            foreach( var result in filteredResults.OfType<JObject>() )
+            {
+                result.Remove( "identityGroupedBySource" );
+            }
         }
 
         if (filteredResults == null || filteredResults.Count < 1)
@@ -2121,7 +2126,6 @@ public class ClientIdentityService : IClientIdentityService
     // TODO: check if shared logic can be extracted
     private static void FilterSearchResultDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
     {
-
         JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
         JArray sources = new();
         foreach (var source in identityGroupedBySourceArray)
@@ -2149,10 +2153,6 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             filteredResults.Add(item);
-            foreach (var result in filteredResults.OfType<JObject>())
-            {
-                result.Remove("identityGroupedBySource");
-            }
         }
     }
 
