@@ -1097,13 +1097,13 @@ public class ClientIdentityService : IClientIdentityService
         {
             return false;
         }
-        if( demographicsQueryContent["identity"]?["sources"] is not JArray SourceArray )
+        if( demographicsQueryContent["identityGroupedBySource"] is not JArray SourceArray )
         {
             return false;
         }
         foreach( var source in SourceArray ) 
         {
-            if( allowedSystems.Any( allowedSystem => allowedSystem.AllowedSystemName.Equals( source["name"]?.ToString(), StringComparison.OrdinalIgnoreCase ) ) ) 
+            if( allowedSystems.Any( allowedSystem => allowedSystem.AllowedSystemName.Equals( source["source"]?["name"]?.ToString(), StringComparison.OrdinalIgnoreCase ) ) )
             {
                 return true;
             }
