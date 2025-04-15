@@ -1940,50 +1940,46 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private void FilterPostResponse( DOH_PostClientIdentityRequest request, DOH_PostClientIdentityResponse? response )
+    private void FilterPostResponse( DOH_PostClientIdentityRequest request, DOH_PostClientIdentityResponse response )
     {
         string responseContent = Convert.ToString(response.Content);
 
         if (string.IsNullOrEmpty(responseContent))
         {
-            response.Content = null;
+            response.Content = new JsonElement();
             return;
         }
 
         JObject jsonObjectResponse = JObject.Parse(responseContent);
-        JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
 
-        if (jsonObjectResponse?.Count > 0 && identityGroupedBySource != null)
+        if( jsonObjectResponse.Count > 0 && jsonObjectResponse["identityGroupedBySource"] is JArray identityGroupedBySource )
         {
-            JArray sources = new();
-
-            foreach (var source in identityGroupedBySource)
+            JArray sources = [];
+            foreach( var source in identityGroupedBySource )
             {
-                if (source != null && IsMatchingSourceSystem(source["source"]["name"]?.ToString(), request.SourceSystem))
+                if( IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), request.SourceSystem ) )
                 {
-                    sources.Add(source);
+                    sources.Add( source );
                 }
             }
-            if (sources?.Count > 0)
+
+            if( sources.Count > 0 )
             {
                 jsonObjectResponse["identityGroupedBySource"] = sources;
 
-                if (request.Content.ResponseIdentityFormatNames[0].ToString().Equals("DEFAULT", StringComparison.CurrentCultureIgnoreCase))
+                if( request.Content.ResponseIdentityFormatNames[0].ToString().Equals( "DEFAULT", StringComparison.CurrentCultureIgnoreCase ) )
                 {
-
-                    jsonObjectResponse["linkIdentity"] = TransformGroupedToDefault(jsonObjectResponse)["content"]?["identity"];
-                    jsonObjectResponse.Remove("identityGroupedBySource");
-
+                    jsonObjectResponse["linkIdentity"] = TransformGroupedToDefault( jsonObjectResponse )["content"]?["identity"];
+                    jsonObjectResponse.Remove( "identityGroupedBySource" );
                 }
             }
             else
             {
-                jsonObjectResponse = null;
+                jsonObjectResponse = [];
             }
-
         }
 
-        response.Content = ConvertJObjectToJsonElement( jsonObjectResponse );
+        response.Content = ConvertJObjectToJsonElement( jsonObjectResponse ) ?? new();
     }
 
     private static bool IsMatchingSourceSystem(string? sourceSystemFromResponse, string? sourceSystemFromRequest)
