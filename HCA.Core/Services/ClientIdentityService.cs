@@ -1952,7 +1952,6 @@ public class ClientIdentityService : IClientIdentityService
 
         JObject jsonObjectResponse = JObject.Parse(responseContent);
         JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
-        JArray newArray = new();
 
         if (jsonObjectResponse?.Count > 0 && identityGroupedBySource != null)
         {
