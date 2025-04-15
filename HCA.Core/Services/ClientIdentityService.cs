@@ -1953,7 +1953,7 @@ public class ClientIdentityService : IClientIdentityService
         JArray? identityGroupedBySource = jsonObjectResponse["identityGroupedBySource"] as JArray;
         JArray newArray = new();
 
-        if (jsonObjectResponse != null && jsonObjectResponse.Count > 0 && identityGroupedBySource != null)
+        if (jsonObjectResponse?.Count > 0 && identityGroupedBySource != null)
         {
             JArray sources = new();
 
@@ -1964,7 +1964,7 @@ public class ClientIdentityService : IClientIdentityService
                     sources.Add(source);
                 }
             }
-            if (sources != null && sources.Count > 0)
+            if (sources?.Count > 0)
             {
                 jsonObjectResponse["identityGroupedBySource"] = sources;
 
