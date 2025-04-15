@@ -2326,124 +2326,121 @@ public class ClientIdentityService : IClientIdentityService
     {
         var identityGroups = groupedResponse["identityGroupedBySource"] as JArray;
 
-        if(identityGroups == null || identityGroups.Count == 0)
+        if( identityGroups?.Count == 0)
         {
             return new JObject
             {
                 ["content"] = null
             };
         }
-        else
+
+        var identity = new JObject
         {
-            var identity = new JObject
+            ["linkId"] = groupedResponse["linkId"],
+            ["sources"] = new JArray()
+        };
+
+        //Core attributes
+        var names = new JArray();
+        var dobs = new JArray();
+        var ssns = new JArray();
+        var addresses = new JArray();
+        var genders = new JArray();
+        var emails = new JArray();
+        var phones = new JArray();
+
+        //custom attributes
+        var customFields = new Dictionary<string, JArray>();
+
+        foreach (var group in identityGroups)
+        {
+            // Source
+            var source = group["source"];
+            if( source != null )
             {
-                ["linkId"] = groupedResponse["linkId"],
-                ["sources"] = new JArray()
-            };
+                ((JArray)identity["sources"])?.Add( source );
+            }
 
-            //Core attributes
-            var names = new JArray();
-            var dobs = new JArray();
-            var ssns = new JArray();
-            var addresses = new JArray();
-            var genders = new JArray();
-            var emails = new JArray();
-            var phones = new JArray();
+            // Names
+            InsertGroupedItem( names, group, "names", "name" );
 
-            //custom attributes
-            var customFields = new Dictionary<string, JArray>();
+            //DOBs
+            InsertGroupedItem(dobs, group, "datesOfBirth", "dateOfBirth");
 
-            foreach (var group in identityGroups)
+            //SSNs
+            InsertGroupedItem(ssns, group, "ssns", "ssn");
+
+            //Addresses
+            InsertGroupedItem(addresses, group, "addresses", "address");
+
+            //Genders
+            InsertGroupedItem(genders, group, "genders", "gender");
+
+            //Emails
+            InsertGroupedItem(emails, group, "emails", "email");
+
+            //Phone Numbers
+            InsertGroupedItem(phones, group, "phoneNumbers", "phoneNumber");
+
+            // Dynamic custom.* handling
+            foreach ( var property in group.Children<JProperty>() )
             {
-                // Source
-                var source = group["source"];
-                if( source != null )
+                if( property.Name.StartsWith( "custom." ) )
                 {
-                    ((JArray)identity["sources"])?.Add( source );
-                }
-
-                // Names
-                InsertGroupedItem( names, group, "names", "name" );
-
-                //DOBs
-                InsertGroupedItem(dobs, group, "datesOfBirth", "dateOfBirth");
-
-                //SSNs
-                InsertGroupedItem(ssns, group, "ssns", "ssn");
-
-                //Addresses
-                InsertGroupedItem(addresses, group, "addresses", "address");
-
-                //Genders
-                InsertGroupedItem(genders, group, "genders", "gender");
-
-                //Emails
-                InsertGroupedItem(emails, group, "emails", "email");
-
-                //Phone Numbers
-                InsertGroupedItem(phones, group, "phoneNumbers", "phoneNumber");
-
-                // Dynamic custom.* handling
-                foreach ( var property in group.Children<JProperty>() )
-                {
-                    if( property.Name.StartsWith( "custom." ) )
+                    var customArray = property.Value as JArray;
+                    if( customArray != null )
                     {
-                        var customArray = property.Value as JArray;
-                        if( customArray != null )
+                        foreach( var item in customArray )
                         {
-                            foreach( var item in customArray )
+                            var innerValue = item[property.Name];
+                            if( innerValue != null )
                             {
-                                var innerValue = item[property.Name];
-                                if( innerValue != null )
-                                {
-                                    if( !customFields.ContainsKey( property.Name ) )
-                                        customFields[property.Name] = new JArray();
+                                if( !customFields.ContainsKey( property.Name ) )
+                                    customFields[property.Name] = new JArray();
 
-                                    customFields[property.Name].Add( innerValue );
-                                }
+                                customFields[property.Name].Add( innerValue );
                             }
                         }
                     }
                 }
             }
+        }
 
-            // Add all to identity
-            identity["names"] = names;
-            identity["datesOfBirth"] = dobs;
-            identity["ssns"] = ssns;
-            identity["addresses"] = addresses;
-            identity["genders"] = genders;
-            identity["emails"] = emails;
-            identity["phoneNumbers"] = phones;
+        // Add all to identity
+        identity["names"] = names;
+        identity["datesOfBirth"] = dobs;
+        identity["ssns"] = ssns;
+        identity["addresses"] = addresses;
+        identity["genders"] = genders;
+        identity["emails"] = emails;
+        identity["phoneNumbers"] = phones;
 
-            // Assign custom fields
-            foreach (var custom in customFields)
+        // Assign custom fields
+        foreach (var custom in customFields)
+        {
+            identity[custom.Key] = custom.Value;
+        }
+
+        if (isTransformationForSearch)
+        {
+            return new JObject
             {
-                identity[custom.Key] = custom.Value;
-            }
 
-            if (isTransformationForSearch)
+                ["linkId"] = groupedResponse["linkId"],
+                ["identity"] = identity
+
+            };
+        }
+        else
+        {
+            return new JObject
             {
-                return new JObject
+                ["content"] = new JObject
                 {
-
                     ["linkId"] = groupedResponse["linkId"],
                     ["identity"] = identity
-
-                };
-            }
-            else
-            {
-                return new JObject
-                {
-                    ["content"] = new JObject
-                    {
-                        ["linkId"] = groupedResponse["linkId"],
-                        ["identity"] = identity
-                    }
-                };
-            }
-
+                }
+            };
         }
     }
 
