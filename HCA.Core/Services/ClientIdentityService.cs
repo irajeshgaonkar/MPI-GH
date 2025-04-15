@@ -2098,7 +2098,7 @@ public class ClientIdentityService : IClientIdentityService
         JArray searchResults = (JArray)jsonObject["searchResults"];
         if( searchResults == null ) { return; }
 
-        JArray filteredResults = new();
+        JArray filteredResults = [];
 
         if( filter.content.responseIdentityFormatNames[0].ToString().ToUpper() == "GROUP_BY_SOURCE" )
         {
@@ -2126,13 +2126,13 @@ public class ClientIdentityService : IClientIdentityService
             }
         }
 
-        if (filteredResults == null || filteredResults.Count < 1)
+        if( filteredResults.Count < 1 )
         {
             response.Message = "No identity found.";
         }
 
         jsonObject["searchResults"] = filteredResults;
-        response.Content = ConvertJObjectToJsonElement(jsonObject);
+        response.Content = ConvertJObjectToJsonElement(jsonObject) ?? new();
     }
 
     private static JArray GetSearchResultFilteredSources( string? sourceSystemName, JToken searchResult )
