@@ -2244,9 +2244,9 @@ public class ClientIdentityService : IClientIdentityService
         return response;
     }
 
-    private void FilterQueryResponse( DOH_DemographicQueryRequest filter, DOH_DemographicQueryClientIdentityResponse? response )
+    private void FilterQueryResponse( DOH_DemographicQueryRequest filter, DOH_DemographicQueryClientIdentityResponse response )
     {
-        JObject? jsonObject = JObject.Parse(response?.Content.ToString());
+        JObject? jsonObject = JObject.Parse(response.Content.ToString());
         JArray identityGroupedBySource = (JArray)jsonObject["identityGroupedBySource"];
 
         if(jsonObject !=null && jsonObject.Count > 0 && identityGroupedBySource != null)
