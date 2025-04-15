@@ -2098,14 +2098,20 @@ public class ClientIdentityService : IClientIdentityService
         {
             foreach( var item in searchResults )
             {
-                FilterSearchResultGroupBySource( filter, filteredResults, item );
+                if( FilterSearchResultGroupBySource( filter.SourceSystem, item ) is JToken filteredResult )
+                {
+                    filteredResults.Add( filteredResult );
+                }
             }
         }
         else
         {
             foreach( var item in searchResults )
             {
-                FilterSearchResultDefault( filter, filteredResults, item );
+                if ( FilterAndTransformSearchResultDefault( filter.SourceSystem, item ) is JToken filteredResult )
+                {
+                    filteredResults.Add( filteredResult );
+                }
             }
 
             foreach( var result in filteredResults.OfType<JObject>() )
@@ -2123,56 +2129,52 @@ public class ClientIdentityService : IClientIdentityService
         response.Content = ConvertJObjectToJsonElement(jsonObject);
     }
 
-    // TODO: check if shared logic can be extracted
-    private static void FilterSearchResultDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
+    private static JArray GetSearchResultFilteredSources( string? sourceSystemName, JToken searchResult )
     {
-        JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
-        JArray sources = new();
-        foreach (var source in identityGroupedBySourceArray)
-        {
-            if (IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
-            {
-                sources.Add(source);
-            }
-        }
-        if (sources != null && sources.Count > 0)
-        {
-            var identityJObject = new JObject
-            {
-                ["identityGroupedBySource"] = sources,
-                ["linkId"] = item["linkId"]
-            };
+        if( searchResult["identityGroupedBySource"] is not JArray identityGroupedBySourceArray ) { return []; }
 
-            item["identityGroupedBySource"]?.Replace(TransformGroupedToDefault(identityJObject, true));
-
-            var grouped = item["identityGroupedBySource"]?["identity"];
-            if (grouped != null)
-            {
-                // Promote identity
-                item["identity"] = grouped.DeepClone();
-            }
-
-            filteredResults.Add(item);
-        }
+        return (JArray)identityGroupedBySourceArray.Where(
+            source => IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), sourceSystemName )) ;
     }
 
-
-    private static void FilterSearchResultGroupBySource( DOH_DemographicsSearchRequest filter, JArray newArray, JToken item )
+    // TODO: check if shared logic can be extracted
+    private static JToken? FilterAndTransformSearchResultDefault(string? sourceSystemName, JToken searchResult)
     {
-        JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
-        JArray sources = new();
-        foreach( var source in identityGroupedBySourceArray )
+        JArray sources = GetSearchResultFilteredSources(sourceSystemName, searchResult);
+        
+        if( sources.Count < 1 )
         {
-            if( IsMatchingSourceSystem(source["source"]?["name"]?.ToString(), filter.SourceSystem))
-            {
-                sources.Add( source );
-            }
+            return null;
         }
-        if( sources != null && sources.Count > 0 )
+
+        var identityJObject = new JObject
         {
-            item["identityGroupedBySource"] = sources;
-            newArray.Add( item );
+            ["identityGroupedBySource"] = sources,
+            ["linkId"] = searchResult["linkId"]
+        };
+
+        searchResult["identityGroupedBySource"]?.Replace( TransformGroupedToDefault( identityJObject, true ) );
+
+        var grouped = searchResult["identityGroupedBySource"]?["identity"];
+        if( grouped != null )
+        {
+            // Promote identity
+            searchResult["identity"] = grouped.DeepClone();
         }
+
+        return searchResult;
+    }
+
+    private static JToken? FilterSearchResultGroupBySource( string? sourceSystemName, JToken searchResult )
+    {
+        JArray sources = GetSearchResultFilteredSources(sourceSystemName, searchResult);
+
+        if( sources.Count < 1 )
+        {
+            return null;
+        }
+        searchResult["identityGroupedBySource"] = sources;
+        return searchResult;
     }
 
     private async Task<DemographicQueryResponseContent?> DemographicQuery( UserRequestEntity userRequestEntity, Identity filter )
