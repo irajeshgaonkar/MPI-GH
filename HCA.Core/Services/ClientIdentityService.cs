@@ -203,28 +203,13 @@ public class ClientIdentityService : IClientIdentityService
         {
             string strIdentities = request.Content.Identity.ToString();
             Identity? identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-
-            //If there are no sources in Identity request
-            //Or Sources are missing Name, we will not be able to match the source system
-            if (identity?.Sources.Count == 0)
+            if( ValidateIdentity( request, identity ) is object errorResponse )
             {
-                return ErrorResponseBuilder(request.TrackingId, "Identity Sources can not be Null or Empty");
-            }
-            if(identity != null && identity.Sources.Any(s => string.IsNullOrWhiteSpace(s.Name)))
-            {
-                return ErrorResponseBuilder(request.TrackingId, $"Identity Source Name can not be Null or Empty");
-            }
-
-            if (!string.Equals(request.SourceSystem, identity?.Sources[0]?.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                if(!string.Equals(request.SourceSystem, identity?.Sources[0].Name.Split('.')[0], StringComparison.OrdinalIgnoreCase))
-                {
-                    return ErrorResponseBuilder(request.TrackingId, "Source system mismatch.");
-                }
+                return errorResponse;
             }
 
             string trackingId = string.IsNullOrWhiteSpace(request.TrackingId)
-                                ? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost): request.TrackingId;
+                                ? ClientIdentityRequestExtension.GetTrackingId(identity!, ApiCallType.DOH_VEPost): request.TrackingId;
 
             DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
             {
@@ -289,6 +274,34 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
+    }
+
+    private static object? ValidateIdentity( DOH_PostClientIdentityRequest request, Identity? identity )
+    {
+        //If there are no sources in Identity request
+        //Or Sources are missing Name, we will not be able to match the source system
+        if( identity == null )
+        {
+            return ErrorResponseBuilder( request.TrackingId, "Identity can not be Null or Empty" );
+        }
+        if( identity.Sources.Count == 0 )
+        {
+            return ErrorResponseBuilder( request.TrackingId, "Identity Sources can not be Null or Empty" );
+        }
+        if( identity.Sources.Any( s => string.IsNullOrWhiteSpace( s.Name ) ) )
+        {
+            return ErrorResponseBuilder( request.TrackingId, "Identity Source Name can not be Null or Empty" );
+        }
+
+        if( !string.Equals( request.SourceSystem, identity.Sources[0]?.Name, StringComparison.OrdinalIgnoreCase ) )
+        {
+            if( !string.Equals( request.SourceSystem, identity.Sources[0].Name.Split( '.' )[0], StringComparison.OrdinalIgnoreCase ) )
+            {
+                return ErrorResponseBuilder( request.TrackingId, "Source system mismatch." );
+            }
+        }
+
+        return null;
     }
 
     private JsonElement? ConvertJObjectToJsonElement( JObject jObject )
