@@ -2098,14 +2098,14 @@ public class ClientIdentityService : IClientIdentityService
         {
             foreach( var item in searchResults )
             {
-                FilterSearchResultsGroupBySource( filter, filteredResults, item );
+                FilterSearchResultGroupBySource( filter, filteredResults, item );
             }
         }
         else
         {
             foreach( var item in searchResults )
             {
-                FilterSearchResultsDefault( filter, filteredResults, item );
+                FilterSearchResultDefault( filter, filteredResults, item );
             }
         }
 
@@ -2119,7 +2119,7 @@ public class ClientIdentityService : IClientIdentityService
     }
 
     // TODO: check if shared logic can be extracted
-    private static void FilterSearchResultsDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
+    private static void FilterSearchResultDefault(DOH_DemographicsSearchRequest filter, JArray filteredResults, JToken item)
     {
 
         JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
@@ -2157,7 +2157,7 @@ public class ClientIdentityService : IClientIdentityService
     }
 
 
-    private static void FilterSearchResultsGroupBySource( DOH_DemographicsSearchRequest filter, JArray newArray, JToken item )
+    private static void FilterSearchResultGroupBySource( DOH_DemographicsSearchRequest filter, JArray newArray, JToken item )
     {
         JArray identityGroupedBySourceArray = (JArray)item["identityGroupedBySource"];
         JArray sources = new();
