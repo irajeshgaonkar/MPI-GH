@@ -2144,6 +2144,7 @@ public class ClientIdentityService : IClientIdentityService
     }
 
     // TODO: check if shared logic can be extracted
+    // TODO: see about splitting filtering and transformation logic?
     private static JToken? FilterAndTransformSearchResultDefault(string? sourceSystemName, JToken searchResult)
     {
         JArray sources = GetSearchResultFilteredSources(sourceSystemName, searchResult);
