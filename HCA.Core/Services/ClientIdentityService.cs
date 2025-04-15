@@ -209,7 +209,7 @@ public class ClientIdentityService : IClientIdentityService
             }
 
             string trackingId = string.IsNullOrWhiteSpace(request.TrackingId)
-                                ? ClientIdentityRequestExtension.GetTrackingId(identity!, ApiCallType.DOH_VEPost): request.TrackingId;
+                                ? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost): request.TrackingId;
 
             DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
             {
@@ -276,12 +276,13 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
-    private static object? ValidateIdentity( DOH_PostClientIdentityRequest request, Identity? identity )
+    private static object? ValidateIdentity( DOH_PostClientIdentityRequest request, [System.Diagnostics.CodeAnalysis.NotNull] Identity? identity )
     {
         //If there are no sources in Identity request
         //Or Sources are missing Name, we will not be able to match the source system
         if( identity == null )
         {
+            identity = new Identity();
             return ErrorResponseBuilder( request.TrackingId, "Identity can not be Null or Empty" );
         }
         if( identity.Sources.Count == 0 )
