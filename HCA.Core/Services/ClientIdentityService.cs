@@ -2358,7 +2358,7 @@ public class ClientIdentityService : IClientIdentityService
             var source = group["source"];
             if( source != null )
             {
-                ((JArray)identity["sources"])?.Add( source );
+                (identity["sources"] as JArray)?.Add( source );
             }
 
             // Names
