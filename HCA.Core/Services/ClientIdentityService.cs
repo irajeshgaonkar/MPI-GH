@@ -2142,7 +2142,7 @@ public class ClientIdentityService : IClientIdentityService
         IEnumerable<JToken> query = identityGroupedBySourceArray.Where(
             source => IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), sourceSystemName ));
 
-        return (JArray) query ;
+        return new JArray(query);
     }
 
     // TODO: check if shared logic can be extracted
