@@ -2060,7 +2060,7 @@ public class ClientIdentityService : IClientIdentityService
         // Always send the verato request with the GROUP_BY_SOURCE response identity format name
         ContentSearch content = new() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
 
-        var demographicSearhRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
+        var demographicSearchRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
@@ -2068,7 +2068,7 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearchRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
         // Determine request status and message based on the response
