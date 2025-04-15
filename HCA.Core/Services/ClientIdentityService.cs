@@ -2114,7 +2114,7 @@ public class ClientIdentityService : IClientIdentityService
         {
             foreach( var item in searchResults )
             {
-                if ( FilterAndTransformSearchResultDefault( filter.SourceSystem, item ) is JToken filteredResult )
+                if( FilterAndTransformSearchResultDefault( filter.SourceSystem, item ) is JToken filteredResult )
                 {
                     filteredResults.Add( filteredResult );
                 }
