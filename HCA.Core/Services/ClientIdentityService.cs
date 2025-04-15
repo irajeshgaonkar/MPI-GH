@@ -2050,6 +2050,7 @@ public class ClientIdentityService : IClientIdentityService
     {
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
+        // TODO: either create method for transforming requests, or put the request transform method in the Content object
         // Always send the verato request with the GROUP_BY_SOURCE response identity format name
         ContentSearch content = new() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
 
