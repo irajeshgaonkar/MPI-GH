@@ -2317,6 +2317,7 @@ public class ClientIdentityService : IClientIdentityService
         response.Content = ConvertJObjectToJsonElement( jsonObject ) ?? new();
     }
 
+    // TODO: organize the logic better.
     /// <summary>
     /// Transform the grouped response to the default format.
     /// </summary>
