@@ -2281,6 +2281,7 @@ public class ClientIdentityService : IClientIdentityService
             response.Message = "No identity found.";
         }
 
+        // TODO: cover case where jsonObject is null
         response.Content = ConvertJObjectToJsonElement(jsonObject);
     }
 
