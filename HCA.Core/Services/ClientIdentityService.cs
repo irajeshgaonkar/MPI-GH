@@ -1972,7 +1972,7 @@ public class ClientIdentityService : IClientIdentityService
                 if (request.Content.ResponseIdentityFormatNames[0].ToString().Equals("DEFAULT", StringComparison.CurrentCultureIgnoreCase))
                 {
 
-                    jsonObjectResponse["linkIdentity"] = TransformGroupedToDefault(jsonObjectResponse);
+                    jsonObjectResponse["linkIdentity"] = TransformGroupedToDefault(jsonObjectResponse)["content"]?["identity"];
                     jsonObjectResponse.Remove("identityGroupedBySource");
 
                 }
@@ -2290,7 +2290,7 @@ public class ClientIdentityService : IClientIdentityService
                 if (filter.content.responseIdentityFormatNames[0].ToString().Equals("DEFAULT", StringComparison.CurrentCultureIgnoreCase))
                 {
 
-                    jsonObject["identity"] = TransformGroupedToDefault(jsonObject);
+                    jsonObject["identity"] = TransformGroupedToDefault(jsonObject)["content"]?["identity"];
                     jsonObject.Remove("identityGroupedBySource");
 
                 }
