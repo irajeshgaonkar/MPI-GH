@@ -211,6 +211,12 @@ public class ClientIdentityService : IClientIdentityService
             string trackingId = string.IsNullOrWhiteSpace(request.TrackingId)
                                 ? ClientIdentityRequestExtension.GetTrackingId(identity, ApiCallType.DOH_VEPost): request.TrackingId;
 
+            if (request.Content.ResponseIdentityFormatNames == null || request.Content.ResponseIdentityFormatNames.Length == 0
+                || request.Content.ResponseIdentityFormatNames.Any(view => string.IsNullOrWhiteSpace(view)))
+            {
+                request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
+            }
+
             DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
             {
                 SourceSystem = request.SourceSystem,
