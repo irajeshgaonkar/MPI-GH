@@ -2326,7 +2326,7 @@ public class ClientIdentityService : IClientIdentityService
     {
         var identityGroups = groupedResponse["identityGroupedBySource"] as JArray;
 
-        if( identityGroups?.Count == 0)
+        if( identityGroups is null || identityGroups.Count == 0)
         {
             return new JObject
             {
