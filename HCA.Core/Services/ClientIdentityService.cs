@@ -2213,10 +2213,10 @@ public class ClientIdentityService : IClientIdentityService
     private async Task<dynamic?> DOH_DemographicQuery( UserRequestEntity userRequestEntity, DOH_DemographicQueryRequest filter, bool filterQueryResponse = true )
     {
         // Always send the verato request with the GROUP_BY_SOURCE response identity format name
-        Content content = new Content() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
+        Content content = new() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
 
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
-        var demographicSearhRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
+        var demographicSearchRequest = new DOH_DemographicQueryClientIdentityRequest(userRequestEntity.TrackingId)
         {
             SourceSystem = filter.SourceSystem,
             Agency = filter.Agency,
@@ -2224,7 +2224,7 @@ public class ClientIdentityService : IClientIdentityService
             Caller = ServiceLayer.API.ToString()
         };
 
-        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearhRequest, requestStatusUpdater)
+        var response = await _clientIdentityRequestExecutor.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearchRequest, requestStatusUpdater)
             ?? throw new HcaBadRequestException("Failed to process request");
 
         // Determine request status and message based on the response
@@ -2312,7 +2312,7 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         // TODO: cover case where jsonObject is null
-        response.Content = ConvertJObjectToJsonElement(jsonObject);
+        response.Content = ConvertJObjectToJsonElement( jsonObject ) ?? new();
     }
 
     /// <summary>
