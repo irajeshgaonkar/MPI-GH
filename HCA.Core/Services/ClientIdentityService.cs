@@ -2139,8 +2139,10 @@ public class ClientIdentityService : IClientIdentityService
     {
         if( searchResult["identityGroupedBySource"] is not JArray identityGroupedBySourceArray ) { return []; }
 
-        return (JArray)identityGroupedBySourceArray.Where(
-            source => IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), sourceSystemName )) ;
+        IEnumerable<JToken> query = identityGroupedBySourceArray.Where(
+            source => IsMatchingSourceSystem( source["source"]?["name"]?.ToString(), sourceSystemName ));
+
+        return (JArray) query ;
     }
 
     // TODO: check if shared logic can be extracted
