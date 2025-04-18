@@ -2304,7 +2304,7 @@ public class ClientIdentityService : IClientIdentityService
             }
             else
             {
-                jsonObject = null;
+                jsonObject = [];
             }
         }
 
