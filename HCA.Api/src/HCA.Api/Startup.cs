@@ -114,6 +114,7 @@ public class Startup
         app.UseRouting();
         app.UseAuthorization();
         app.UseJwtMiddleware(() => Configuration.GetSection("SecurityOptions").Get<SecurityOptions>());
+        app.UseMiddleware<ResponseHeaderMiddleware>();
 
         //Todo: ;write use source system middleware
 
