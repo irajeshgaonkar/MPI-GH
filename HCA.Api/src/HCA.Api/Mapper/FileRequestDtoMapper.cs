@@ -37,43 +37,46 @@ public static class ClientIdentityDtoMapper
 
         foreach (var model in models)
         {
+            var clientIdentityDto = new ClientIdentityDto()
+            {
+                Id = model.Id,
+                MPILinkId = model.MpiLinkId ?? "",
+                SourceName = model.SourceSystemName,
+                SourceSystemId = model.SourceSystemId,
+                SourceSystemLastUpdate = model.SourceSystemUpdated,
+                FirstName = model.FirstName,
+                MiddleName = model.MiddleName ?? "",
+                LastName = model.LastName ?? "",
+                Suffix = model.NameSuffix ?? "",
+                BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
+                Gender = model.Gender ?? "",
+                SSN = showSensitiveData ? model.SSN ?? "" : "*****",
+                ProtectecPopulationFlag = model.ProtectedPopulationFlag,
+                ProtectedPopulationType = model.ProtectedPopulationType ?? ""
+            };
+
             foreach (var address in model.Addresses)
             {
+                clientIdentityDto.AddressType = address.AddressType ?? "";
+                clientIdentityDto.AddressLine1 = address.AddressLine1 ?? "";
+                clientIdentityDto.AddressLine2 = address.AddressLine2 ?? "";
+                clientIdentityDto.AddressLine3 = address.AddressLine3 ?? "";
+                clientIdentityDto.City = address.City ?? "";
+                clientIdentityDto.State = address.State ?? "";
+                clientIdentityDto.ZipCode = address.ZipCode ?? "";
+                clientIdentityDto.ZipPlusFour = address.ZipFour ?? "";
+
                 foreach (var communication in address.Communications)
                 {
-                    var clientIdentityDto = new ClientIdentityDto()
-                    {
-                        Id = model.Id,
-                        MPILinkId = model.MpiLinkId ?? "",
-                        SourceName = model.SourceSystemName,
-                        SourceSystemId = model.SourceSystemId,
-                        SourceSystemLastUpdate = model.SourceSystemUpdated,
-                        FirstName = model.FirstName,
-                        MiddleName = model.MiddleName ?? "",
-                        LastName = model.LastName ?? "",
-                        Suffix = model.NameSuffix ?? "",
-                        BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
-                        Gender = model.Gender ?? "",
-                        SSN = showSensitiveData ? model.SSN ?? "" : "*****",
-                        AddressType = address.AddressType ?? "",
-                        AddressLine1 = address.AddressLine1 ?? "",
-                        AddressLine2 = address.AddressLine2 ?? "",
-                        AddressLine3 = address.AddressLine3 ?? "",
-                        City = address.City ?? "",
-                        State = address.State ?? "",
-                        ZipCode = address.ZipCode ?? "",
-                        ZipPlusFour = address.ZipFour ?? "",
-                        PhoneType = communication.PhoneType ?? "",
-                        PhoneNumber = communication.PhoneNumber ?? "",
-                        EmailType = communication.EmailType ?? "",
-                        EmailAddress = communication.EmailAddress ?? "",
-                        ProtectecPopulationFlag = model.ProtectedPopulationFlag,
-                        ProtectedPopulationType = model.ProtectedPopulationType ?? ""
-                    };
+                    clientIdentityDto.PhoneType = communication.PhoneType ?? "";
+                    clientIdentityDto.PhoneNumber = communication.PhoneNumber ?? "";
+                    clientIdentityDto.EmailType = communication.EmailType ?? "";
+                    clientIdentityDto.EmailAddress = communication.EmailAddress ?? "";
 
-                    dtos.Add(clientIdentityDto);
                 }
             }
+
+            dtos.Add(clientIdentityDto);
         }
 
         return dtos;
