@@ -37,50 +37,72 @@ public static class ClientIdentityDtoMapper
 
         foreach (var model in models)
         {
-            var clientIdentityDto = new ClientIdentityDto()
-            {
-                Id = model.Id,
-                MPILinkId = model.MpiLinkId ?? "",
-                SourceName = model.SourceSystemName,
-                SourceSystemId = model.SourceSystemId,
-                SourceSystemLastUpdate = model.SourceSystemUpdated,
-                FirstName = model.FirstName,
-                MiddleName = model.MiddleName ?? "",
-                LastName = model.LastName ?? "",
-                Suffix = model.NameSuffix ?? "",
-                BirthDate = showSensitiveData ? model.DOB.ToString() ?? "" : "*****",
-                Gender = model.Gender ?? "",
-                SSN = showSensitiveData ? model.SSN ?? "" : "*****",
-                ProtectecPopulationFlag = model.ProtectedPopulationFlag,
-                ProtectedPopulationType = model.ProtectedPopulationType ?? ""
-            };
-
             foreach (var address in model.Addresses)
             {
-                clientIdentityDto.AddressType = address.AddressType ?? "";
-                clientIdentityDto.AddressLine1 = address.AddressLine1 ?? "";
-                clientIdentityDto.AddressLine2 = address.AddressLine2 ?? "";
-                clientIdentityDto.AddressLine3 = address.AddressLine3 ?? "";
-                clientIdentityDto.City = address.City ?? "";
-                clientIdentityDto.State = address.State ?? "";
-                clientIdentityDto.ZipCode = address.ZipCode ?? "";
-                clientIdentityDto.ZipPlusFour = address.ZipFour ?? "";
-
-                foreach (var communication in address.Communications)
+                // If there are no communications, still create a record for the address
+                if (address.Communications == null || !address.Communications.Any())
                 {
-                    clientIdentityDto.PhoneType = communication.PhoneType ?? "";
-                    clientIdentityDto.PhoneNumber = communication.PhoneNumber ?? "";
-                    clientIdentityDto.EmailType = communication.EmailType ?? "";
-                    clientIdentityDto.EmailAddress = communication.EmailAddress ?? "";
-
+                    var dto = CreateBaseDto(model, showSensitiveData);
+                    AddAddressData(dto, address);
+                    dtos.Add(dto);
+                }
+                else
+                {
+                    foreach (var communication in address.Communications)
+                    {
+                        var dto = CreateBaseDto(model, showSensitiveData);
+                        AddAddressData(dto, address);
+                        AddCommunicationData(dto, communication);
+                        dtos.Add(dto);
+                    }
                 }
             }
-
-            dtos.Add(clientIdentityDto);
         }
 
         return dtos;
     }
+
+    private static ClientIdentityDto CreateBaseDto(ClientIdentityModel model, bool showSensitiveData)
+    {
+        return new ClientIdentityDto
+        {
+            Id = model.Id,
+            MPILinkId = model.MpiLinkId ?? "",
+            SourceName = model.SourceSystemName,
+            SourceSystemId = model.SourceSystemId,
+            SourceSystemLastUpdate = model.SourceSystemUpdated,
+            FirstName = model.FirstName,
+            MiddleName = model.MiddleName ?? "",
+            LastName = model.LastName ?? "",
+            Suffix = model.NameSuffix ?? "",
+            BirthDate = showSensitiveData ? model.DOB?.ToString() ?? "" : "*****",
+            Gender = model.Gender ?? "",
+            SSN = showSensitiveData ? model.SSN ?? "" : "*****",
+            ProtectecPopulationFlag = model.ProtectedPopulationFlag,
+            ProtectedPopulationType = model.ProtectedPopulationType ?? ""
+        };
+    }
+
+    private static void AddAddressData(ClientIdentityDto dto, ClientIdentityAddress address)
+    {
+        dto.AddressType = address.AddressType ?? "";
+        dto.AddressLine1 = address.AddressLine1 ?? "";
+        dto.AddressLine2 = address.AddressLine2 ?? "";
+        dto.AddressLine3 = address.AddressLine3 ?? "";
+        dto.City = address.City ?? "";
+        dto.State = address.State ?? "";
+        dto.ZipCode = address.ZipCode ?? "";
+        dto.ZipPlusFour = address.ZipFour ?? "";
+    }
+
+    private static void AddCommunicationData(ClientIdentityDto dto, ClientIdentityCommunication communication)
+    {
+        dto.PhoneType = communication.PhoneType ?? "";
+        dto.PhoneNumber = communication.PhoneNumber ?? "";
+        dto.EmailType = communication.EmailType ?? "";
+        dto.EmailAddress = communication.EmailAddress ?? "";
+    }
+
 
     public static IList<ClientIdentityDto> GetReportsDto(IEnumerable<ClientIdentityModel> models, bool showSensitiveData)
     {
