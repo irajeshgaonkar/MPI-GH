@@ -381,16 +381,25 @@ WHERE mpi_link_id IN
     {
         clientIdentityEntity.IsDelete = true;
         clientIdentityEntity.IsActive = false;
-        foreach (var address in clientIdentityEntity.Addresses)
+
+        if (clientIdentityEntity.Addresses != null && clientIdentityEntity.Addresses.Count != 0)
         {
-            address.IsDelete = true;
-            address.IsActive = false;
+            foreach (var address in clientIdentityEntity.Addresses)
+            {
+                address.IsDelete = true;
+                address.IsActive = false;
+            }
         }
-        foreach (var communicaiton in clientIdentityEntity.Communications)
+
+        if (clientIdentityEntity.Communications != null && clientIdentityEntity.Communications.Count != 0)
         {
-            communicaiton.IsDelete = true;
-            communicaiton.IsActive = false;
+            foreach (var communication in clientIdentityEntity.Communications)
+            {
+                communication.IsDelete = true;
+                communication.IsActive = false;
+            }
         }
+
         Update(clientIdentityEntity);
     }
 
