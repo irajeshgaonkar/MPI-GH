@@ -371,14 +371,33 @@ WHERE mpi_link_id IN
 
     public void UpdateMpiLinkId(ClientIdentityEntity clientIdentityEntity, string newMpiLinkId)
     {
+        if (clientIdentityEntity == null || string.IsNullOrEmpty(newMpiLinkId)) return;
+
         clientIdentityEntity.MpiLinkId = newMpiLinkId;
-        foreach (var address in clientIdentityEntity.Addresses) address.MpiLinkId = newMpiLinkId;
-        foreach (var communicaiton in clientIdentityEntity.Communications) communicaiton.MpiLinkId = newMpiLinkId;
+
+        if (clientIdentityEntity.Addresses != null && clientIdentityEntity.Addresses.Count != 0)
+        {
+            foreach (var address in clientIdentityEntity.Addresses)
+            {
+                address.MpiLinkId = newMpiLinkId;
+            }
+        }
+
+        if (clientIdentityEntity.Communications != null && clientIdentityEntity.Communications.Count != 0)
+        {
+            foreach (var communicaiton in clientIdentityEntity.Communications)
+            {
+                communicaiton.MpiLinkId = newMpiLinkId;
+            }
+        }
+
         Update(clientIdentityEntity);
     }
 
     public void DeleteClientIdentity(ClientIdentityEntity clientIdentityEntity)
     {
+        if(clientIdentityEntity == null) return;
+
         clientIdentityEntity.IsDelete = true;
         clientIdentityEntity.IsActive = false;
 
