@@ -82,14 +82,14 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// </summary>
     [Column("first_name")]
     [Required]
-    [MaxLength(40)]
+    [MaxLength(255)]
     public string FirstName { get; set; }
 
     /// <summary>
     /// Middle Name
     /// </summary>
     [Column("middle_name")]
-    [MaxLength(40)]
+    [MaxLength(255)]
     public string? MiddleName { get; set; }
 
     /// <summary>
@@ -97,14 +97,14 @@ public class ClientIdentityRequestEntity : BaseEntity
     /// </summary>
     [Column("last_name")]
     [Required]
-    [MaxLength(40)]
+    [MaxLength(255)]
     public string LastName { get; set; }
 
     /// <summary>
     /// Name Suffix
     /// </summary>
     [Column("name_suffix")]
-    [MaxLength(40)]
+    [MaxLength(255)]
     public string? NameSuffix { get; set; }
 
     /// <summary>
