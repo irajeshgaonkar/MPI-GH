@@ -96,7 +96,7 @@ namespace HCA.Api.Filters
                         //This can happen when whitelisting systems manually
                         else
                         {
-                            context.Result = BuildOkObjectResultWith400Error("sourceSystem validation failed. ipAddress/sourceSystem mismatch.", trackingId);
+                            context.Result = BuildOkObjectResultWith400Error("Your Whitelisted IP Address is conflicting with another system. Please contact MPI to resolve", trackingId);
                             return;
                         }
                     }
