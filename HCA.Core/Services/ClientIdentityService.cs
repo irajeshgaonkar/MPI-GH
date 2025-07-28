@@ -1936,6 +1936,10 @@ public class ClientIdentityService : IClientIdentityService
         {
             FilterPostResponse(request, response);
         }
+        else
+        {
+            TransformVeratoErrorResponse(response);
+        }
 
         // Update the response in the user request entity
         userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
@@ -1944,6 +1948,19 @@ public class ClientIdentityService : IClientIdentityService
         UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
+    }
+
+    /// <summary>
+    /// Transform Verato error response messages to a more user-friendly format.
+    /// </summary>
+    /// <param name="veratoResponse"></param>
+    private void TransformVeratoErrorResponse(BaseResponse veratoResponse)
+    {
+        if (veratoResponse == null || string.IsNullOrWhiteSpace(veratoResponse.Message))
+            return;
+
+        veratoResponse.Message = VeratoErrorMapper.MapErrorMessage(veratoResponse.Message);
+
     }
 
     private void FilterPostResponse( DOH_PostClientIdentityRequest request, DOH_PostClientIdentityResponse response )
