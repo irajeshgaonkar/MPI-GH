@@ -179,7 +179,7 @@ WHERE mpi_link_id IN
 
                 case "sourcesystemnames":
                     var scopes = filterValue.Split(',');
-                    searchQuery = searchQuery.And(() => c => scopes.Any(s => c.SourceSystemName.ToLower() == s));
+                    searchQuery = searchQuery.And(() => c => scopes.Any(s => c.SourceSystemName.ToLower().StartsWith(s)));
                     break;
 
                 // Add more filters here as needed
