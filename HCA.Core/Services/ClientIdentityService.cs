@@ -74,14 +74,31 @@ public class ClientIdentityService : IClientIdentityService
         {
             var userModifyRecords = new List<int>();
 
-            var sourceSystemScopes = await GetSourceSysteAccessFromContext(_httpContextAccessor.HttpContext);
-            if (!sourceSystemScopes.Item1)
+            var (isAdmin, accessibleSources) = await GetSourceSysteAccessFromContext(_httpContextAccessor.HttpContext);
+
+            var hasSourceName = searchFilter.TryGetValue("SourceSystemName", out string? sourceName);
+
+            if (!isAdmin)
             {
-                searchFilter.Add("SourceSystemNames", string.Join(',', sourceSystemScopes.Item2));
+                if (hasSourceName && !string.IsNullOrEmpty(sourceName) && accessibleSources.Contains(sourceName))
+                {
+                    searchFilter["SourceSystemNames"] = sourceName;
+                }
+                else
+                {
+                    searchFilter["SourceSystemNames"] = string.Join(',', accessibleSources);
+                }
+            }
+            else if (hasSourceName && !string.IsNullOrEmpty(sourceName))
+            {
+                searchFilter["SourceSystemNames"] = sourceName;
             }
 
-            var (count, entities) = await _clientIdentityRepository.GetAll(searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
+            var (count, entities) = await _clientIdentityRepository.GetAll(
+                searchFilter, userModifyRecords, pageNumber, recordsPerPage, orderBy);
+
             var models = ClientIdentityMapper.MapToClientIdentityModel(entities);
+
             return (count, models);
         }
         catch(Exception ex)

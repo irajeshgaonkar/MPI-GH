@@ -272,6 +272,8 @@ namespace HCA.Api.Controllers
             if (filter.Zip.IsNotEmpty()) searchFilter.Add("Zip", filter.Zip);
             if (filter.LinkId.IsNotEmpty()) searchFilter.Add("MpiLinkId", filter.LinkId);
             if (filter.SourceSystemId.IsNotEmpty()) searchFilter.Add("SourceId", filter.SourceSystemId);
+            if (filter.SourceSystemName.IsNotEmpty()) searchFilter.Add("SourceSystemName", filter.SourceSystemName);
+
             return searchFilter;
         }
 
@@ -887,6 +889,11 @@ namespace HCA.Api.Controllers
         /// </summary>
         /// <example></example>
         public string SourceSystemId { get; set; }
+
+        /// <summary>
+        /// Source System Name
+        /// </summary>
+        public string SourceSystemName { get; set; }
     }
 }
 
