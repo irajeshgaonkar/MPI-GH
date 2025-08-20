@@ -85,9 +85,14 @@ public class ClientIdentityService : IClientIdentityService
                     searchFilter["SourceSystemNames"] = string.Join(',', accessibleSources);
                 }
 
-                else if (!string.IsNullOrEmpty(sourceName) && accessibleSources.Contains(sourceName))
+                else if (!string.IsNullOrEmpty(sourceName) && accessibleSources.Any(source => source.StartsWith(sourceName, StringComparison.OrdinalIgnoreCase)))
                 {
                     searchFilter["SourceSystemNames"] = sourceName;
+                }
+                else
+                {
+                    //SourceName in search filter is not one among the accessible systems.
+                    return (0, new List<ClientIdentityModel>());
                 }
             }
             else if (hasSourceName && !string.IsNullOrEmpty(sourceName))
