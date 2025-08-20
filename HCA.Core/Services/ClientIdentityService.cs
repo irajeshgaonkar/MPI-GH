@@ -80,13 +80,14 @@ public class ClientIdentityService : IClientIdentityService
 
             if (!isAdmin)
             {
-                if (hasSourceName && !string.IsNullOrEmpty(sourceName) && accessibleSources.Contains(sourceName))
-                {
-                    searchFilter["SourceSystemNames"] = sourceName;
-                }
-                else
+                if(!hasSourceName)
                 {
                     searchFilter["SourceSystemNames"] = string.Join(',', accessibleSources);
+                }
+
+                else if (!string.IsNullOrEmpty(sourceName) && accessibleSources.Contains(sourceName))
+                {
+                    searchFilter["SourceSystemNames"] = sourceName;
                 }
             }
             else if (hasSourceName && !string.IsNullOrEmpty(sourceName))
