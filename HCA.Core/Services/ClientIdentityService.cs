@@ -76,28 +76,11 @@ public class ClientIdentityService : IClientIdentityService
 
             var (isAdmin, accessibleSources) = await GetSourceSysteAccessFromContext(_httpContextAccessor.HttpContext);
 
-            var hasSourceName = searchFilter.TryGetValue("SourceSystemName", out string? sourceName);
+            var preparedSearchFilter = PrepareSearchFilter(searchFilter, isAdmin, accessibleSources);
 
-            if (!isAdmin)
+            if (preparedSearchFilter == null)
             {
-                if(!hasSourceName)
-                {
-                    searchFilter["SourceSystemNames"] = string.Join(',', accessibleSources);
-                }
-
-                else if (!string.IsNullOrEmpty(sourceName) && accessibleSources.Any(source => source.StartsWith(sourceName, StringComparison.OrdinalIgnoreCase)))
-                {
-                    searchFilter["SourceSystemNames"] = sourceName;
-                }
-                else
-                {
-                    //SourceName in search filter is not one among the accessible systems.
-                    return (0, new List<ClientIdentityModel>());
-                }
-            }
-            else if (hasSourceName && !string.IsNullOrEmpty(sourceName))
-            {
-                searchFilter["SourceSystemNames"] = sourceName;
+                return (0, new List<ClientIdentityModel>());
             }
 
             var (count, entities) = await _clientIdentityRepository.GetAll(
@@ -129,6 +112,46 @@ public class ClientIdentityService : IClientIdentityService
             throw;
         }
     }
+
+    /// <summary>
+    /// Prepare the search filter based on the user role and accessible sources.
+    /// </summary>
+    /// <param name="searchFilter"></param>
+    /// <param name="isAdmin"></param>
+    /// <param name="accessibleSources"></param>
+    /// <returns></returns>
+    private static Dictionary<string, string>? PrepareSearchFilter(
+    Dictionary<string, string> searchFilter,
+    bool isAdmin,
+    List<string> accessibleSources)
+    {
+        var hasSourceName = searchFilter.TryGetValue("SourceSystemName", out string? sourceName);
+
+        if (!isAdmin)
+        {
+            if (!hasSourceName)
+            {
+                searchFilter["SourceSystemNames"] = string.Join(',', accessibleSources);
+            }
+            else if (!string.IsNullOrEmpty(sourceName) &&
+                     accessibleSources.Any(source => source.StartsWith(sourceName, StringComparison.OrdinalIgnoreCase)))
+            {
+                searchFilter["SourceSystemNames"] = sourceName;
+            }
+            else
+            {
+                // SourceName in search filter is not one among the accessible systems.
+                return null;
+            }
+        }
+        else if (hasSourceName && !string.IsNullOrEmpty(sourceName))
+        {
+            searchFilter["SourceSystemNames"] = sourceName;
+        }
+
+        return searchFilter;
+    }
+
 
     public async Task<dynamic?> PostIdentities( IEnumerable<ClientIdentityRequest> identities, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )
     {
