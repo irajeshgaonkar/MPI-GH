@@ -1,6 +1,7 @@
 ﻿using Amazon;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
+using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Sftp;
 using System.Text.Json;
 
@@ -8,11 +9,11 @@ namespace HCA.Infrastructure.SecretsManager
 {
     public static class AmazonSecretsManager
     {
-        public static SftpOptions GetSftpOptions()
+        public static AppSettings GetAppSettings()
         {
-            string sftpSecret = AmazonSecretsManager.GetSecret("sftp").Result;
-            return JsonSerializer.Deserialize<SftpOptions>(sftpSecret)
-                                      ?? throw new ArgumentException("Sftp secret load issue.");
+            var appSettings = AmazonSecretsManager.GetSecret("AppSettings").Result;
+            return JsonSerializer.Deserialize<AppSettings>(appSettings)
+                                      ?? throw new ArgumentException("Failed to load AppSettings from AWS SecretManager");
         }
 
         /// <summary>

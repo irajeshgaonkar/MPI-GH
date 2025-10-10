@@ -1,11 +1,10 @@
 ﻿
-using HCA.Api.Constants;
-using HCA.Api.Extensions;
-using HCA.Api.Options;
-using HCA.Infrastructure.Logger;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Principal;
+using HCA.Api.Constants;
+using HCA.Api.Extensions;
+using HCA.Infrastructure.Configurations;
 
 namespace HCA.Api.Middleware;
 
@@ -13,12 +12,12 @@ public class JwtMiddleware
 {
     private readonly RequestDelegate _next;
 
-    private readonly SecurityOptions _securityOptions;
+    private readonly AppSettings _appSettings;
 
-    public JwtMiddleware(RequestDelegate next, SecurityOptions securityOptions)
+    public JwtMiddleware(RequestDelegate next, AppSettings appSettings)
     {
         _next = next;
-        _securityOptions = securityOptions;
+        _appSettings = appSettings;
     }
 
     public async Task Invoke(HttpContext context)
@@ -42,7 +41,7 @@ public class JwtMiddleware
             var customGroups = jwtToken.Claims.First(x => x.Type == "custom:groups").Value;
             var groups = ParseUserGroups(customGroups);
             var roles = new List<string>() { Roles.ReadOnly };
-            var isAdmin = groups?.Any(g => g == _securityOptions.AdminGroupName);
+            var isAdmin = groups?.Any(g => g == _appSettings.SecurityOptions.AdminGroupName);
             if (isAdmin == true) roles.Add(Roles.Admin);
             var identity = new ClaimsIdentity(Claims.Token);
             var claims = new List<Claim>() { new Claim(ClaimTypes.NameIdentifier, email)};

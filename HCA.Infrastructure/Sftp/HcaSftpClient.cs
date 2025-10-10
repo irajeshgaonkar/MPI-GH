@@ -1,4 +1,5 @@
-﻿using HCA.Infrastructure.Logger;
+﻿using HCA.Infrastructure.Configurations;
+using HCA.Infrastructure.Logger;
 using HCA.Infrastructure.Sftp;
 using HCA.Models.Sftp;
 using Renci.SshNet;
@@ -8,13 +9,13 @@ namespace HCA.Infrastructure.sftp
 {
     public class HcaSftpClient : IHcaSftpClient
     {
-        private readonly SftpOptions _sftpOptions;
+        private readonly AppSettings _appSettings;
 
         private readonly IAppLogger _appLogger;
 
-        public HcaSftpClient(SftpOptions sftpOptions, IAppLogger appLogger)
+        public HcaSftpClient(AppSettings appSettings, IAppLogger appLogger)
         {
-            _sftpOptions = sftpOptions;
+            _appSettings = appSettings;
             _appLogger = appLogger;
         }
 
@@ -87,8 +88,8 @@ namespace HCA.Infrastructure.sftp
 
         private SftpClient CreateSftpClient()
         {
-            _appLogger.LogInformation($"Connecting to Sftp {_sftpOptions.Host}, {_sftpOptions.UserName}");
-            SftpClient sftpClient = new SftpClient(new PasswordConnectionInfo(_sftpOptions.Host, _sftpOptions.UserName, _sftpOptions.Password));
+            _appLogger.LogInformation($"Connecting to Sftp {_appSettings.SftpOptions.Host}, {_appSettings.SftpOptions.UserName}");
+            SftpClient sftpClient = new SftpClient(new PasswordConnectionInfo(_appSettings.SftpOptions.Host, _appSettings.SftpOptions.UserName, _appSettings.SftpOptions.Password));
             sftpClient.Connect();
             _appLogger.LogInformation("Successfully connected to sftp");
             return sftpClient;

@@ -1,9 +1,8 @@
 ﻿using HCA.Data.Entities;
 using HCA.Data.Repository;
+using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.sftp;
-using HCA.Infrastructure.Sftp;
-using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.Sftp;
 
@@ -16,9 +15,7 @@ public interface ISftpProcessor
 
 public class SftpProcessor : ISftpProcessor
 {
-    private readonly SftpOptions _sftpOptions;
-
-    private readonly S3Options _s3Options;
+    private readonly AppSettings _appSettings;
 
     private readonly IHcaSftpClient _sftpClient;
 
@@ -26,18 +23,17 @@ public class SftpProcessor : ISftpProcessor
 
     private readonly ISftpToS3FileTransferClient _sftpToS3FileTransferClient;
 
-    public SftpProcessor(SftpOptions sftpOptions, S3Options s3Options, IHcaSftpClient sftpClient, ISftpFileTransferRepository sftpFileTransferRepository, ISftpToS3FileTransferClient sftpToS3FileTransferClient)
+    public SftpProcessor(AppSettings appSettings, IHcaSftpClient sftpClient, ISftpFileTransferRepository sftpFileTransferRepository, ISftpToS3FileTransferClient sftpToS3FileTransferClient)
     {
-        _sftpOptions = sftpOptions;
+        _appSettings = appSettings;
         _sftpClient = sftpClient;
         _sftpFileTransferRepository = sftpFileTransferRepository;
         _sftpToS3FileTransferClient = sftpToS3FileTransferClient;
-        _s3Options = s3Options;
     }
 
     public async Task TransferFilesForProcessing()
     {
-        foreach(var path in _sftpOptions.Paths)
+        foreach(var path in _appSettings.SftpOptions.Paths)
         {
             await TransferFilesForProcessing(path);
         }
@@ -46,13 +42,13 @@ public class SftpProcessor : ISftpProcessor
     public async Task TransferFilesForProcessing(string path)
     {
         var filesToTransfer = new List<HcaSftpFile>();
-        var filesInPath = _sftpClient.ListDirectory($"{path}/{_sftpOptions.SourceFolder}");
+        var filesInPath = _sftpClient.ListDirectory($"{path}/{_appSettings.SftpOptions.SourceFolder}");
         var filesInDatabase = (await _sftpFileTransferRepository.GetTransferedFiles(path)).ToList();
 
         foreach(var file in filesInPath)
         {
             var fileExtension = GetFileExtension(file.Name);
-            if( !_sftpOptions.AllowedFileTypes.Any( c => c == fileExtension ) )
+            if( !_appSettings.SftpOptions.AllowedFileTypes.Any( c => c == fileExtension ) )
             {
                 continue;
             }
@@ -70,7 +66,7 @@ public class SftpProcessor : ISftpProcessor
     {
         foreach(var file in files)
         {
-            await _sftpToS3FileTransferClient.TransferFile(file.FullName, _s3Options.InputBucketName, file.Name);
+            await _sftpToS3FileTransferClient.TransferFile(file.FullName, _appSettings.InputBucketName, file.Name);
             CreateFileTransferRequest(path, file);
         }
     }

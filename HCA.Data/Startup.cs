@@ -1,5 +1,6 @@
 ﻿using HCA.Data.Repository;
 using HCA.Data.Repository.Impl;
+using HCA.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,10 +11,18 @@ public static class Startup
 {
     public static IServiceCollection AddDbContext(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionDetails = new ConnectionDetails { ConnectionString = configuration["DbConnectionStr"] };
-        return services
-            .AddSingleton(connectionDetails)
-            .AddDbContext<HcaDbContext>(options => options.UseNpgsql(connectionDetails.ConnectionString));
+
+        services.AddDbContext<HcaDbContext>((sp, options) =>
+        {
+            var appSettings = sp.GetRequiredService<AppSettings>();
+
+            if (string.IsNullOrWhiteSpace(appSettings.DbConnectionStr))
+                throw new InvalidOperationException("Database connection string is missing.");
+
+            options.UseNpgsql(appSettings.DbConnectionStr);
+        });
+
+        return services;
     }
 
     public static IServiceCollection AddRepositories(this IServiceCollection services)

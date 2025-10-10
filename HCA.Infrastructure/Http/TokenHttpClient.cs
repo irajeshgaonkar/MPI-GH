@@ -1,15 +1,15 @@
-﻿using HCA.Infrastructure.Logger;
-using HCA.Models.MuleSoft;
+﻿using HCA.Infrastructure.Configurations;
+using HCA.Infrastructure.Logger;
 using HCA.Models.Response;
 using Newtonsoft.Json;
 
 namespace HCA.Infrastructure.Http
 {
-    public class TokenHttpClient(HttpClient httpClient, IAppLogger appLogger, MuleSoftOptions muleSoftOptions)
+    public class TokenHttpClient(HttpClient httpClient, IAppLogger appLogger, AppSettings appSettings)
     {
         private readonly HttpClient _httpClient = httpClient;
         private readonly IAppLogger _logger = appLogger;
-        private readonly MuleSoftOptions _muleSoftOptions = muleSoftOptions;
+        private readonly AppSettings _appSettings = appSettings;
         private static string _token;
         private static DateTime _tokenExpiration;
 
@@ -32,14 +32,14 @@ namespace HCA.Infrastructure.Http
                 {
                     var requestData = new Dictionary<string, string>
                     {
-                        { "grant_type", _muleSoftOptions.AdOptions.GrantType },
-                        { "client_id", _muleSoftOptions.AdOptions.ClientId },
-                        { "client_secret", _muleSoftOptions.AdOptions.ClientSecret },
-                        { "scope", _muleSoftOptions.AdOptions.Scope }
+                        { "grant_type", _appSettings.MuleSoft.AdOptions.GrantType },
+                        { "client_id", _appSettings.MuleSoft.AdOptions.ClientId },
+                        { "client_secret", _appSettings.MuleSoft.AdOptions.ClientSecret },
+                        { "scope", _appSettings.MuleSoft.AdOptions.Scope }
                     };
 
                     var requestContent = new FormUrlEncodedContent(requestData);
-                    var tokenUrl = $"https://login.microsoftonline.com/{_muleSoftOptions.AdOptions.Tenant}/oauth2/v2.0/token";
+                    var tokenUrl = $"https://login.microsoftonline.com/{_appSettings.MuleSoft.AdOptions.Tenant}/oauth2/v2.0/token";
 
                     _logger.LogInformation($"Sending POST request to {tokenUrl}");
 

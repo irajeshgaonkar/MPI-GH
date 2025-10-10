@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Amazon.Lambda.Core;
+using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Http;
 using HCA.Infrastructure.JObjectHelper;
 using HCA.Infrastructure.Logger;
@@ -9,7 +10,6 @@ using HCA.Infrastructure.Security.Contracts;
 using HCA.Infrastructure.Security.Hashing;
 using HCA.Infrastructure.Security.Tokens;
 using HCA.Infrastructure.sftp;
-using HCA.Models.MuleSoft;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,23 +34,18 @@ namespace HCA.Infrastructure
                     .AddScoped<IAppLogger, ConsoleAppAppLogger>();
         }
 
-        public static IServiceCollection AddMuleSoftOptions(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddAppSettings(this IServiceCollection services, IConfiguration configuration)
         {
-            var muleSoftOptions = configuration.GetSection("MuleSoft").Get<MuleSoftOptions>() ?? 
-                throw new InvalidOperationException("MuleSoft configuration is missing or invalid.");
-
-            // Register the options as a singleton service
-            return services.AddSingleton(muleSoftOptions);
+            return services.AddSingleton(AmazonSecretsManager.GetAppSettings());
         }
 
         public static IServiceCollection AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
-            var muleSoftOptions = configuration.GetSection("MuleSoft").Get<MuleSoftOptions>() ??
-                throw new InvalidOperationException("MuleSoft configuration is missing or invalid.");
-
-            services.AddHttpClient<MuleSoftHttpClient>(client =>
+            services.AddHttpClient<MuleSoftHttpClient>((sp, client) =>
             {
-                client.BaseAddress = new Uri(muleSoftOptions.BaseUrl);
+                var appSettings = sp.GetRequiredService<AppSettings>();
+
+                client.BaseAddress = new Uri(appSettings.MuleSoft.BaseUrl);
             }).AddPolicyHandler(GetRetryPolicy());
 
             services.AddHttpClient<TokenHttpClient>(client =>
@@ -62,7 +57,6 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddSftp( this IServiceCollection services )
         {
-            services.AddSingleton(AmazonSecretsManager.GetSftpOptions());
             services.AddScoped<ISftpToS3FileTransferClient, SftpToS3FileTransferClient>();
             services.AddScoped<IS3ToSftpFileTransferClient, S3ToSftpFileTransferClient>();
             services.AddScoped<IHcaSftpClient, HcaSftpClient>();

@@ -113,7 +113,7 @@ public class Startup
         app.UseHttpsRedirection();
         app.UseRouting();
         app.UseAuthorization();
-        app.UseJwtMiddleware(() => Configuration.GetSection("SecurityOptions").Get<SecurityOptions>());
+        app.UseJwtMiddleware();
         app.UseMiddleware<ResponseHeaderMiddleware>();
 
         //Todo: ;write use source system middleware

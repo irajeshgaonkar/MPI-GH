@@ -1,4 +1,5 @@
 ﻿using HCA.Core.Processors;
+using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
@@ -13,17 +14,17 @@ namespace HCA.Core.Services
 {
     public class MuleSoftRequestExecuter : IMuleSoftRequestExecuter
     {
-        private readonly MuleSoftRetryOptions _muleSoftRetryOptions;
+        private readonly AppSettings _appSettings;
         private readonly IDelayCaculator _delayCaculator;
         private readonly IMuleSoftRepository _muleSoftRepository;
         private readonly IMuleSoftRequestBuilder _muleSoftRequestBuilder;
         private readonly IDictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>> requestExecuters;
         private readonly IAppLogger _appLogger;
 
-        public MuleSoftRequestExecuter(MuleSoftRetryOptions muleSoftRetryOptions, IDelayCaculator delayCaculator,
+        public MuleSoftRequestExecuter(AppSettings appSettings, IDelayCaculator delayCaculator,
             IMuleSoftRepository muleSoftRepository, IMuleSoftRequestBuilder muleSoftRequestBuilder, IAppLogger appLogger)
         {
-            _muleSoftRetryOptions = muleSoftRetryOptions;
+            _appSettings = appSettings;
             _delayCaculator = delayCaculator;
             _muleSoftRepository = muleSoftRepository;
             _muleSoftRequestBuilder = muleSoftRequestBuilder;
@@ -34,7 +35,7 @@ namespace HCA.Core.Services
         public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater statusUpdater) where T : BaseResponse
         {
             var exception = "Error processing the request";
-            for (int i = 0; i < _muleSoftRetryOptions.MaxRetries; ++i)
+            for (int i = 0; i < _appSettings.MuleSoft.RetryOptions.MaxRetries; ++i)
             {
                 try
                 {
@@ -66,7 +67,7 @@ namespace HCA.Core.Services
                     _appLogger.LogInformation($"Retrying for the exception HcaHttpException {e.StatusCode}");
                     _appLogger.LogError(e);
                     exception = e.ToString();
-                    if (!_muleSoftRetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw new HcaMuleSoftException(exception);
+                    if (!_appSettings.MuleSoft.RetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw new HcaMuleSoftException(exception);
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
                 catch(Exception e)

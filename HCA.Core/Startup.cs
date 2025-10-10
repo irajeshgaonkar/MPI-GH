@@ -17,11 +17,11 @@ public static class Startup
 {
     public static IServiceCollection AddHca(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddAppSettings(configuration);
         services.AddConsoleLogging();
         services.AddDbContext(configuration);
         services.AddRepositories();
         services.AddMuleSoft(configuration);
-        services.AddMuleSoftOptions(configuration);
         services.AddHttpClients(configuration);
         services.AddServices();
         services.AddAutoMapper();
