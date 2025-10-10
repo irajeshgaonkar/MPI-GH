@@ -75,6 +75,10 @@ public interface IMuleSoftRepository
 
     Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request);
 
+    Task<NativeIdQueryResponse> NativeIdQuery(NativeIdQueryRequest request);
+
+    Task<SearchNotificationsResponse> SearchNotifications(SearchNotificationsRequest request);
+
     Task<T> CallMulesoft<T>(string requestUrl, MuleSoftRequest? request);
 
 }

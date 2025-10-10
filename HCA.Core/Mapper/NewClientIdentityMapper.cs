@@ -11,74 +11,29 @@ namespace HCA.Core.Mapper;
 
 public class NewClientIdentityMapper
 {
-    private static CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
+    private static readonly CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
 
     public static ClientIdentityEntity MapFromRequestToEntity(string linkId, DateTime mpiUpdated, DOH_PostClientIdentityRequest requests)
     {
-        var result = new ClientIdentityEntity();
-        result.Addresses = new List<ClientIdentityAddressEntity>();
-        result.Communications = new List<ClientIdentityCommunicationEntity>();
         string strIdentities = requests.Content.Identity.ToString();
-        Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities);
-        //if (identity == null)
-          //  throw Exception(invalid records");
-        //var request = identity.;
-        //DateTime.TryParse(Identity.SourceSystemUpdated, culture, DateTimeStyles.None, out var sourceSystemUpdated);
-        //bool.TryParse(request.ProtectedPopulationFlag, out var protectedPopulationFlag);
-        result.MpiLinkId = linkId;
-        result.SourceSystemName = identity.Sources.FirstOrDefault().Name;
-        result.SourceSystemId = identity.Sources.FirstOrDefault().Id;
-        result.SourceSystemAgency = "";
-        if (identity.Names.Count > 0)
-        {
-            result.FirstName = identity.Names.FirstOrDefault().First ?? "";
-            result.MiddleName = identity.Names.FirstOrDefault().Middle ?? "";
-            result.LastName = identity.Names.FirstOrDefault().Last ?? "";
-            result.NameSuffix = identity.Names.FirstOrDefault().Suffix ?? "";
-        }
-        else
-        {
-            result.FirstName = "";
-            result.MiddleName = "";
-            result.LastName = "";
-            result.NameSuffix = "";
-        }
-        if (identity.Ssns.Count > 0)
-            result.Ssn = identity.Ssns.FirstOrDefault();
-        else
-            result.Ssn = "";
+        Identity identity = JsonConvert.DeserializeObject<Identity>(strIdentities) ?? throw new Exception("Invalid Identity");
 
-        if (identity.DatesOfBirth.Count > 0)
-        {
-        bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.FirstOrDefault(), culture, DateTimeStyles.None, out var dob);
-            result.Dob = valiDob ? dob : null;
-        }
-        if (identity.Genders.Count > 0)
-            result.Gender = identity.Genders.FirstOrDefault();
-        else
-            result.Gender = "unknown";
+        var clientIdentityEntity = MapIdentityToClientIdentityEntity(linkId, mpiUpdated, identity);
 
         ProtectedPopulation? protectedPopulationFromRequest = requests.protectedPopulation?.First();
         if (protectedPopulationFromRequest != null)
         {
             // TODO: use String comparison everywhere; set up warning rule on direct comparison
-            result.ProtectedPopulationFlag = string.Equals( "Y", protectedPopulationFromRequest.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
+            clientIdentityEntity.ProtectedPopulationFlag = string.Equals( "Y", protectedPopulationFromRequest.ProtectedPopulationFlag, StringComparison.OrdinalIgnoreCase );
 
-            result.ProtectedPopulationType = protectedPopulationFromRequest.ProtectedPopulationTypes is not null
+            clientIdentityEntity.ProtectedPopulationType = protectedPopulationFromRequest.ProtectedPopulationTypes is not null
                 ? string.Join( ";", protectedPopulationFromRequest.ProtectedPopulationTypes )
                 : "";
         }   
         else {
-            result.ProtectedPopulationFlag = false;
-            result.ProtectedPopulationType = "";
+            clientIdentityEntity.ProtectedPopulationFlag = false;
+            clientIdentityEntity.ProtectedPopulationType = "";
         }
-        result.MpiUpdated = mpiUpdated;
-        result.IsActive = true;
-        result.IsDelete = false;
-        // TODO: URGENT/ERROR: populate this correctly
-        result.CreatedBy = result.SourceSystemName;
-        result.UpdatedBy = result.SourceSystemName;
-        result.SetAllDateTimesToNow();
 
         // Deserialize the JSON string into a JObject 
         JObject json = JObject.Parse(strIdentities);
@@ -96,81 +51,126 @@ public class NewClientIdentityMapper
             }
         }
         
-        result.CustomJson = customCreateDatesJson;
+        clientIdentityEntity.CustomJson = customCreateDatesJson;
 
-        //var requestGroupedByAddress = requests.GroupBy(r => r, new ClientIdentityRequestAddressComparer());
-
-        // TODO: make mapping shared code
-        foreach (Address addressGroup in identity.Addresses)
-        {
-            List<ClientIdentityAddressCommunicationEntity> addressCommunications = new List<ClientIdentityAddressCommunicationEntity>();
-
-            //var requestGroupedByCommunication = addressGroup.GroupBy(r => r, new ClientIdentityRequestCommunicationComparer());
-
-            var address = new ClientIdentityAddressEntity
-            {
-                ClientIdentity = result,
-                AddressType = "",
-                AddressLine1 = addressGroup.Line1,
-                AddressLine2 = addressGroup.Line2,
-                AddressLine3 = "",
-                City = addressGroup.City,
-                State = addressGroup.State,
-                ZipCode = addressGroup.PostalCode,
-                ZipFour = addressGroup.ZipFour ?? "",
-                IsActive = true,
-                IsDelete = false,
-                CreatedBy = "DOH",
-                CreatedDate = DateTime.Now,
-                UpdatedBy = "DOH",
-                UpdatedDate = DateTime.Now
-            };
-            result.Addresses.Add(address);
-
-
-            foreach (var communicationGroup in identity.PhoneNumbers)
-            {
-                var communication = new ClientIdentityCommunicationEntity();
-                //var communicationRequest = communicationGroup.FirstOrDefault();
-                communication.MpiLinkId = result.MpiLinkId;
-                communication.SourceSystemName = result.SourceSystemName;
-                communication.SourceSystemId = result.SourceSystemId;
-                communication.PhoneType = "";
-                communication.EmailType = "";
-                communication.EmailAddress = identity.Emails.FirstOrDefault() ?? "";
-                communication.PhoneNumber = Regex.Replace(communicationGroup.Number ?? "", @"\D", ""); 
-                communication.SourceSystemUpdated = result.SourceSystemUpdated;
-                communication.IsActive = true;
-                communication.IsDelete = false;
-                communication.CreatedBy = "DOH";
-                communication.CreatedDate = DateTime.Now;
-                communication.UpdatedBy = "DOH";
-                communication.UpdatedDate = DateTime.Now;
-                result.Communications.Add(communication);
-
-                var addressCommunication = new ClientIdentityAddressCommunicationEntity()
-                {
-
-                    Address = address,
-                    Communication = communication
-                };
-
-                addressCommunications.Add(addressCommunication);
-            }
-
-            address.AddressCommunications = addressCommunications;
-
-        }
-        return result;
+        return clientIdentityEntity;
     }
 
-    public static List<ClientIdentityModel> MapToClientIdentityModel(IEnumerable<ClientIdentityEntity> entities)
+    public static ClientIdentityEntity MapIdentityToClientIdentityEntity(string linkId, DateTime mpiUpdated, Identity identity, bool isDelete = false)
     {
-        var result = new List<ClientIdentityModel>();
-        foreach (var entity in entities)
+        var result = new ClientIdentityEntity
         {
-            var model = MapToClientIdentityModel(entity);
-            result.Add(model);
+            Addresses = [],
+            Communications = [],
+
+            MpiLinkId = linkId
+        };
+
+        if (identity.Sources.Count > 0 && identity.Sources.First().Name != null && identity.Sources.First().Id != null)
+        {
+            result.SourceSystemName = identity.Sources.First().Name;
+            result.SourceSystemId = identity.Sources.First().Id;
+        }
+        else 
+        {
+            throw new InvalidDataException("Invalid Identity Sources.");
+        }
+
+        result.SourceSystemAgency = "";
+
+        if (identity.Names.Count > 0)
+        {
+            result.FirstName = identity?.Names?.First()?.First ?? "";
+            result.MiddleName = identity?.Names?.First()?.Middle ?? "";
+            result.LastName = identity?.Names?.First()?.Last ?? "";
+            result.NameSuffix = identity?.Names?.First()?.Suffix ?? "";
+        }
+        else
+        {
+            result.FirstName = "";
+            result.MiddleName = "";
+            result.LastName = "";
+            result.NameSuffix = "";
+        }
+
+        result.Ssn = identity?.Ssns.Count > 0 ? identity.Ssns.First() : "";
+
+        if (identity?.DatesOfBirth.Count > 0)
+        {
+            bool valiDob = DateOnly.TryParse(identity.DatesOfBirth.First(), culture, DateTimeStyles.None, out var dob);
+            result.Dob = valiDob ? dob : null;
+        }
+        
+        result.Gender = identity?.Genders != null && identity.Genders.Count > 0
+            ? identity.Genders.First() ?? "unknown"
+            : "unknown";
+
+        result.IsDelete = isDelete;
+        result.CreatedBy = result.SourceSystemName;
+        result.UpdatedBy = result.SourceSystemName;
+        result.SetAllDateTimesToNow();
+
+        if(identity?.Addresses.Count > 0)
+        {
+            foreach (Address addressGroup in identity.Addresses)
+            {
+                List<ClientIdentityAddressCommunicationEntity> addressCommunications = [];
+
+                var address = new ClientIdentityAddressEntity
+                {
+                    ClientIdentity = result,
+                    AddressType = "",
+                    AddressLine1 = addressGroup.Line1,
+                    AddressLine2 = addressGroup.Line2,
+                    AddressLine3 = "",
+                    City = addressGroup.City,
+                    State = addressGroup.State,
+                    ZipCode = addressGroup.PostalCode,
+                    ZipFour = addressGroup.ZipFour ?? "",
+                    IsActive = true,
+                    IsDelete = false,
+                    CreatedBy = "DOH",
+                    CreatedDate = DateTime.Now,
+                    UpdatedBy = "DOH",
+                    UpdatedDate = DateTime.Now
+                };
+                result.Addresses.Add(address);
+
+
+                foreach (var communicationGroup in identity.PhoneNumbers)
+                {
+                    var communication = new ClientIdentityCommunicationEntity
+                    {
+                        MpiLinkId = result.MpiLinkId,
+                        SourceSystemName = result.SourceSystemName,
+                        SourceSystemId = result.SourceSystemId,
+                        PhoneType = "",
+                        EmailType = "",
+                        EmailAddress = identity.Emails.FirstOrDefault() ?? "",
+                        PhoneNumber = Regex.Replace(communicationGroup.Number ?? "", @"\D", ""),
+                        SourceSystemUpdated = result.SourceSystemUpdated,
+                        IsActive = true,
+                        IsDelete = false,
+                        CreatedBy = "DOH",
+                        CreatedDate = DateTime.Now,
+                        UpdatedBy = "DOH",
+                        UpdatedDate = DateTime.Now
+                    };
+                    result.Communications.Add(communication);
+
+                    var addressCommunication = new ClientIdentityAddressCommunicationEntity()
+                    {
+
+                        Address = address,
+                        Communication = communication
+                    };
+
+                    addressCommunications.Add(addressCommunication);
+                }
+
+                address.AddressCommunications = addressCommunications;
+
+            }
         }
 
         return result;
@@ -233,5 +233,6 @@ public class NewClientIdentityMapper
         result.Addresses = addresses;
         return result;
     }
+
 }
 

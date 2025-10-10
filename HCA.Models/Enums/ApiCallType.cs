@@ -58,4 +58,10 @@ public enum ApiCallType
 
     [StringValue("VE Identity Exists")]
     VEIdentityExists,
+
+    [StringValue("VE Native Id Query")]
+    VENativeIdQuery,
+
+    [StringValue("VE Search Notifications")]
+    VESearchNotifications,
 }

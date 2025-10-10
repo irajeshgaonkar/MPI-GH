@@ -1956,6 +1956,7 @@ public class ClientIdentityService : IClientIdentityService
 
     private async Task<dynamic?> DOH_PostIdentities( UserRequestEntity userRequestEntity, DOH_PostClientIdentityRequest request )
     {
+
         var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
 
         // Always send the verato request with the GROUP_BY_SOURCE response identity format name

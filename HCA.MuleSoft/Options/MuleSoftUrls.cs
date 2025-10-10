@@ -23,5 +23,9 @@ public static class  MuleSoftUrls
     public const string DemographicQuery = "demographicsQuery";
 
     public const string EnrichDemographicQuery = "enrich";
+
+    public const string NativeIdQuery = "nativeIdQuery";
+
+    public const string SearchNotifications = "searchNotifications";
 }
 

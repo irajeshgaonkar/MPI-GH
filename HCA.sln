@@ -31,6 +31,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Batch.SQS.Publisher.Lam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Sftp.Lambda", "HCA.Sftp.Lambda\src\HCA.Sftp.Lambda\HCA.Sftp.Lambda.csproj", "{8EA6A149-3C06-400E-9D1E-977D567791EC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.MPI.DBSync.Lambda", "HCA.MPI.DBSync.Lambda\HCA.MPI.DBSync.Lambda.csproj", "{6512C18E-DB36-DEE1-4218-2FCEB47CF653}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{8EA6A149-3C06-400E-9D1E-977D567791EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8EA6A149-3C06-400E-9D1E-977D567791EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8EA6A149-3C06-400E-9D1E-977D567791EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6512C18E-DB36-DEE1-4218-2FCEB47CF653}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6512C18E-DB36-DEE1-4218-2FCEB47CF653}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6512C18E-DB36-DEE1-4218-2FCEB47CF653}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6512C18E-DB36-DEE1-4218-2FCEB47CF653}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

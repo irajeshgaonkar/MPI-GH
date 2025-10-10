@@ -76,6 +76,12 @@ public class MuleSoftRepository(IAppLogger appLogger, MuleSoftHttpClient muleSof
     public async Task<PostIdentityResponse> PostIdentity(PostIdentityRequest request)
         => await Execute<PostIdentityResponse>(MuleSoftUrls.PostIdentities, request);
 
+    public async Task<NativeIdQueryResponse> NativeIdQuery( NativeIdQueryRequest request)
+        => await Execute<NativeIdQueryResponse>(MuleSoftUrls.NativeIdQuery, request);
+
+    public async Task<SearchNotificationsResponse> SearchNotifications(SearchNotificationsRequest request)
+        => await Execute<SearchNotificationsResponse>(MuleSoftUrls.SearchNotifications, request);
+
     ///<inheritdoc />
     public async Task<DOH_PostIdentityResponse> DOH_PostIdentity(PostIdentityRequest request)
         => await Execute<DOH_PostIdentityResponse>(MuleSoftUrls.PostIdentities, request);

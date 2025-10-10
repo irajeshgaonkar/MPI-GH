@@ -69,7 +69,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.VEDemographicQuery] = DemographicQuery,
             [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
             [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
-            [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity
+            [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity,
+            [ApiCallType.VENativeIdQuery] = NativeIdQuery,
+            [ApiCallType.VESearchNotifications] = SearchNotifications,
         };
 
         return requestExecuters;
@@ -655,6 +657,29 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
             throw;
         }
+    }
+
+    private async Task<BaseResponse> NativeIdQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var nativeIdQueryClientIdentityRequest = Cast<NativeIdQueryClientIdentityRequest>(request);
+        var response = await _muleSoftRequestExecuter.Execute<NativeIdQueryClientIdentityResponse>(nativeIdQueryClientIdentityRequest, requestStatusUpdater);
+        if (response != null && response.Success)
+        {
+            return response;
+        }
+        throw new HcaBadRequestException("Error processing the request");
+    }
+
+    private async Task<BaseResponse> SearchNotifications(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var searchNotificationsRequest = Cast<SearchClientIdentityNotificationsRequest>(request);
+        var response = await _muleSoftRequestExecuter.Execute<SearchClientIdentityNotificationResponse>(searchNotificationsRequest, requestStatusUpdater);
+        if (response != null && response.Success)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Error processing the request");
     }
 
     private async Task<BaseResponse> DOH_EnrichDemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
