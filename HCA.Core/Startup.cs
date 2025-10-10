@@ -1,6 +1,7 @@
 ﻿using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
+using HCA.Core.Processors.MPIDBSync;
 using HCA.Core.Processors.Sftp;
 using HCA.Core.Services;
 using HCA.Data;
@@ -54,7 +55,8 @@ public static class Startup
             .AddScoped<IBatchRequestProcessor, BatchRequestProcessor>()
             .AddScoped<IFileWriter, CsvFileWriter>()
             .AddScoped<ISftpProcessor, SftpProcessor>()
-            .AddScoped<IOutputFileWriter, OutputFileWriter>();
+            .AddScoped<IOutputFileWriter, OutputFileWriter>()
+            .AddScoped<IMPIDBSynchronizer, MPIDBSynchronizer>();
 
         return services;
     }

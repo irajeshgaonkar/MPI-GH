@@ -41,8 +41,10 @@ namespace HCA.Core.Services
                     //if (i > 0)
                     //    await statusUpdater.UpdateStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
 
-                    if(i > 0)
+                    if( i > 0 )
+                    {
                         _appLogger.LogInformation($"Retrying request {request.TrackingId}, iteration{i}");
+                    }
 
                     var response = await requestExecuters[request.ApiCallType](request);
                     return response as T;
@@ -66,7 +68,11 @@ namespace HCA.Core.Services
                     _appLogger.LogInformation($"Retrying for the exception HcaHttpException {e.StatusCode}");
                     _appLogger.LogError(e);
                     exception = e.ToString();
-                    if (!_muleSoftRetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw new HcaMuleSoftException(exception);
+                    if( !_muleSoftRetryOptions.ReTriableStatusCode.Contains( e.StatusCode ) )
+                    {
+                        throw new HcaMuleSoftException( exception );
+                    }
+
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
                 catch(Exception e)
@@ -101,7 +107,9 @@ namespace HCA.Core.Services
                 [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
                 [ApiCallType.VEDelete] = DeleteIdentity,
                 [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity,
-                [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery
+                [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
+                [ApiCallType.VENativeIdQuery] = NativeIdQuery,
+                [ApiCallType.VESearchNotifications] = SearchNotifications,
             };
 
             return requestExecuters;
@@ -280,6 +288,43 @@ namespace HCA.Core.Services
             return response;
         }
 
+        private async Task<BaseResponse> NativeIdQuery(BaseRequest request)
+        {
+            var queryRequest = Cast<NativeIdQueryClientIdentityRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.Build_NativeIdQueryRequest(queryRequest);
+            var muleSoftResponse = await _muleSoftRepository.NativeIdQuery(muleSoftRequest);
+            var response = CreateResponse<NativeIdQueryClientIdentityResponse>(muleSoftResponse);
+            response.Content = muleSoftResponse.Content;
+            return response;
+        }
+
+        private async Task<BaseResponse> SearchNotifications(BaseRequest request)
+        {
+            var queryRequest = Cast<SearchClientIdentityNotificationsRequest>(request);
+            var muleSoftRequest = _muleSoftRequestBuilder.Build_SearchNotificationsRequest(queryRequest);
+            var muleSoftResponse = await _muleSoftRepository.SearchNotifications(muleSoftRequest);
+            var response = CreateResponse<SearchClientIdentityNotificationResponse>(muleSoftResponse);
+            response.Content.TotalElements = muleSoftResponse.Content.TotalElements;
+            response.Content.HasNext = muleSoftResponse.Content.HasNext;
+            response.Content.CustomerId = muleSoftResponse.Content.CustomerId;
+            response.Content.Notifications = new();
+            if (muleSoftResponse.Content.Notifications != null)
+            {
+                foreach (var notification in muleSoftResponse.Content.Notifications)
+                {
+                    response.Content.Notifications.Add(new ClientIdentityNotification
+                    {
+                        Ts = notification.Ts,
+                        Service = notification.Service,
+                        NotificationType = notification.NotificationType,
+                        Body = notification.Body,
+                        Username = notification.Username
+                    });
+                }
+            }
+            return response;
+        }
+
         private static T CreateResponse<T>(MuleSoftResponse muleSoftResponse) where T : BaseResponse, new()
         {
             var value = new T
@@ -296,16 +341,22 @@ namespace HCA.Core.Services
 
         private static T Cast<T>(BaseRequest request) where T : BaseRequest
         {
-            if (request is not T muleSoftRequest)
+            if( request is not T muleSoftRequest )
+            {
                 throw new HcaMuleSoftException("Invalid input");
+            }
+
             return muleSoftRequest;
         }
 
         private static bool HasErrors(BaseResponse response)
         {
-            if (null != response.Errors && response.Errors.Count > 0) return true;
-            if (null == response) return true;
-            return false;
+            if (null != response.Errors && response.Errors.Count > 0)
+            {
+                return true;
+            }
+
+            return null == response;
         }
     }
 }

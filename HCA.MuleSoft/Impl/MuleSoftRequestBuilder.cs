@@ -91,6 +91,30 @@ public class MuleSoftRequestBuilder : IMuleSoftRequestBuilder
         return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
     }
 
+    public NativeIdQueryRequest Build_NativeIdQueryRequest(NativeIdQueryClientIdentityRequest request)
+    {
+        NativeIdRequestContent nativeIdQueryContent = new()
+        {
+            ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames,
+            Source = new Models.MuleSoft.Request.NativeIdRequestSource() { Id = request.Content.Source.Id, Name = request.Content.Source.Name }
+        };
+
+        return new NativeIdQueryRequest(request.TrackingId, nativeIdQueryContent);
+    }
+
+    public SearchNotificationsRequest Build_SearchNotificationsRequest(SearchClientIdentityNotificationsRequest request)
+    {
+        SearchNotificationsRequestContent searchNotificationsRequestContent = new ()
+        {
+            PageNumber = request.Content.PageNumber,
+            PageSize = request.Content.PageSize,
+            StartDate = request.Content.StartDate,
+            EndDate = request.Content.EndDate
+        };
+
+        return new SearchNotificationsRequest(request.TrackingId, searchNotificationsRequestContent);
+    }
+
     public PostIdentityRequest BuildDOH_EnrichDemographicQueryRequest(DOH_EnrichDemographicQueryClientIdentityRequest request)
     {
         PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.Identity);

@@ -299,7 +299,7 @@ WHERE mpi_link_id IN
         => c => c.SourceSystemName == sourceSystemName && c.SourceSystemId == sourceSystemId;
 
     // TODO: what does 'Upsert' mean? Perhaps 'assert'?
-    public async Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity)
+    public async Task<ClientIdentityEntity?> Upsert(ClientIdentityEntity entity, bool isDelete = false)
     {
         var identity = await GetBySourceAll(entity.SourceSystemName, entity.SourceSystemId);
 
@@ -324,8 +324,8 @@ WHERE mpi_link_id IN
         identity.UpdatedBy = entity.UpdatedBy;
         identity.UpdatedDate = entity.UpdatedDate;
         identity.CustomJson = entity.CustomJson;
-        identity.IsActive = true;
-        identity.IsDelete = false;
+        identity.IsActive = !isDelete;
+        identity.IsDelete = isDelete;
 
         foreach (var address in entity.Addresses)
         {
@@ -339,8 +339,8 @@ WHERE mpi_link_id IN
             else
             {
 
-                matchingAddress.IsActive = true;
-                matchingAddress.IsDelete = false;
+                matchingAddress.IsActive = !isDelete;
+                matchingAddress.IsDelete = isDelete;
                 foreach (var ac in address.AddressCommunications)
                 {
                     var communication = matchingAddress.AddressCommunications.FirstOrDefault(mac => mac.Communication.EmailType == ac.Communication.EmailType && mac.Communication.PhoneType == ac.Communication.PhoneType
@@ -358,8 +358,8 @@ WHERE mpi_link_id IN
                     }
                     else
                     {
-                        communication.IsActive = true;
-                        communication.IsDelete = false;
+                        communication.IsActive = !isDelete;
+                        communication.IsDelete = isDelete;
                     }
                 }
             }
