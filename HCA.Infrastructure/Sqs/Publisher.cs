@@ -1,4 +1,5 @@
 ﻿using Amazon.SQS;
+using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Extensions;
 using HCA.Models.SQS;
 
@@ -18,13 +19,12 @@ namespace HCA.Infrastructure.Sqs
 
     public class SqsPublisher : ISqsPublisher
     {
-        private readonly SqsOptions _sqsOptions;
-
         private readonly IAmazonSQS _sqsClient;
+        private readonly AppSettings _appSettings;
 
-        public SqsPublisher(SqsOptions sqsOptions)
+        public SqsPublisher(AppSettings appSettings)
         {
-            _sqsOptions = sqsOptions;
+            _appSettings = appSettings;
             _sqsClient = new AmazonSQSClient();
         }
 
@@ -33,7 +33,7 @@ namespace HCA.Infrastructure.Sqs
             if (message == null) return;
             var messageBody = SerializationExtensions.SerializeWithoutCasing(message);
 
-            await _sqsClient.SendMessageAsync(_sqsOptions.QueueUrl, messageBody);
+            await _sqsClient.SendMessageAsync(_appSettings.SqsOptions.QueueUrl, messageBody);
         }
     }
 }

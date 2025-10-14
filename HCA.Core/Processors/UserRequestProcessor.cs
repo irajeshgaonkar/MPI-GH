@@ -21,6 +21,16 @@ public class UserRequestProcessor : IUserRequestProcessor
     private readonly IRequestProcessLogRepository _requestProcessLogRepository;
 
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
+    private readonly ISqsPublisher _sqsPublisher;
+
+    public UserRequestProcessor(NotificationDetails notificationOptions, IUserRequestRepository userRequestRepository, IRequestProcessLogRepository requestProcessLogRepository, IClientIdentityRequestExecutor clientIdentityRequestExecutor, ISqsPublisher sqsPublisher)
+    {
+        _notificationOptions = notificationOptions;
+        _userRequestRepository = userRequestRepository;
+        _requestProcessLogRepository = requestProcessLogRepository;
+        _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
+        _sqsPublisher = sqsPublisher;
+    }
 
     public async Task ProcessRequest(UserRequestMessage requestMessage)
     {
@@ -98,8 +108,7 @@ public class UserRequestProcessor : IUserRequestProcessor
             Payload = SerializationExtensions.Serialize(message)
         };
 
-        var sqsPublisher = new SqsPublisher(sqsOptions);
-        await sqsPublisher.PublishMessage(sqsMessage);
+        await _sqsPublisher.PublishMessage(sqsMessage);
     }
 
 

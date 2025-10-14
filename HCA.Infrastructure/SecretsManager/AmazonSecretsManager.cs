@@ -2,7 +2,6 @@
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using HCA.Infrastructure.Configurations;
-using HCA.Infrastructure.Sftp;
 using System.Text.Json;
 
 namespace HCA.Infrastructure.SecretsManager

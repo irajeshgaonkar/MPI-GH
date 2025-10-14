@@ -75,13 +75,7 @@ public static class Startup
 
     public static IServiceCollection AddSqs(this IServiceCollection services, IConfiguration configuration)
     {
-        var sqsOptions = configuration.GetSection("SqsOptions").Get<SqsOptions>();
-        var outputBucketName = configuration["OutputBucketName"];
-        var inputBucketName = configuration["InputBucketName"];
-
         return services
-            .AddSingleton(sqsOptions)
-            .AddSingleton(new S3Options { OutputBucketName = outputBucketName, InputBucketName = inputBucketName})
             .AddScoped<ISqsPublisher, SqsPublisher>()
             .AddScoped<IClientIdentitySQSPublisher, ClientIdentitySQSPublisher>();
     }
