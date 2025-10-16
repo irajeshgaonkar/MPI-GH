@@ -17,5 +17,7 @@
         public string ClientCert { get; set; }
 
         public string ClientCertPassword { get; set; }
+
+        public RetryOptions RetryOptions { get; set; }
     }
 }

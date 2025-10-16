@@ -53,7 +53,7 @@
       <GlobalPropertiesToRemove>
       </GlobalPropertiesToRemove>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\HCA.MuleSoft\HCA.MuleSoft.csproj">
+    <ProjectReference Include="..\..\..\HCA.Verato\HCA.Verato.csproj">
       <GlobalPropertiesToRemove>
       </GlobalPropertiesToRemove>
     </ProjectReference>

@@ -11,17 +11,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft.Lambda", "HCA.MuleSoft.Lambda\src\HCA.MuleSoft.Lambda\HCA.MuleSoft.Lambda.csproj", "{75F8B490-B235-4A42-BBB6-C6B94FC52658}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Verato.Lambda", "HCA.Verato.Lambda\src\HCA.Verato.Lambda\HCA.Verato.Lambda.csproj", "{75F8B490-B235-4A42-BBB6-C6B94FC52658}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft", "HCA.MuleSoft\HCA.MuleSoft.csproj", "{7415F64D-E916-430A-9A19-A96729FA6CAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Verato", "HCA.Verato\HCA.Verato.csproj", "{7415F64D-E916-430A-9A19-A96729FA6CAC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Core", "HCA.Core\HCA.Core.csproj", "{3329398D-FEC5-4B3E-B4D2-FA1B8ECA7D85}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Models", "HCA.Models\HCA.Models.csproj", "{25C45F86-659C-4433-9E36-D992A22DB82C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Infrastructure", "HCA.Infrastructure\HCA.Infrastructure.csproj", "{CACD9606-C5C4-418F-A6E5-BF402FF750B7}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MuleSoft.Interface", "HCA.MuleSoft.Interface\HCA.MuleSoft.Interface.csproj", "{E1629AE9-4992-4AA2-9B82-C717411857B2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Api", "HCA.Api\src\HCA.Api\HCA.Api.csproj", "{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}"
 EndProject
@@ -63,10 +61,6 @@ Global
 		{CACD9606-C5C4-418F-A6E5-BF402FF750B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CACD9606-C5C4-418F-A6E5-BF402FF750B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CACD9606-C5C4-418F-A6E5-BF402FF750B7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E1629AE9-4992-4AA2-9B82-C717411857B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E1629AE9-4992-4AA2-9B82-C717411857B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E1629AE9-4992-4AA2-9B82-C717411857B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E1629AE9-4992-4AA2-9B82-C717411857B2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5725E52-4F68-4EC7-9DAA-9A0ED3B7DDB6}.Release|Any CPU.ActiveCfg = Release|Any CPU

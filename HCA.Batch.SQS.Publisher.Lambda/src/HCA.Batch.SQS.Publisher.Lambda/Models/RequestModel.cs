@@ -1,4 +1,4 @@
-﻿namespace HCA.MuleSoft.Lambda.Models
+﻿namespace HCA.Batch.SQS.Publisher.Lambda.Models
 {
     public class RequestModel
     {

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Request;
+using HCA.Models.Verato;
+using HCA.Models.Verato.Request;
 
 namespace HCA.Models.Request;
 

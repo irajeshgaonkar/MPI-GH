@@ -1,5 +1,5 @@
 ﻿using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
+using HCA.Models.Verato;
 
 namespace HCA.Models.Request;
 

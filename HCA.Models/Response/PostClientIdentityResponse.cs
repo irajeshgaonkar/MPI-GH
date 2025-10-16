@@ -1,4 +1,4 @@
-﻿using HCA.Models.MuleSoft.Response;
+﻿using HCA.Models.Verato.Response;
 
 namespace HCA.Models.Response;
 

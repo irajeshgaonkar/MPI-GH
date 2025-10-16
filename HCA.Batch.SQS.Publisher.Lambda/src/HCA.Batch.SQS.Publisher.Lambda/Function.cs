@@ -1,9 +1,9 @@
 ﻿using Amazon.Lambda.Core;
 using Amazon.S3;
+using HCA.Batch.SQS.Publisher.Lambda.Models;
 using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Infrastructure.Logger;
-using HCA.MuleSoft.Lambda.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

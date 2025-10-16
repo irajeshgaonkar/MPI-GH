@@ -4,7 +4,7 @@ using HCA.Data.Repository;
 using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
+using HCA.Models.Verato;
 using HCA.Models.Request;
 using HCA.Models.Response;
 using Newtonsoft.Json.Linq;

@@ -26,7 +26,6 @@
     <Folder Include="Extensions\ModelExtensions\" />
     <Folder Include="Comparer\" />
     <Folder Include="Logger\" />
-    <Folder Include="Exceptions\" />
     <Folder Include="Security\" />
     <Folder Include="Converters\" />
     <Folder Include="FileReadWriter\" />
@@ -38,16 +37,16 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Amazon.Lambda.Core" Version="2.5.0" />
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.22" />
+	<PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.22" />
     <PackageReference Include="AWSSDK.SecretsManager" Version="3.7.400.95" />
     <PackageReference Include="AWSSDK.SQS" Version="3.7.400.95" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.3.0" />
+	<PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.2" />
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
-    <PackageReference Include="Amazon.S3" Version="0.34.0" />
+	<PackageReference Include="Amazon.S3" Version="0.34.0" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 </Project>

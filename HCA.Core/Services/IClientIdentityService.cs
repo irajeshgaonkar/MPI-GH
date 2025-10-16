@@ -1,6 +1,6 @@
 ﻿using HCA.Models;
 using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
+using HCA.Models.Verato;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;

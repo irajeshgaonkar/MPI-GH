@@ -6,8 +6,6 @@
 
         public LoggingOptions Logging { get; set; }
 
-        public MuleSoftOptions MuleSoft { get; set; }
-
         public string InputBucketName { get; set; }
 
         public string OutputBucketName { get; set; }

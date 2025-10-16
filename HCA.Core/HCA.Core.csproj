@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\HCA.Data\HCA.Data.csproj" />
-    <ProjectReference Include="..\HCA.MuleSoft\HCA.MuleSoft.csproj" />
+    <ProjectReference Include="..\HCA.Verato\HCA.Verato.csproj" />
     <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
     <ProjectReference Include="..\HCA.Infrastructure\HCA.Infrastructure.csproj" />
     <ProjectReference Include="..\HCA.FileProcessor\HCA.FileProcessor.csproj" />

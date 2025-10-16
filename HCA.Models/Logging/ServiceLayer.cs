@@ -21,9 +21,9 @@
         Batch,
 
         /// <summary>
-        /// Service Layer MuleSoft
+        /// Service Layer Verato
         /// </summary>
-        MuleSoft,
+        Verato,
 
         /// <summary>
         /// None

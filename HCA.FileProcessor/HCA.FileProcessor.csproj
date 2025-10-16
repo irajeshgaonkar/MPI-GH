@@ -25,6 +25,5 @@
   <ItemGroup>
     <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
     <ProjectReference Include="..\HCA.Infrastructure\HCA.Infrastructure.csproj" />
-    <ProjectReference Include="..\HCA.Data\HCA.Data.csproj" />
   </ItemGroup>
 </Project>

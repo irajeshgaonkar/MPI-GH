@@ -7,8 +7,7 @@ using HCA.Core.Services;
 using HCA.Data;
 using HCA.Infrastructure;
 using HCA.Infrastructure.Sqs;
-using HCA.Models;
-using HCA.MuleSoft;
+using HCA.Verato;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,7 +21,7 @@ public static class Startup
         services.AddConsoleLogging();
         services.AddDbContext(configuration);
         services.AddRepositories();
-        services.AddMuleSoft(configuration);
+        services.AddVerato(configuration);
         services.AddHttpClients(configuration);
         services.AddServices();
         services.AddAutoMapper();
@@ -50,7 +49,7 @@ public static class Startup
     public static IServiceCollection AddProcessors(this IServiceCollection services)
     {
         services
-            .AddScoped<IMuleSoftRequestExecuter, MuleSoftRequestExecuter>()
+            .AddScoped<IVeratoRequestExecuter, VeratoRequestExecuter>()
             .AddScoped<IClientIdentityRequestExecutor, ClientIdentityRequestExecutor>()
             .AddScoped<IBatchRequestProcessor, BatchRequestProcessor>()
             .AddScoped<IFileWriter, CsvFileWriter>()

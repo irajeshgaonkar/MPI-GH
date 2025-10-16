@@ -38,13 +38,13 @@ If already installed check if new version is available.
 
 Execute unit tests
 ```
-    cd "HCA.MuleSoft.Lambda/test/HCA.MuleSoft.Lambda.Tests"
+    cd "HCA.Verato.Lambda/test/HCA.Verato.Lambda.Tests"
     dotnet test
 ```
 
 Deploy function to AWS Lambda
 ```
-    cd "HCA.MuleSoft.Lambda/src/HCA.MuleSoft.Lambda"
+    cd "HCA.Verato.Lambda/src/HCA.Verato.Lambda"
     dotnet lambda deploy-function
 ```
 

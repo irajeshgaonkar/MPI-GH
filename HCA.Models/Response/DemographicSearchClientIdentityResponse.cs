@@ -1,5 +1,5 @@
-﻿using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Response;
+﻿using HCA.Models.Verato;
+using HCA.Models.Verato.Response;
 
 namespace HCA.Models.Response;
 

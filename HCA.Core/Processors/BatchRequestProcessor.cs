@@ -129,7 +129,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
             var request = requests.First();
             var deleteIdentityRequest = new DeleteClientIdentityRequest(trackingId)
             {
-                Content = new Models.MuleSoft.Source(request.SourceSystemName, request.SourceSystemId)
+                Content = new Models.Verato.Source(request.SourceSystemName, request.SourceSystemId)
             };
 
             var response = await _clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(deleteIdentityRequest, requestStatusUpdater);

@@ -44,17 +44,6 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddHttpClient<MuleSoftHttpClient>((sp, client) =>
-            {
-                var appSettings = sp.GetRequiredService<AppSettings>();
-
-                client.BaseAddress = new Uri(appSettings.MuleSoft.BaseUrl);
-            }).AddPolicyHandler(GetRetryPolicy());
-
-            services.AddHttpClient<TokenHttpClient>(client =>
-            {
-            }).AddPolicyHandler(GetRetryPolicy());
-
             //Register client for Verato with Basic Auth and Client Cert
             services.AddHttpClient<VeratoHttpClient>((sp, client) =>
             {

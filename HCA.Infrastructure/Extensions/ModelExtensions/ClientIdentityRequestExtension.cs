@@ -1,6 +1,6 @@
 ﻿using HCA.Infrastructure.Comparer;
 using HCA.Models.Enums;
-using HCA.Models.MuleSoft;
+using HCA.Models.Verato;
 using HCA.Models.Request;
 
 namespace HCA.Infrastructure.Extensions.ModelExtensions;

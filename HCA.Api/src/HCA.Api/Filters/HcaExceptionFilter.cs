@@ -22,7 +22,7 @@ public class HcaExceptionFilter : IExceptionFilter
             };
         }
 
-        else if (exception is HcaMuleSoftException mse)
+        else if (exception is HcaVeratoException mse)
         {
             appLogger?.LogError(mse);
             context.Result = new JsonResult(mse.Message)

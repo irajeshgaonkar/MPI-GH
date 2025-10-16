@@ -1,4 +1,4 @@
-﻿using HCA.Models.MuleSoft;
+﻿using HCA.Models.Verato;
 using HCA.Models.Enums;
 
 namespace HCA.Models.Request

@@ -12,9 +12,9 @@ using HCA.Infrastructure.Sqs;
 using HCA.Models;
 using HCA.Models.Enums;
 using HCA.Models.Logging;
-using HCA.Models.MuleSoft;
-using HCA.Models.MuleSoft.Request;
-using HCA.Models.MuleSoft.Response;
+using HCA.Models.Verato;
+using HCA.Models.Verato.Request;
+using HCA.Models.Verato.Response;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
@@ -192,7 +192,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -455,7 +455,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -545,7 +545,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -635,7 +635,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -725,7 +725,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -790,7 +790,7 @@ public class ClientIdentityService : IClientIdentityService
 
             return await DemographicSearch( userRequestEntity, filter );
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
 
@@ -855,7 +855,7 @@ public class ClientIdentityService : IClientIdentityService
 
             return await DemographicQuery( userRequestEntity, filter );
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
 
@@ -964,7 +964,7 @@ public class ClientIdentityService : IClientIdentityService
 
             return await DOH_DemographicSearch(userRequestEntity, dOH_DemographicQueryRequest);
         }
-        catch ( HcaMuleSoftException e )
+        catch ( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Success, e.ToString() );
             var exceptionCustomProperties = new ExceptionCustomProperties
@@ -1224,7 +1224,7 @@ public class ClientIdentityService : IClientIdentityService
 
             return await DOH_DemographicQuery(userRequestEntity, dOH_DemographicQueryRequest);
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
 
@@ -1421,7 +1421,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
             var exceptionCustomProperties = new ExceptionCustomProperties
@@ -1536,7 +1536,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
             var exceptionCustomProperties = new ExceptionCustomProperties
@@ -1652,7 +1652,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch (HcaMuleSoftException e)
+        catch (HcaVeratoException e)
         {
             UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
             var exceptionCustomProperties = new ExceptionCustomProperties
@@ -1771,7 +1771,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch (HcaMuleSoftException e)
+        catch (HcaVeratoException e)
         {
             UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
             var exceptionCustomProperties = new ExceptionCustomProperties
@@ -1877,7 +1877,7 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
-        catch( HcaMuleSoftException e )
+        catch( HcaVeratoException e )
         {
             UpdateProcessStatus( userRequestEntity, RequestStatus.Failed, e.ToString() );
             var exceptionCustomProperties = new ExceptionCustomProperties

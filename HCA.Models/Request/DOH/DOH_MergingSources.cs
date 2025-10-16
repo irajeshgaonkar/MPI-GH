@@ -1,4 +1,4 @@
-﻿using HCA.Models.MuleSoft;
+﻿using HCA.Models.Verato;
 
 namespace HCA.Models.Request.DOH
 {
