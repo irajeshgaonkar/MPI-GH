@@ -3,7 +3,7 @@
 /// <summary>
 /// Demographic search response
 /// </summary>
-public class DemoGraphicSearchResponse: VeratoResponse
+public class DemographicSearchResponse: VeratoResponse
 {
     /// <summary>
     /// Demographic search content <see cref="DemographicSearchContent"/>
@@ -11,7 +11,7 @@ public class DemoGraphicSearchResponse: VeratoResponse
     public DemographicSearchContent Content { get; set; }
 }
 
-public class DOH_DemoGraphicSearchResponse : VeratoResponse
+public class DOH_DemographicSearchResponse : VeratoResponse
 {
     /// <summary>
     /// Demographic search content <see cref="DemographicSearchContent"/>
@@ -22,7 +22,7 @@ public class DOH_DemoGraphicSearchResponse : VeratoResponse
 /// <summary>
 /// Demographic search response
 /// </summary>
-public class DemoGraphicQueryResponse : VeratoResponse
+public class DemographicQueryResponse : VeratoResponse
 {
     /// <summary>
     /// Demographic search content <see cref="DemographicQueryResponseContent"/>
@@ -33,7 +33,7 @@ public class DemoGraphicQueryResponse : VeratoResponse
 /// <summary>
 /// 
 /// </summary>
-public class DOH_DemoGraphicQueryResponse : VeratoResponse
+public class DOH_DemographicQueryResponse : VeratoResponse
 {
     /// <summary>
     /// Demographic search content <see cref="DemographicQueryResponseContent"/>

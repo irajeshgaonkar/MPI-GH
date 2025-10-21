@@ -21,21 +21,21 @@ public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpC
     private readonly VeratoHttpClient _veratoHttpClient = veratoHttpClient;
 
     ///<inheritdoc />
-    public async Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request)
-        => await Execute<DemoGraphicSearchResponse>(VeratoEndpoint.DemographicSearch, request);
+    public async Task<DemographicSearchResponse> DemographicSearch(PostIdentityRequest request)
+        => await Execute<DemographicSearchResponse>(VeratoEndpoint.DemographicSearch, request);
 
     ///<inheritdoc />
-    public async Task<DOH_DemoGraphicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request)
-        => await Execute<DOH_DemoGraphicSearchResponse>(VeratoEndpoint.DemographicSearch, request);
+    public async Task<DOH_DemographicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request)
+        => await Execute<DOH_DemographicSearchResponse>(VeratoEndpoint.DemographicSearch, request);
 
-    public async Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request)
-       => await Execute<DemoGraphicQueryResponse>(VeratoEndpoint.DemographicQuery, request);
+    public async Task<DemographicQueryResponse> DemographicQuery(PostIdentityRequest request)
+       => await Execute<DemographicQueryResponse>(VeratoEndpoint.DemographicQuery, request);
 
-    public async Task<DOH_DemoGraphicQueryResponse> DOH_DemographicQuery(PostIdentityRequest request)
-      => await Execute<DOH_DemoGraphicQueryResponse>(VeratoEndpoint.DemographicQuery, request);
+    public async Task<DOH_DemographicQueryResponse> DOH_DemographicQuery(PostIdentityRequest request)
+      => await Execute<DOH_DemographicQueryResponse>(VeratoEndpoint.DemographicQuery, request);
 
-    public async Task<DOH_DemoGraphicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request)
-      => await Execute<DOH_DemoGraphicQueryResponse>(VeratoEndpoint.EnrichDemographicQuery, request);
+    public async Task<DOH_DemographicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request)
+      => await Execute<DOH_DemographicQueryResponse>(VeratoEndpoint.EnrichDemographicQuery, request);
 
     ///<inheritdoc />
     public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request)

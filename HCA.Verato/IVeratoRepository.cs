@@ -13,21 +13,21 @@ public interface IVeratoRepository
     /// Verato demographic search api
     /// </summary>
     /// <param name="request">Demograph search request <see cref="PostIdentityRequest"/></param>
-    /// <returns>demographc serach response <see cref="DemoGraphicSearchResponse"/></returns>
-    Task<DemoGraphicSearchResponse> DemographicSearch(PostIdentityRequest request);
+    /// <returns>demographc serach response <see cref="DemographicSearchResponse"/></returns>
+    Task<DemographicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
-    Task<DOH_DemoGraphicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request);
+    Task<DOH_DemographicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request);
 
     /// <summary>
     /// Verato demographic search api
     /// </summary>
     /// <param name="request">Demograph search request <see cref="PostIdentityRequest"/></param>
-    /// <returns>demographc serach response <see cref="DemoGraphicQueryResponse"/></returns>
-    Task<DemoGraphicQueryResponse> DemographicQuery(PostIdentityRequest request);
+    /// <returns>demographc serach response <see cref="DemographicQueryResponse"/></returns>
+    Task<DemographicQueryResponse> DemographicQuery(PostIdentityRequest request);
 
-    Task<DOH_DemoGraphicQueryResponse> DOH_DemographicQuery(PostIdentityRequest request);
+    Task<DOH_DemographicQueryResponse> DOH_DemographicQuery(PostIdentityRequest request);
 
-    Task<DOH_DemoGraphicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request);
+    Task<DOH_DemographicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request);
 
     /// <summary>
     /// Verato link identities api call
