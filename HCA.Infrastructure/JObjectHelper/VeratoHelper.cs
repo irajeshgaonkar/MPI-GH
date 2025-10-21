@@ -52,8 +52,10 @@ namespace HCA.Infrastructure.JObjectHelper
 
             foreach (var clientIdentity in clientIdentities)
             {
-                if (clientIdentity.CustomJson == null)
+                if( clientIdentity.CustomJson == null )
+                {
                     continue;
+                }
 
                 var jsonObject = JObject.Parse(clientIdentity.CustomJson);
 
