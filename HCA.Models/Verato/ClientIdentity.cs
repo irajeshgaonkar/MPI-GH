@@ -2,6 +2,8 @@
 
 public class ClientIdentity
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
     public int Id { get; set; }
 
     public string MPILinkId { get; set; }
@@ -50,8 +52,10 @@ public class ClientIdentity
 
     public string EmailAddress { get; set; }
 
-    public bool ProtectecPopulationFlag { get; set; }
+    public bool ProtectedPopulationFlag { get; set; }
 
     public string ProtectedPopulationType { get; set; }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 }
 
