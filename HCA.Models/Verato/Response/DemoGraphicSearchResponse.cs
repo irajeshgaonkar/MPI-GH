@@ -40,6 +40,3 @@ public class DOH_DemographicQueryResponse : VeratoResponse
     /// </summary>
     public dynamic Content { get; set; }
 }
-
-
-
