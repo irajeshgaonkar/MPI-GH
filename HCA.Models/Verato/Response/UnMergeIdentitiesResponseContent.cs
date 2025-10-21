@@ -1,5 +1,4 @@
-﻿
-namespace HCA.Models.Verato.Response;
+﻿namespace HCA.Models.Verato.Response;
 
 /// <summary>
 /// Un merge identities response content
@@ -26,6 +25,3 @@ public class UnMergeIdentitiesResponseContent
     /// </summary>
     public Source UnmergedSource { get; set; }
 }
-
-
-
