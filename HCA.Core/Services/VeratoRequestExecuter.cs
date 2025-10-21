@@ -71,7 +71,10 @@ namespace HCA.Core.Services
                     _appLogger.LogError(e);
                     exception = e.ToString();
 
-                    if (!_appSettings.VeratoOptions.RetryOptions.ReTriableStatusCode.Contains(e.StatusCode)) throw new HcaVeratoException(exception);
+                    if( !_appSettings.VeratoOptions.RetryOptions.ReTriableStatusCode.Contains( e.StatusCode ) )
+                    {
+                        throw new HcaVeratoException( exception );
+                    }
 
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
