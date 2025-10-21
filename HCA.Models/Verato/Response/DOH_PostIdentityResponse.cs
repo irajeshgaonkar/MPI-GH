@@ -10,9 +10,3 @@ public class DOH_PostIdentityResponse : VeratoResponse
     /// </summary>
     public dynamic Content { get; set; }
 }
-
-
-
-
-
-
