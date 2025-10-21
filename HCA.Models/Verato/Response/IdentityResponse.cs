@@ -151,5 +151,3 @@ public class PhoneNumberResponse : BaseResponseEntity
     /// </summary>
     public PhoneNumber PhoneNumber { get; set; }
 }
-
-
