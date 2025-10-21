@@ -3,16 +3,11 @@
 /// <summary>
 /// Base Request for all the Verato Calls through Verato
 /// </summary>
-public class VeratoRequest
+public class VeratoRequest( string trackingId )
 {
-	public VeratoRequest(string trackingId)
-	{
-		TrackingId = trackingId;
-	}
-
-	/// <summary>
-	/// Id for Tracking the request and response
-	/// </summary>
-	public string TrackingId { get; set; }
+    /// <summary>
+    /// Id for Tracking the request and response
+    /// </summary>
+    public string TrackingId { get; set; } = trackingId;
 }
 

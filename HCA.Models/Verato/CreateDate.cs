@@ -25,8 +25,6 @@
         /// CreateDate
         /// </summary>
         public string createDate { get; set; } = null;
-
-
     }
 
 
