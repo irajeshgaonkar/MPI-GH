@@ -1,5 +1,4 @@
-﻿
-namespace HCA.Models.Verato.Response;
+﻿namespace HCA.Models.Verato.Response;
 
 /// <summary>
 /// Demographic search response
@@ -7,7 +6,7 @@ namespace HCA.Models.Verato.Response;
 public class DemoGraphicSearchResponse: VeratoResponse
 {
     /// <summary>
-    /// Demogrpahic search content <see cref="DemographicSearchContent"/>
+    /// Demographic search content <see cref="DemographicSearchContent"/>
     /// </summary>
     public DemographicSearchContent Content { get; set; }
 }
@@ -15,7 +14,7 @@ public class DemoGraphicSearchResponse: VeratoResponse
 public class DOH_DemoGraphicSearchResponse : VeratoResponse
 {
     /// <summary>
-    /// Demogrpahic search content <see cref="DemographicSearchContent"/>
+    /// Demographic search content <see cref="DemographicSearchContent"/>
     /// </summary>
     public DemographicSearchContent Content { get; set; }
 }
@@ -26,7 +25,7 @@ public class DOH_DemoGraphicSearchResponse : VeratoResponse
 public class DemoGraphicQueryResponse : VeratoResponse
 {
     /// <summary>
-    /// Demogrpahic search content <see cref="DemographicQueryResponseContent"/>
+    /// Demographic search content <see cref="DemographicQueryResponseContent"/>
     /// </summary>
     public DemographicQueryResponseContent Content { get; set; }
 }
@@ -37,7 +36,7 @@ public class DemoGraphicQueryResponse : VeratoResponse
 public class DOH_DemoGraphicQueryResponse : VeratoResponse
 {
     /// <summary>
-    /// Demogrpahic search content <see cref="DemographicQueryResponseContent"/>
+    /// Demographic search content <see cref="DemographicQueryResponseContent"/>
     /// </summary>
     public dynamic Content { get; set; }
 }
