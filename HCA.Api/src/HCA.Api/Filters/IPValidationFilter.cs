@@ -37,6 +37,12 @@ namespace HCA.Api.Filters
                 string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
                 string trackingId = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
+                //Add trackingId to context to consume and format the exception if any in down the line.
+                if (!string.IsNullOrEmpty(trackingId))
+                {
+                    context.HttpContext.Items["TrackingId"] = trackingId;
+                }
+
                 if (string.IsNullOrEmpty(ipAddress))
                 {
                     context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
