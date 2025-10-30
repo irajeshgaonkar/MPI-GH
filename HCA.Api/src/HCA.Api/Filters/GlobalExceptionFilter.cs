@@ -46,7 +46,12 @@ public class GlobalExceptionFilter(IAppLogger logger) : IExceptionFilter
                 statusCode = (int)HttpStatusCode.RequestTimeout;
                 response.Message = "The request timed out. Please try again later.";
                 response.RetryableError = true;
-                break; 
+                break;
+
+            case IPValidationException:
+                statusCode = (int)HttpStatusCode.Unauthorized;
+                response.Message = exception.Message;
+                break;
 
             default:
                 response.Message = "An unexpected error occurred. Please try again later.";

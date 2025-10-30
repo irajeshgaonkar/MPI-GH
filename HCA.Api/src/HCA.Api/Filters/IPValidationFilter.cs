@@ -1,31 +1,27 @@
-﻿using HCA.Api.Extensions;
+﻿using System.Text.Json;
+using HCA.Api.Extensions;
 using HCA.Data.Repository;
+using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Logging;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json.Linq;
-using System.Text.Json;
 
 namespace HCA.Api.Filters
 {
-    // TODO: add documentation
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    public class IPValidationFilter : IAsyncActionFilter
+    /// <summary>
+    /// IP Validation Filter
+    /// </summary>
+    /// <param name="onboardedSystemRepository"></param>
+    /// <param name="logger"></param>
+    public class IPValidationFilter(IOnboardedSystemRepository onboardedSystemRepository, IAppLogger logger) : IAsyncActionFilter
     {
-        private readonly IOnboardedSystemRepository _onboardedSystemRepository;
+        private readonly IOnboardedSystemRepository _onboardedSystemRepository = onboardedSystemRepository;
 
-        private readonly IAppLogger _logger;
-
-        public IPValidationFilter(IOnboardedSystemRepository onboardedSystemRepository, IAppLogger logger)
-        {
-            _onboardedSystemRepository = onboardedSystemRepository;
-            _logger = logger;
-        }
+        private readonly IAppLogger _logger = logger;
 
         public async Task OnActionExecutionAsync( ActionExecutingContext context, ActionExecutionDelegate next )
         {
-            // TODO: limit try/catch wrapping
             try
             {
                 var requestBody = context.ActionArguments.FirstOrDefault();
@@ -34,7 +30,7 @@ namespace HCA.Api.Filters
 
                 JObject jsonObjectRequestBody = JObject.Parse(body);
 
-                string ipAddress = Convert.ToString(jsonObjectRequestBody["IpAddress"]) ?? "";
+                string ipAddress = GetClientIpAddress(context, jsonObjectRequestBody);
                 string trackingId = Convert.ToString(jsonObjectRequestBody["TrackingId"]) ?? "";
 
                 //Add trackingId to context to consume and format the exception if any in down the line.
@@ -45,8 +41,7 @@ namespace HCA.Api.Filters
 
                 if (string.IsNullOrEmpty(ipAddress))
                 {
-                    context.Result = BuildOkObjectResultWith400Error( "ipAddress validation failed. Input is missing ipAddress value." , trackingId);
-                    return;
+                    throw new IPValidationException($"ipAddress validation failed. Incoming request does not have an IP Address.");
                 }
 
                 var sourceSystems = await _onboardedSystemRepository.GetActiveSourceSystemsByIPAsync(ipAddress);
@@ -54,9 +49,9 @@ namespace HCA.Api.Filters
                 // If there are no Source Systems for incoming IP - Block it.
                 if(sourceSystems.Count == 0)
                 {
-                    context.Result = BuildOkObjectResultWith400Error("sourceSystem validation failed. ipAddress/sourceSystem mismatch.", trackingId);
-                    return;
+                    throw new IPValidationException("sourceSystem validation failed. ipAddress/sourceSystem mismatch. Please contact MPI to resolve.");
                 }
+
                 //If there is one matching source system for incoming IP - Allow
                 if(sourceSystems.Count == 1)
                 {
@@ -102,58 +97,12 @@ namespace HCA.Api.Filters
                         //This can happen when whitelisting systems manually
                         else
                         {
-                            context.Result = BuildOkObjectResultWith400Error("Your Whitelisted IP Address is conflicting with another system. Please contact MPI to resolve", trackingId);
-                            return;
+                            throw new IPValidationException("Your Whitelisted IP Address is conflicting with another system. Please contact MPI to resolve");
                         }
                     }
                 }               
             }
-            catch (JsonException e)
-            {
-                // TODO: swap this to a unauthorized error/result once systems are online
-                var exceptionCustomProperties = new ExceptionCustomProperties
-                {
-                    User = context.HttpContext.GetCurrentUser(),
-                    Agency = "",
-                    Role = context.HttpContext.GetUserRoles(),
-                    FunctionName = nameof(IPValidationFilter),
-                    ErrorMessage = e.Message,
-                    StackTrace = e.StackTrace,
-                    ErrorCode = "400"
-                };
-                var errorLogItem = new LogItem()
-                {
-                    Name = $"{HCA.Models.Logging.Constants.LogPrefix_API}-{nameof(IPValidationFilter)}-Failed",
-                    TrackingId = "",
-                    Layer = ServiceLayer.API.ToString(),
-                    ExceptionCustomProperties = exceptionCustomProperties
-                };
-
-                _logger.LogError(e, JsonSerializer.Serialize(errorLogItem));
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. JsonException Error: "+ e.Message );
-            }
-            catch (InvalidOperationException e) {
-                var exceptionCustomProperties = new ExceptionCustomProperties
-                {
-                    User = context.HttpContext.GetCurrentUser(),
-                    Agency = "",
-                    Role = context.HttpContext.GetUserRoles(),
-                    FunctionName = nameof(IPValidationFilter),
-                    ErrorMessage = e.Message,
-                    StackTrace = e.StackTrace,
-                    ErrorCode = "400"
-                };
-                var errorLogItem = new LogItem()
-                {
-                    Name = $"{HCA.Models.Logging.Constants.LogPrefix_API}-{nameof(IPValidationFilter)}-Failed",
-                    TrackingId = "",
-                    Layer = ServiceLayer.API.ToString(),
-                    ExceptionCustomProperties = exceptionCustomProperties
-                };
-
-                _logger.LogError(e, JsonSerializer.Serialize(errorLogItem));
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Likely database IP list error: "+ e.Message );
-            }
+            
             catch (Exception e ){
                 var exceptionCustomProperties = new ExceptionCustomProperties
                 {
@@ -174,11 +123,43 @@ namespace HCA.Api.Filters
                 };
 
                 _logger.LogError(e, JsonSerializer.Serialize(errorLogItem));
-                context.Result = BuildOkObjectResultWith400Error( "sourceSystem validation failed. Unknown error: "+ e.Message );
+                throw;
             }
         }
 
-        private static OkObjectResult BuildOkObjectResultWith400Error( string message, string? trackingid = "" ) => new( new { errorCode = "400", Message = message, Success = false, TrackingId = trackingid } );
+        /// <summary>
+        /// Get incoming IP Address
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="jsonObjectRequestBody"></param>
+        /// <returns></returns>
+        private string GetClientIpAddress(ActionExecutingContext context, JObject jsonObjectRequestBody)
+        {
+            // Try to get IP from request body
+            string? ipAddress = Convert.ToString(jsonObjectRequestBody?["IpAddress"]);
+
+            _logger.LogInformation($"IPAddress from request Body: {ipAddress}");
+
+            if (string.IsNullOrWhiteSpace(ipAddress))
+            {
+                // Fallback: check X-Forwarded-For header
+                ipAddress = context?.HttpContext?.Request?.Headers?["X-Forwarded-For"].First();
+                _logger.LogInformation($"IPAddress from Headers: {ipAddress}");
+
+                if (!string.IsNullOrWhiteSpace(ipAddress))
+                {
+                    // X-Forwarded-For can contain multiple IPs; take the first one
+                    ipAddress = ipAddress.Split(',').First().Trim();
+                }
+                else
+                {
+                    // Final fallback: remote IP address
+                    ipAddress = context?.HttpContext.Connection.RemoteIpAddress?.ToString();
+                    _logger.LogInformation($"IPAddress from RemoteIpAddress: {ipAddress}");
+                }
+            }
+
+            return ipAddress ?? string.Empty;
+        }
     }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
