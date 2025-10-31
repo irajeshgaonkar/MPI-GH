@@ -7,17 +7,17 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace HCA.Api.Filters;
 
-public class GlobalExceptionFilter(IAppLogger logger) : IExceptionFilter
+public class GlobalExceptionFilter( IAppLogger logger ) : IExceptionFilter
 {
     private readonly IAppLogger _logger = logger;
 
-    public void OnException(ExceptionContext context)
+    public void OnException( ExceptionContext context )
     {
         var exception = context.Exception;
         string? trackingId = context.HttpContext.Items.TryGetValue("TrackingId", out var trackingIdValue) ? trackingIdValue?.ToString() : "";
         var auditId = Guid.NewGuid();
 
-        _logger.LogError(exception, $"Unhandled exception occurred. TrackingId: {trackingId}");
+        _logger.LogError( exception, $"Unhandled exception occurred. TrackingId: {trackingId}" );
 
         var statusCode = (int)HttpStatusCode.InternalServerError;
 
@@ -29,8 +29,8 @@ public class GlobalExceptionFilter(IAppLogger logger) : IExceptionFilter
             RetryableError = false,
             Errors = [exception.Message]
         };
-        
-        switch(exception)
+
+        switch( exception )
         {
             case HcaBadRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;
@@ -58,7 +58,7 @@ public class GlobalExceptionFilter(IAppLogger logger) : IExceptionFilter
                 break;
         }
 
-        context.Result = new ObjectResult(response)
+        context.Result = new ObjectResult( response )
         {
             StatusCode = statusCode
         };
