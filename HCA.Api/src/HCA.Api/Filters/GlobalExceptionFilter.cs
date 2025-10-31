@@ -14,7 +14,7 @@ public class GlobalExceptionFilter( IAppLogger logger ) : IExceptionFilter
     public void OnException( ExceptionContext context )
     {
         var exception = context.Exception;
-        string? trackingId = context.HttpContext.Items.TryGetValue("TrackingId", out var trackingIdValue) ? trackingIdValue?.ToString() : "";
+        string trackingId = (context.HttpContext.Items.TryGetValue("TrackingId", out var trackingIdValue) ? trackingIdValue?.ToString() : "") ?? "";
         var auditId = Guid.NewGuid();
 
         _logger.LogError( exception, $"Unhandled exception occurred. TrackingId: {trackingId}" );
@@ -24,7 +24,7 @@ public class GlobalExceptionFilter( IAppLogger logger ) : IExceptionFilter
         var response = new APIErrorResponse
         {
             Success = false,
-            TrackingId = trackingId ?? "",
+            TrackingId = trackingId,
             AuditId = auditId,
             RetryableError = false,
             Errors = [exception.Message]
