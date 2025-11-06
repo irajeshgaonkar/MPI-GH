@@ -1,6 +1,4 @@
-﻿using HCA.Models.Verato.Request;
-
-namespace HCA.Models.Verato.Request;
+﻿namespace HCA.Models.Verato.Request;
 
 /// <summary>
 /// Un merge identities request
@@ -9,6 +7,7 @@ namespace HCA.Models.Verato.Request;
 /// <see cref="UnMergeIdentitiesRequest"/>
 /// </remarks>
 /// <param name="trackingId">Tracking id</param>
+/// <param name="content"></param>
 public class UnMergeIdentitiesRequest( string trackingId, UnMergingSources content ) : VeratoRequest(trackingId)
 {
 

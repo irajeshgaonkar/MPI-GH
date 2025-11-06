@@ -22,20 +22,21 @@ namespace HCA.Infrastructure.JObjectHelper
                 for (int i = 0; i < nestedProperties.Length - 1; i++)
                 {
                     var nestedProperty = nestedProperties[i];
-                    if (currentObject.Property(nestedProperty) == null)
+                    if (currentObject?.Property(nestedProperty) == null)
                     {
                         var newObject = new JObject();
-                        currentObject.Add(nestedProperty, newObject);
+                        currentObject?.Add(nestedProperty, newObject);
                         currentObject = newObject;
                     }
                     else
                     {
-                        currentObject = (JObject)currentObject[nestedProperty];
+                        currentObject = currentObject[nestedProperty] as JObject
+                                        ?? throw new InvalidOperationException($"Property '{nestedProperty}' is not a JObject.");
                     }
                 }
 
                 property.Remove();
-                currentObject.Add(nestedProperties[^1], property.Value);
+                currentObject?.Add(nestedProperties[^1], property.Value);
             }
 
             return jsonObject;
