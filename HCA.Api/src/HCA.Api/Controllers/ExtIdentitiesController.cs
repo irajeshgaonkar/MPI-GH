@@ -1,5 +1,4 @@
-﻿using HCA.Api.Constants;
-using HCA.Api.Dto;
+﻿using HCA.Api.Dto;
 using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Core.Services;
@@ -11,8 +10,8 @@ using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
-using HCA.Models.Verato.Response;
 using HCA.Models.Verato;
+using HCA.Models.Verato.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
@@ -39,7 +38,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("demographicsQuery")]
@@ -94,7 +92,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("identityExists")]
@@ -148,7 +145,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("demographicsSearch")]
@@ -201,7 +197,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [ServiceFilter(typeof(ValidateIdentityFilter))]
         [HttpPost("postIdentity")]
@@ -256,7 +251,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("linkIdentities")]
         public async Task<IActionResult> LinkIdentitiesAsync([FromBody] DOH_LinkingSources value, [FromQuery] string? processingOptions = null)
@@ -308,7 +302,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("unlinkIdentities")]
         public async Task<IActionResult> UnlinkIdentitiesAsync([FromBody] DOH_UnLinkingSources value, [FromQuery] string? processingOptions = null)
@@ -360,7 +353,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("mergeIdentities")]
         public async Task<IActionResult> MergeIdentitiesAsync([FromBody] DOH_MergingSources value, [FromQuery] string? processingOptions = null)
@@ -412,7 +404,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("unMergeIdentities")]
         public async Task<IActionResult> UnmergeIdentitiesAsync([FromBody] DOH_UnMergingSources value, [FromQuery] string? processingOptions = null)
@@ -465,7 +456,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("deleteSourceIdentity")]
         public async Task<IActionResult> DeleteSourceIdentityAsync([FromBody] DOH_DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
@@ -515,7 +505,6 @@ namespace HCA.Api.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized)]
         [SwaggerResponse(StatusCodes.Status403Forbidden)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        [HcaAuthorize(Roles.ReadOnly, Roles.Admin)]
         [ServiceFilter(typeof(IPValidationFilter))]
         [HttpPost("enrichDemographicsQuery")]
         public async Task<IActionResult> EnrichDemographicsQueryAsync([FromBody] DOH_EnrichDemographicQueryRequest filter, [FromQuery] string? processingOptions = null)
