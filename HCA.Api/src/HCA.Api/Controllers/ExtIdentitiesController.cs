@@ -548,17 +548,33 @@ namespace HCA.Api.Controllers
 
         private static OkObjectResult BuildOkObjectResultWith400Error(List<string> message, string? TrackingId = "") => new(new { errorCode = "400", Message = String.Join(",", message), Success = false, TrackingId = TrackingId });
 
-        private static (ProcessType, NotificationOptions?) GetProcessingOptions(string? processingOptions)
+        private static (ProcessType, NotificationOptions?) GetProcessingOptions( string? processingOptions )
         {
-            if (processingOptions.IsEmpty()) return (ProcessType.Sync, null);
-            var options = processingOptions?.SplitByChar('|');
-            if (options == null) return (ProcessType.Sync, null);
-            Enum.TryParse(typeof(ProcessType), options[0], true, out var processTypeObj);
-            if (processTypeObj == null) return (ProcessType.Sync, null);
+            if( processingOptions.IsEmpty() )
+            {
+                return (ProcessType.Sync, null);
+            }
+
+            string[]? options = processingOptions?.SplitByChar('|');
+            if( options == null )
+            {
+                return (ProcessType.Sync, null);
+            }
+
+            Enum.TryParse( typeof( ProcessType ), options[0], true, out var processTypeObj );
+            if( processTypeObj == null )
+            {
+                return (ProcessType.Sync, null);
+            }
+
             var processType = (ProcessType)processTypeObj;
-            if (options.Length < 3 || processType == ProcessType.Sync) return (ProcessType.Sync, null);
-            var appName = options[1];
-            var messageGroupId = options[2];
+            if( options.Length < 3 || processType == ProcessType.Sync )
+            {
+                return (ProcessType.Sync, null);
+            }
+
+            string appName = options[1];
+            string messageGroupId = options[2];
             return (ProcessType.Async, new NotificationOptions() { AppName = appName, MessageGroup = messageGroupId });
         }
     }
