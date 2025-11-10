@@ -70,6 +70,32 @@ namespace HCA.Infrastructure
 
             }).AddPolicyHandler(GetRetryPolicy());
 
+            //Register client for Verato Enrich with Basic Auth and Client Cert
+            services.AddHttpClient<VeratoEnrichHttpClient>((sp, client) =>
+            {
+                var appSettings = sp.GetRequiredService<AppSettings>();
+
+                client.BaseAddress = new Uri(appSettings.VeratoOptions.EnrichBaseUrl);
+
+                var byteArray = Encoding.ASCII.GetBytes($"{appSettings.VeratoOptions.EnrichUsername}:{appSettings.VeratoOptions.EnrichPassword}");
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
+
+            }).ConfigurePrimaryHttpMessageHandler(sp =>
+            {
+                var appSettings = sp.GetRequiredService<AppSettings>();
+
+                var handler = new HttpClientHandler();
+
+                var certBytes = Convert.FromBase64String(appSettings.VeratoOptions.ClientCert);
+                var certificate = new X509Certificate2(certBytes, appSettings.VeratoOptions.ClientCertPassword, X509KeyStorageFlags.MachineKeySet);
+
+                handler.ClientCertificates.Add(certificate);
+                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+
+                return handler;
+
+            }).AddPolicyHandler(GetRetryPolicy());
+
             return services;
         }
 
