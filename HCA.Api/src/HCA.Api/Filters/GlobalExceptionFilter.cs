@@ -35,31 +35,31 @@ public class GlobalExceptionFilter( IAppLogger logger ) : IExceptionFilter
             case HcaBadRequestException:
                 statusCode = (int)HttpStatusCode.BadRequest;
                 response.Message = "The request could not be processed due to invalid input. Please verify your data and try again.";
-                response.ErroCode = "400";
+                response.ErrorCode = "400";
                 break;
 
             case HcaVeratoException:
                 statusCode = (int)HttpStatusCode.InternalServerError;
                 response.Message = "An unexpected error occurred on Verato. Please try again later.";
-                response.ErroCode = "500";
+                response.ErrorCode = "500";
                 break;
 
             case TimeoutException:
                 statusCode = (int)HttpStatusCode.RequestTimeout;
                 response.Message = "The request timed out. Please try again later.";
-                response.ErroCode = "408";
+                response.ErrorCode = "408";
                 response.RetryableError = true;
                 break;
 
             case IPValidationException:
                 statusCode = (int)HttpStatusCode.Unauthorized;
                 response.Message = exception.Message;
-                response.ErroCode = "401";
+                response.ErrorCode = "401";
                 break;
 
             default:
                 response.Message = "An unexpected error occurred. Please try again later.";
-                response.ErroCode = "500";
+                response.ErrorCode = "500";
                 break;
         }
 

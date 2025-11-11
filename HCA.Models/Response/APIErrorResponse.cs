@@ -8,6 +8,6 @@
         /// <summary>
         /// Status Code for Error
         /// </summary>
-        public string ErroCode { get; set; }
+        public string ErrorCode { get; set; }
     }
 }
