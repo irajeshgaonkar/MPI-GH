@@ -5,7 +5,7 @@
         /// <summary>
         /// 
         /// </summary>
-        public string Trackingid { get; set; } = "";
+        public string? Trackingid { get; set; } = "";
         /// <summary>
         /// 
         /// </summary>

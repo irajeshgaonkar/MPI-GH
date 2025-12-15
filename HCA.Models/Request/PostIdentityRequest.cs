@@ -25,7 +25,7 @@ public class DeleteClientIdentityRequest : BaseRequest
 
 public class DOH_DeleteClientIdentityRequest : BaseRequest
 {
-    public DOH_DeleteClientIdentityRequest(string trackingId = "") : base(ApiCallType.DOH_VEDelete, trackingId)
+    public DOH_DeleteClientIdentityRequest(string? trackingId = "") : base(ApiCallType.DOH_VEDelete, trackingId)
     {
     }
     /// <summary>
@@ -51,7 +51,7 @@ public class DOH_PostClientIdentityRequest : BaseRequest
     /// <summary>
     /// 
     /// </summary>
-    public DOH_PostClientIdentityRequest(string trackingId = "") : base(ApiCallType.DOH_VEPost, trackingId)
+    public DOH_PostClientIdentityRequest(string? trackingId = "") : base(ApiCallType.DOH_VEPost, trackingId)
     {
     }
 
