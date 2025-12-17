@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Collections.Generic;
 using Amazon.Lambda.Core;
 using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Http;
@@ -50,6 +51,7 @@ namespace HCA.Infrastructure
                 var appSettings = sp.GetRequiredService<AppSettings>();
 
                 client.BaseAddress = new Uri(appSettings.VeratoOptions.BaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(appSettings.VeratoOptions.RequestTimeoutInSec);
 
                 var byteArray = Encoding.ASCII.GetBytes($"{appSettings.VeratoOptions.Username}:{appSettings.VeratoOptions.Password}");
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
@@ -68,7 +70,7 @@ namespace HCA.Infrastructure
 
                 return handler;
 
-            }).AddPolicyHandler(GetRetryPolicy());
+            }).AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
 
             //Register client for Verato Enrich with Basic Auth and Client Cert
             services.AddHttpClient<VeratoEnrichHttpClient>((sp, client) =>
@@ -76,6 +78,7 @@ namespace HCA.Infrastructure
                 var appSettings = sp.GetRequiredService<AppSettings>();
 
                 client.BaseAddress = new Uri(appSettings.VeratoOptions.EnrichBaseUrl);
+                client.Timeout = TimeSpan.FromSeconds(appSettings.VeratoOptions.RequestTimeoutInSec);
 
                 var byteArray = Encoding.ASCII.GetBytes($"{appSettings.VeratoOptions.EnrichUsername}:{appSettings.VeratoOptions.EnrichPassword}");
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
@@ -94,7 +97,7 @@ namespace HCA.Infrastructure
 
                 return handler;
 
-            }).AddPolicyHandler(GetRetryPolicy());
+            }).AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
 
             return services;
         }
@@ -141,15 +144,30 @@ namespace HCA.Infrastructure
 
         /// <summary>
         /// Defines and returns a retry policy for HTTP requests, with exponential backoff.
-        /// This policy retries requests in case of HttpRequestException or when the response status is 404 (Not Found) 
-        /// or 500 (Internal Server Error), using an exponential backoff strategy.
+        /// This policy retries requests in case of HttpRequestException or when the response status code matches
+        /// the configured retryable codes, using an exponential backoff strategy.
         /// </summary>
-        private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy()
+        private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy(IServiceProvider sp)
         {
+            var appSettings = sp.GetRequiredService<AppSettings>();
+
+            var retryOptions = appSettings.VeratoOptions?.RetryOptions;
+            var retryStatusCodes = retryOptions?.ReTriableStatusCode?.Length > 0
+                ? [.. retryOptions.ReTriableStatusCode]
+                : new HashSet<HttpStatusCode>
+                {
+                    HttpStatusCode.NotFound,
+                    HttpStatusCode.InternalServerError,
+                    HttpStatusCode.GatewayTimeout,
+                    HttpStatusCode.RequestTimeout
+                };
+
+            var maxRetries = retryOptions?.MaxRetries > 0 ? retryOptions.MaxRetries : 3;
+
             return Polly.Policy.Handle<HttpRequestException>()  // Handle any HttpRequestException (e.g., network errors)
-                .OrResult<HttpResponseMessage>(r => r.StatusCode == HttpStatusCode.NotFound || r.StatusCode == HttpStatusCode.InternalServerError) // Retry on 404 or 500 status codes
+                .OrResult<HttpResponseMessage>(r => retryStatusCodes.Contains(r.StatusCode)) // Retry on configured status codes
                 .WaitAndRetryAsync(
-                    3,  // Retry up to 3 times
+                    maxRetries,  // Retry up to configured max times
                     attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)) // Exponential backoff: 2^attempt seconds (e.g., 2, 4, 8 seconds, etc.)
                 );
         }
@@ -157,4 +175,3 @@ namespace HCA.Infrastructure
     }
 
 }
-
