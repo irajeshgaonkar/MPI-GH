@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{53EEBCD8-A6A9-4CBA-9DA3-8BF380021535}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		deploy.ps1 = deploy.ps1
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -29,7 +30,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Batch.SQS.Publisher.Lam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.Sftp.Lambda", "HCA.Sftp.Lambda\src\HCA.Sftp.Lambda\HCA.Sftp.Lambda.csproj", "{8EA6A149-3C06-400E-9D1E-977D567791EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HCA.MPI.DBSync.Lambda", "HCA.MPI.DBSync.Lambda\HCA.MPI.DBSync.Lambda.csproj", "{6512C18E-DB36-DEE1-4218-2FCEB47CF653}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HCA.MPI.DBSync.Lambda", "HCA.MPI.DBSync.Lambda\HCA.MPI.DBSync.Lambda.csproj", "{6512C18E-DB36-DEE1-4218-2FCEB47CF653}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
