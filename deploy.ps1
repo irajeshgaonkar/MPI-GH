@@ -30,7 +30,7 @@ Param(
 $projectsToLambdas = @{
     "HCA.Api"                        = "mpi-frontend-api-lambda" ;
     "HCA.Batch.SQS.Publisher.Lambda" = "mpi-batch-processing-sqs";
-    "HCA.MuleSoft.Lambda"            = "mpi-mulesoft-api-lambda";
+    "HCA.Verato.Lambda"            = "mpi-mulesoft-api-lambda";
     "HCA.Sftp.Lambda"                = "mpi-sftp";
 }
 
