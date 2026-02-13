@@ -79,6 +79,6 @@ public interface IVeratoRepository
 
     Task<SearchNotificationsResponse> SearchNotifications(SearchNotificationsRequest request);
 
-    Task<T> CallVerato<T>(string requestUrl, VeratoRequest? request);
+    Task<T> CallVerato<T>(string requestUrl, VeratoRequest? request, bool isEnrich = false);
 
 }

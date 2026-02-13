@@ -22,7 +22,7 @@ namespace HCA.Api.Controllers
     [Route("api/v1")]
     [Consumes("application/json")]
     [Produces("application/json")]
-    public class ExtIdentitiesController(IAppLogger logger, IClientIdentityService clientIdentityService) : Controller
+    public class ExternalIdentitiesController(IAppLogger logger, IClientIdentityService clientIdentityService) : Controller
     {
         private readonly IAppLogger _logger = logger;
 

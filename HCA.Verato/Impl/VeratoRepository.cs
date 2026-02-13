@@ -15,10 +15,11 @@ namespace HCA.Verato.Impl;
 /// This class is responsible for making HTTP requests to Verato services and 
 /// handling the necessary data transformations or logic for communication with Verato.
 /// </summary>
-public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpClient) : IVeratoRepository
+public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpClient, VeratoEnrichHttpClient veratoEnrichHttpClient) : IVeratoRepository
 {
     private readonly IAppLogger _appLogger = appLogger;
     private readonly VeratoHttpClient _veratoHttpClient = veratoHttpClient;
+    private readonly VeratoEnrichHttpClient _veratoEnrichHttpClient = veratoEnrichHttpClient;
 
     ///<inheritdoc />
     public async Task<DemographicSearchResponse> DemographicSearch(PostIdentityRequest request)
@@ -35,7 +36,7 @@ public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpC
       => await Execute<DOH_DemographicQueryResponse>(VeratoEndpoint.DemographicQuery, request);
 
     public async Task<DOH_DemographicQueryResponse> DOH_EnrichDemographicQuery(PostIdentityRequest request)
-      => await Execute<DOH_DemographicQueryResponse>(VeratoEndpoint.EnrichDemographicQuery, request);
+      => await Execute<DOH_DemographicQueryResponse>(VeratoEndpoint.EnrichDemographicQuery, request, true);
 
     ///<inheritdoc />
     public async Task<LinkIdentitiesResponse> LinkIdentities(LinkIdentitiesRequest request)
@@ -85,20 +86,34 @@ public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpC
     public async Task<DOH_PostIdentityResponse> DOH_PostIdentity(PostIdentityRequest request)
         => await Execute<DOH_PostIdentityResponse>(VeratoEndpoint.PostIdentities, request);
 
-    public async Task<T> CallVerato<T>(string requestUrl, VeratoRequest? request)
-       => await Execute<T>(requestUrl, request);
+    public async Task<T> CallVerato<T>(string requestUrl, VeratoRequest? request, bool isEnrich = false)
+       => await Execute<T>(requestUrl, request, isEnrich);
 
-    private async Task<T> Execute<T>(string requestUrl, VeratoRequest? request)
+    private async Task<T> Execute<T>(string requestUrl, VeratoRequest? request, bool isEnrich = false)
     {
-        var sw = new Stopwatch();
         _appLogger.LogInformation($"started processing verato request {request?.TrackingId}");
-        var httpRequestMessage = GetHttpRequestMessage(requestUrl, request);
-        sw.Start();
-        var httpResponse = await _veratoHttpClient.SendAsync(httpRequestMessage);
-        sw.Stop();
-        _appLogger.LogInformation($"completed processing verato request {request?.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
-        var response = await httpResponse.Deserialize<T>();
 
+        var httpRequestMessage = GetHttpRequestMessage(requestUrl, request);
+
+        HttpResponseMessage httpResponse;
+
+        var sw = Stopwatch.StartNew();
+
+        //Verato Enrich call.
+        if (isEnrich)
+        {
+            httpResponse = await _veratoEnrichHttpClient.SendAsync(httpRequestMessage);
+        }
+        else
+        {
+            httpResponse = await _veratoHttpClient.SendAsync(httpRequestMessage);
+        }
+
+        sw.Stop();
+
+        _appLogger.LogInformation($"completed processing verato request {request?.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
+
+        var response = await httpResponse.Deserialize<T>();
         if( null == response ) {
             throw new HcaVeratoException("Error occurred while posting request to Verato");
         }

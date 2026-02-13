@@ -19,5 +19,7 @@
         public string ClientCertPassword { get; set; }
 
         public RetryOptions RetryOptions { get; set; }
+
+        public int RequestTimeoutInSec { get; set; }
     }
 }

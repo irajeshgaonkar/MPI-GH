@@ -10,7 +10,7 @@
         /// <summary>
         /// Tracking Id for the request
         /// </summary>
-        public string TrackingId { get; set; } = "";
+        public string? TrackingId { get; set; } = "";
 
         /// <summary>
         /// Source System name in the context
