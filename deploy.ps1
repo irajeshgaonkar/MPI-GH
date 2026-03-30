@@ -26,12 +26,18 @@ Param(
     [String]$Environment
 )
 
+$releaseDir = ".\Release"
+if (-not (Test-Path $releaseDir)) {
+    New-Item -ItemType Directory -Path $releaseDir | Out-Null
+}
+
 # list of VS projects and corresponding lambda names
 $projectsToLambdas = @{
     "HCA.Api"                        = "mpi-frontend-api-lambda" ;
     "HCA.Batch.SQS.Publisher.Lambda" = "mpi-batch-processing-sqs";
     "HCA.Verato.Lambda"            = "mpi-mulesoft-api-lambda";
     "HCA.Sftp.Lambda"                = "mpi-sftp";
+    "HCA.MPI.DBSync.Lambda"          = "mpi-dbsync-lambda"
 }
 
 # TODO: more thorough testing before using in prod
@@ -63,7 +69,7 @@ Write-Verbose "Generating lambda zip files"
 
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
-    $zipName = "Release\$lambda.zip"
+    $zipName = "$releaseDir\$lambda.zip"
     if (Test-Path $zipName) {
         Write-Verbose "removing old $lambda zip"
         Remove-Item $zipName -verbose
@@ -98,12 +104,17 @@ if (-not ($result)) {
     }
 }
 
+$releaseDir = ".\Release"
+if (-not (Test-Path $releaseDir)) {
+    New-Item -ItemType Directory -Path $releaseDir | Out-Null
+}
+
 foreach ($project in $projectsToLambdas.Keys) {
     $lambda = $projectsToLambdas[$project]
     Write-Verbose "Uploading $lambda to ${region}:$Environment"
     $awsProfile = $environmentToProfile[$Environment]
-    $zipName = "Release\$lambda.zip"
-    aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish --profile $awsProfile >".\Release\upload_$lambda.log"
+    $zipName = "$releaseDir\$lambda.zip"
+    aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish --profile $awsProfile >".\$releaseDir\upload_$lambda.log"
     if ( $?) {
         Write-Output "!! $lambda Upload successful to $Environment !!"    
     }
