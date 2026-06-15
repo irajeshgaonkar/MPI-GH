@@ -200,7 +200,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
     private static string CombinePostalCode(string zipCode, string? zipFour)
     {
-        if (string.IsNullOrWhiteSpace(zipFour))
+        if (string.IsNullOrWhiteSpace(zipCode) || string.IsNullOrWhiteSpace(zipFour))
             return zipCode;
 
         if (PostalCodeAlreadyContainsZipFour(zipCode, zipFour))
