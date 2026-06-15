@@ -148,10 +148,12 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
     private PostIdentityRequestContent BuildPostIdentityContent(IEnumerable<ClientIdentityRequest> clientIdentities)
     {
-        var identity = BuildIdentity(clientIdentities);
+        var clientIdentityList = clientIdentities.ToList();
+        var identity = BuildIdentity(clientIdentityList);
         var identityJObject = JObject.FromObject(identity);
-        JArray jsonArray = new JArray();
+        //JArray jsonArray = new JArray();
 
+        RemoveZipFourFromBatchPostAddresses(identityJObject, clientIdentityList);
         var mergedObject = VeratoHelper.MergedObjects(clientIdentities);
 
         identityJObject.Merge(mergedObject);
@@ -179,5 +181,28 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         }
 
         return identity;
+    }
+
+    private static void RemoveZipFourFromBatchPostAddresses(JObject identityJObject, IReadOnlyList<ClientIdentityRequest> clientIdentityRequests)
+    {
+        if (identityJObject["Addresses"] is not JArray addresses)
+            return;
+
+        for (int i = 0; i < addresses.Count && i < clientIdentityRequests.Count; i++)
+        {
+            if (addresses[i] is not JObject address)
+                continue;
+
+            address["PostalCode"] = CombinePostalCode(clientIdentityRequests[i].ZipCode, clientIdentityRequests[i].ZipFour);
+            address.Remove("ZipFour");
+        }
+    }
+
+    private static string CombinePostalCode(string zipCode, string? zipFour)
+    {
+        if (string.IsNullOrWhiteSpace(zipFour))
+            return zipCode;
+
+        return $"{zipCode}-{zipFour}";
     }
 }
