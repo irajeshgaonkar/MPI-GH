@@ -203,6 +203,23 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         if (string.IsNullOrWhiteSpace(zipFour))
             return zipCode;
 
-        return $"{zipCode}{zipFour}";
+        if (PostalCodeAlreadyContainsZipFour(zipCode, zipFour))
+            return zipCode;
+
+        return $"{zipCode}-{zipFour}";
+    }
+
+    private static bool PostalCodeAlreadyContainsZipFour(string zipCode, string zipFour)
+    {
+        if (string.IsNullOrWhiteSpace(zipCode))
+            return false;
+
+        var normalizedZipCode = zipCode.Replace("-", "");
+        var normalizedZipFour = zipFour.Replace("-", "");
+
+        if (normalizedZipCode.Length < normalizedZipFour.Length)
+            return false;
+
+        return normalizedZipCode.EndsWith(normalizedZipFour, StringComparison.Ordinal);
     }
 }
