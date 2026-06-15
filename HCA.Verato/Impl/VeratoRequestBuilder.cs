@@ -217,7 +217,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         var normalizedZipCode = zipCode.Replace("-", "");
         var normalizedZipFour = zipFour.Replace("-", "");
 
-        if (normalizedZipCode.Length < normalizedZipFour.Length)
+        if (normalizedZipCode.Length <= normalizedZipFour.Length)
             return false;
 
         return normalizedZipCode.EndsWith(normalizedZipFour, StringComparison.Ordinal);
