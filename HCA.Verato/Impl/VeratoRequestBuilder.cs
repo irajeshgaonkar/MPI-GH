@@ -203,6 +203,6 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         if (string.IsNullOrWhiteSpace(zipFour))
             return zipCode;
 
-        return $"{zipCode}-{zipFour}";
+        return $"{zipCode}{zipFour}";
     }
 }
