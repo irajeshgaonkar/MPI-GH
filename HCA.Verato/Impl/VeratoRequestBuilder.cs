@@ -151,7 +151,6 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         var clientIdentityList = clientIdentities.ToList();
         var identity = BuildIdentity(clientIdentityList);
         var identityJObject = JObject.FromObject(identity);
-        //JArray jsonArray = new JArray();
 
         RemoveZipFourFromBatchPostAddresses(identityJObject, clientIdentityList);
         var mergedObject = VeratoHelper.MergedObjects(clientIdentities);
