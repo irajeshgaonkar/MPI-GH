@@ -305,11 +305,26 @@ WHERE mpi_link_id IN
 
         if (identity == null)
         {
-            // TODO: this should probably be an error
-            AddAsync(entity);
-            return entity;
+            try
+            {
+                AddAsync(entity);
+                return entity;
+            }
+            catch (DbUpdateException ex) when (IsClientIdentityUniqueViolation(ex))
+            {
+                identity = await GetBySourceAll(entity.SourceSystemName, entity.SourceSystemId);
+                if (identity == null)
+                    throw;
+            }
         }
 
+        ApplyIdentityUpdates(identity, entity, isDelete);
+        Update(identity);
+        return identity;
+    }
+
+    private static void ApplyIdentityUpdates(ClientIdentityEntity identity, ClientIdentityEntity entity, bool isDelete)
+    {
         identity.MpiLinkId = entity.MpiLinkId;
         identity.FirstName = entity.FirstName;
         identity.LastName = entity.LastName;
@@ -364,10 +379,12 @@ WHERE mpi_link_id IN
                 }
             }
         }
-
-        Update(identity);
-        return identity;
     }
+
+    private static bool IsClientIdentityUniqueViolation(DbUpdateException exception)
+        => exception.InnerException is PostgresException postgresException
+           && postgresException.SqlState == PostgresErrorCodes.UniqueViolation
+           && string.Equals(postgresException.ConstraintName, "PK_client_identity", StringComparison.Ordinal);
 
     public void UpdateMpiLinkId(ClientIdentityEntity clientIdentityEntity, string newMpiLinkId)
     {
