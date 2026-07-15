@@ -28,7 +28,8 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 namespace HCA.Core.Services;
 
 public class ClientIdentityService : IClientIdentityService
-{
+{   
+    private static readonly string[] AllowedResponseIdentityFormatNames = ["DEFAULT", "GROUP_BY_SOURCE"];
     private readonly IUserRequestRepository _userRequestRepository;
     private readonly IUserModifyRecordsService _userModifyRecordsService;
     private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
@@ -263,6 +264,11 @@ public class ClientIdentityService : IClientIdentityService
                 request.Content.ResponseIdentityFormatNames = ["DEFAULT"];
             }
 
+            if (ValidateResponseIdentityFormatNames(trackingId, request.Content.ResponseIdentityFormatNames) is object invalidViewResponse)
+            {
+                return invalidViewResponse;
+            }
+
             DOH_PostClientIdentityRequest dOH_PostClientIdentityRequest = new(trackingId)
             {
                 SourceSystem = request.SourceSystem,
@@ -355,6 +361,21 @@ public class ClientIdentityService : IClientIdentityService
         }
 
         return null;
+    }
+
+    private static object? ValidateResponseIdentityFormatNames(string trackingId, string[] formatNames)
+    {
+        string? invalidView = formatNames.FirstOrDefault(View =>
+            !AllowedResponseIdentityFormatNames.Contains(View, StringComparer.OrdinalIgnoreCase));
+        
+        if (invalidView is null)
+        {
+            return null;
+        }
+        return ErrorResponseBuilder(
+            trackingId,
+            $"Invalid view name in the request, please configure a view with the specified name [{invalidView}]"
+        );
     }
 
     private JsonElement? ConvertJObjectToJsonElement( JObject jObject )
