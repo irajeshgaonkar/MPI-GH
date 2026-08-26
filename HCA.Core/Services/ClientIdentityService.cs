@@ -374,7 +374,7 @@ public class ClientIdentityService : IClientIdentityService
         }
         return ErrorResponseBuilder(
             trackingId,
-            $"Invalid view name in the request, please configure a view with the specified name [{invalidView}]"
+            $"Invalid view name in the request, please configure a view with the specified name [{invalidView}] or use a standard view."
         );
     }
 
