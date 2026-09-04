@@ -5,6 +5,7 @@ using HCA.Models.Request;
 using Newtonsoft.Json.Linq;
 using HCA.Infrastructure.JObjectHelper;
 using HCA.Verato.Extensions;
+using System.Text.Json;
 
 namespace HCA.Verato;
 
@@ -27,7 +28,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
     /// </summary>
     public PostIdentityRequest BuildDOH_PostIdentityRequest(DOH_PostClientIdentityRequest request)
     {
-        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.Identity);
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(NormalizeDynamicIdentityAddresses(request.Content.Identity));
         postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
 
         return new(request.TrackingId, postIdentityRequestContent);
@@ -75,6 +76,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         demographicsSearchRequestContent.Content.responseIdentityFormatNames = request.Content.responseIdentityFormatNames;
         demographicsSearchRequestContent.Content.matchScoreThreshold = request.Content.matchScoreThreshold;
         demographicsSearchRequestContent.Content.maxSearchResults = request.Content.maxSearchResults;
+        demographicsSearchRequestContent.Content.identity = NormalizeDynamicIdentityAddresses(request.Content.identity);
         return demographicsSearchRequestContent;
     }
 
@@ -86,7 +88,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
     public PostIdentityRequest BuildDOH_DemographicQueryRequest(DOH_DemographicQueryClientIdentityRequest request)
     {
-        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.identity);
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(NormalizeDynamicIdentityAddresses(request.Content.identity));
         postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.responseIdentityFormatNames;
         return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
     }
@@ -104,7 +106,7 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
     public SearchNotificationsRequest Build_SearchNotificationsRequest(SearchClientIdentityNotificationsRequest request)
     {
-        SearchNotificationsRequestContent searchNotificationsRequestContent = new ()
+        SearchNotificationsRequestContent searchNotificationsRequestContent = new()
         {
             PageNumber = request.Content.PageNumber,
             PageSize = request.Content.PageSize,
@@ -117,20 +119,20 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
     public PostIdentityRequest BuildDOH_EnrichDemographicQueryRequest(DOH_EnrichDemographicQueryClientIdentityRequest request)
     {
-        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(request.Content.Identity);
+        PostIdentityRequestContent postIdentityRequestContent = new PostIdentityRequestContent(NormalizeDynamicIdentityAddresses(request.Content.Identity));
         postIdentityRequestContent.ResponseIdentityFormatNames = request.Content.ResponseIdentityFormatNames;
         return new PostIdentityRequest(request.TrackingId, postIdentityRequestContent);
     }
 
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicSearchClientIdentityRequest request)
     {
-        var identity = BuildIdentity(request);
+        var identity = NormalizeIdentityAddresses(BuildIdentity(request));
         return new(identity);
     }
 
     private PostIdentityRequestContent BuildPostIdentityContent(DemographicQueryClientIdentityRequest request)
     {
-        var identity = BuildIdentity(request);
+        var identity = NormalizeIdentityAddresses(BuildIdentity(request));
         return new(identity);
     }
 
@@ -149,11 +151,10 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
     private PostIdentityRequestContent BuildPostIdentityContent(IEnumerable<ClientIdentityRequest> clientIdentities)
     {
         var clientIdentityList = clientIdentities.ToList();
-        var identity = BuildIdentity(clientIdentityList);
-        var identityJObject = JObject.FromObject(identity);
+        var identityJObject = JObject.FromObject(BuildIdentity(clientIdentityList));
+        identityJObject = NormalizeIdentityAddresses(identityJObject);
 
-        RemoveZipFourFromBatchPostAddresses(identityJObject, clientIdentityList);
-        var mergedObject = VeratoHelper.MergedObjects(clientIdentities);
+        var mergedObject = VeratoHelper.MergedObjects(clientIdentityList);
 
         identityJObject.Merge(mergedObject);
         identityJObject = VeratoHelper.ConvertPropertyNames(identityJObject);
@@ -182,28 +183,101 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
         return identity;
     }
 
-    private static void RemoveZipFourFromBatchPostAddresses(JObject identityJObject, IReadOnlyList<ClientIdentityRequest> clientIdentityRequests)
+    private static Identity NormalizeIdentityAddresses(Identity identity)
     {
-        if (identityJObject["Addresses"] is not JArray addresses)
-            return;
-
-        for (int i = 0; i < addresses.Count && i < clientIdentityRequests.Count; i++)
+        foreach (var address in identity.Addresses)
         {
-            if (addresses[i] is not JObject address)
-                continue;
-
-            address["PostalCode"] = CombinePostalCode(clientIdentityRequests[i].ZipCode, clientIdentityRequests[i].ZipFour);
-            address.Remove("ZipFour");
+            address.PostalCode = CombinePostalCode(address.PostalCode, address.ZipFour);
+            address.ZipFour = string.Empty;
         }
+
+        return identity;
+    }
+
+    private static dynamic NormalizeDynamicIdentityAddresses(dynamic identity)
+    {
+        var identityJObject = ToJObject(identity);
+        identityJObject = NormalizeIdentityAddresses(identityJObject);
+        return SerializationExtensions.DeSerialize<dynamic>(identityJObject.ToString());
+    }
+
+    private static JObject ToJObject(dynamic payload)
+    {
+        if( payload is JObject jObject )
+        {
+            return jObject;
+        }
+
+        if( payload is JsonElement jsonElement )
+        {
+            return JObject.Parse(jsonElement.GetRawText());
+        }
+
+        if( payload is string jsonString )
+        {
+            return JObject.Parse(jsonString);
+        }
+
+        return JObject.FromObject(payload);
+    }
+
+    private static JObject NormalizeIdentityAddresses(JObject identityJObject)
+    {
+        var addressesProperty = FindPropertyCaseInsensitive(identityJObject, "addresses");
+        var addresses = addressesProperty?.Value as JArray;
+        if( addresses == null )
+        {
+            return identityJObject;
+        }
+
+        foreach (var addressToken in addresses)
+        {
+            if( addressToken is not JObject address )
+            {
+                continue;
+            }
+
+            var postalCodeProperty = FindPropertyCaseInsensitive(address, "postalCode");
+            var postalCode = postalCodeProperty?.Value?.Value<string>() ?? string.Empty;
+            var zipFourProperty = FindPropertyCaseInsensitive(address, "zipFour");
+            var zipFour = zipFourProperty?.Value?.Value<string>();
+
+            if (postalCodeProperty != null)
+            {
+                postalCodeProperty.Value = CombinePostalCode(postalCode, zipFour);
+            }
+
+            RemovePropertyCaseInsensitive(address, "zipFour");
+        }
+
+        return identityJObject;
+    }
+
+    private static JProperty? FindPropertyCaseInsensitive(JObject jObject, string propertyName)
+        => jObject.Properties().FirstOrDefault(p => string.Equals(p.Name, propertyName, StringComparison.OrdinalIgnoreCase));
+
+    private static void RemovePropertyCaseInsensitive(JObject jObject, string propertyName)
+    {
+        var property = FindPropertyCaseInsensitive(jObject, propertyName);
+        property?.Remove();
     }
 
     private static string CombinePostalCode(string zipCode, string? zipFour)
     {
-        if (string.IsNullOrWhiteSpace(zipCode) || string.IsNullOrWhiteSpace(zipFour))
+        if( string.IsNullOrWhiteSpace( zipCode ) )
+        {
             return zipCode;
+        }
 
-        if (PostalCodeAlreadyContainsZipFour(zipCode, zipFour))
+        if( string.IsNullOrWhiteSpace( zipFour ) )
+        {
             return zipCode;
+        }
+
+        if( PostalCodeAlreadyContainsZipFour( zipCode, zipFour ) )
+        {
+            return zipCode;
+        }
 
         return $"{zipCode}-{zipFour}";
     }
@@ -221,4 +295,5 @@ public class VeratoRequestBuilder : IVeratoRequestBuilder
 
         return normalizedZipCode.EndsWith(normalizedZipFour, StringComparison.Ordinal);
     }
+
 }

@@ -36,6 +36,7 @@ namespace HCA.Api.Filters {
             ["content.identity.addresses.city"] = 100,
             ["content.identity.addresses.state"] = 40,
             ["content.identity.addresses.postalCode"] = 10,
+            ["content.identity.addresses.zipFour"] = 4,
             ["content.identity.phoneNumbers.number"] = 20
         };
 
