@@ -10,6 +10,8 @@ public class ClientIdentityModel
 
     public string SourceSystemName { get; set; }
 
+    public string? Tenant { get; set; }
+
     public string SourceSystemAgency { get; set; }
 
     public string FirstName { get; set; }

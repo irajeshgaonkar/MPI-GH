@@ -8,6 +8,8 @@ public class ClientIdentityDto
 
     public string SourceName { get; set; }
 
+    public string Tenant { get; set; }
+
     public string SourceSystemId { get; set; }
 
     public DateTime SourceSystemLastUpdate { get; set; }

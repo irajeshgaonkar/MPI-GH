@@ -29,6 +29,12 @@ namespace HCA.Data.Entities
         public string AgencyName { get; set; }
 
         /// <summary>
+        /// The tenant that owns or uses the onboarded system
+        /// </summary>
+        [Column("tenant")]
+        public string? Tenant { get; set; }
+
+        /// <summary>
         /// The mode of connectivity used by the onboarded system
         /// </summary>
         [Column("connectivity_mode")]

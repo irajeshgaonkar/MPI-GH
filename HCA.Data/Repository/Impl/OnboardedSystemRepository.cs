@@ -24,5 +24,41 @@ namespace HCA.Data.Repository.Impl
             return await _hcaDbContext.OnboardedSystem.FromSqlRaw(query, new NpgsqlParameter("@incoming_ip", incomingIpAddress))
                 .Select(system => system.SourceSystemName).ToListAsync();
         }
+
+        public async Task<Dictionary<string, string>> GetTenantMapBySourceSystemsAsync(IEnumerable<string> sourceSystemNames)
+        {
+            var normalizedSourceSystems = sourceSystemNames
+                .Where(sourceSystemName => !string.IsNullOrWhiteSpace(sourceSystemName))
+                .Select(sourceSystemName => sourceSystemName.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (!normalizedSourceSystems.Any())
+            {
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            var rows = await _hcaDbContext.OnboardedSystem
+                .AsNoTracking()
+                .Where(system => system.IsActive == true && normalizedSourceSystems.Contains(system.SourceSystemName!))
+                .Select(system => new
+                {
+                    system.SourceSystemName,
+                    system.Tenant
+                })
+                .ToListAsync();
+
+            return rows
+                .GroupBy(row => row.SourceSystemName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => string.Join(", ",
+                        group.Select(row => row.Tenant)
+                            .Where(tenant => !string.IsNullOrWhiteSpace(tenant))
+                            .Select(tenant => tenant!.Trim())
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(tenant => tenant, StringComparer.OrdinalIgnoreCase)),
+                    StringComparer.OrdinalIgnoreCase);
+        }
     }
 }

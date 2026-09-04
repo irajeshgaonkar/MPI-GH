@@ -28,7 +28,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 namespace HCA.Core.Services;
 
 public class ClientIdentityService : IClientIdentityService
-{   
+{
     private static readonly string[] AllowedResponseIdentityFormatNames = ["DEFAULT", "GROUP_BY_SOURCE"];
     private readonly IUserRequestRepository _userRequestRepository;
     private readonly IUserModifyRecordsService _userModifyRecordsService;
@@ -794,6 +794,231 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             throw;
         }
+    }
+
+    public async Task<dynamic?> DeleteIdentity(DeleteClientIdentityRequest deleteIdentityRequest, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        var trackingId = string.IsNullOrWhiteSpace(deleteIdentityRequest.TrackingId)
+            ? $"{ApiCallType.VEDelete.GetStringValue()}-{deleteIdentityRequest.Content.GetTrackingId(deleteIdentityRequest.Content)}"
+            : deleteIdentityRequest.TrackingId;
+        var userRequestEntity = CreateUserRequest(deleteIdentityRequest, ApiCallType.VEDelete, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VEDelete, userRequestEntity);
+                return trackingId;
+            }
+
+            return await DeleteIdentity(userRequestEntity, deleteIdentityRequest);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DeleteIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DeleteIdentity)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DeleteIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DeleteIdentity)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+
+            var exceptionCustomProperties = new ExceptionCustomProperties
+            {
+                User = currentUser,
+                Role = GetUserRoles(_httpContextAccessor.HttpContext),
+                FunctionName = nameof(DeleteIdentity),
+                ErrorMessage = e.Message,
+                StackTrace = e.StackTrace,
+                ErrorCode = "500"
+            };
+            var errorLogItem = new LogItem()
+            {
+                Name = $"{Constants.LogPrefix_API}-{nameof(DeleteIdentity)}-Failed",
+                TrackingId = trackingId,
+                Layer = ServiceLayer.API.ToString(),
+                ExceptionCustomProperties = exceptionCustomProperties
+            };
+
+            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            throw;
+        }
+    }
+
+    public async Task<dynamic?> CreateDataSource(CreateDataSourceClientIdentityRequest createDataSourceRequest, string currentUser, ProcessType processType, NotificationOptions? notificationOptions)
+    {
+        if (createDataSourceRequest.Content?.Sources == null || !createDataSourceRequest.Content.Sources.Any())
+        {
+            throw new HcaBadRequestException("At least one source system is required.");
+        }
+
+        var sourceToken = string.Join("-", createDataSourceRequest.Content.Sources.Where(source => !string.IsNullOrWhiteSpace(source)));
+        var trackingId = string.IsNullOrWhiteSpace(createDataSourceRequest.TrackingId)
+            ? $"{ApiCallType.VECreateDataSource.GetStringValue()}-{sourceToken}"
+            : createDataSourceRequest.TrackingId;
+        var userRequestEntity = CreateUserRequest(createDataSourceRequest, ApiCallType.VECreateDataSource, currentUser, trackingId, notificationOptions);
+
+        try
+        {
+            if (processType == ProcessType.Async)
+            {
+                await PublishMessageToSqs(ApiCallType.VECreateDataSource, userRequestEntity);
+                return trackingId;
+            }
+
+            return await CreateDataSource(userRequestEntity, createDataSourceRequest);
+        }
+        catch (HcaBadRequestException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            LogCreateDataSourceError(currentUser, trackingId, e);
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            LogCreateDataSourceError(currentUser, trackingId, e);
+            throw;
+        }
+        catch (Exception e)
+        {
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.ToString());
+            LogCreateDataSourceError(currentUser, trackingId, e);
+            throw;
+        }
+    }
+
+    private void LogCreateDataSourceError(string currentUser, string trackingId, Exception exception)
+    {
+        var exceptionCustomProperties = new ExceptionCustomProperties
+        {
+            User = currentUser,
+            Role = GetUserRoles(_httpContextAccessor.HttpContext),
+            FunctionName = nameof(CreateDataSource),
+            ErrorMessage = exception.Message,
+            StackTrace = exception.StackTrace,
+            ErrorCode = "500"
+        };
+        var errorLogItem = new LogItem()
+        {
+            Name = $"{Constants.LogPrefix_API}-{nameof(CreateDataSource)}-Failed",
+            TrackingId = trackingId,
+            Layer = ServiceLayer.API.ToString(),
+            ExceptionCustomProperties = exceptionCustomProperties
+        };
+
+        _logger.LogError(exception, JsonConvert.SerializeObject(errorLogItem));
+    }
+
+    private static bool IsAlreadyProvisionedStatus(DataSourceCreationResponse status)
+    {
+        var text = $"{status.Datasource} {status.Status}".ToLowerInvariant();
+        return text.Contains("already") || text.Contains("exists");
+    }
+
+    private static bool IsAlreadyProvisionedMessage(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return false;
+        }
+
+        var text = message.ToLowerInvariant();
+        return text.Contains("already") || text.Contains("exists");
+    }
+
+    private async Task<DeleteIdentityResponseContent?> DeleteIdentity(UserRequestEntity userRequestEntity, DeleteClientIdentityRequest deleteIdentityRequest)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+
+        var request = new DeleteClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = deleteIdentityRequest.Content
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(request, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
+    }
+
+    private async Task<CreateDataSourceResponseContent?> CreateDataSource(UserRequestEntity userRequestEntity, CreateDataSourceClientIdentityRequest createDataSourceRequest)
+    {
+        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
+
+        var request = new CreateDataSourceClientIdentityRequest(userRequestEntity.TrackingId)
+        {
+            Content = new CreateDataSourceClientIdentityRequestContent
+            {
+                Sources = createDataSourceRequest.Content.Sources
+                    .Where(source => !string.IsNullOrWhiteSpace(source))
+                    .Select(source => source.Trim())
+                    .ToList()
+            }
+        };
+
+        var response = await _clientIdentityRequestExecutor.Execute<CreateDataSourceClientIdentityResponse>(request, requestStatusUpdater)
+            ?? throw new HcaBadRequestException("Failed to process request");
+
+        (RequestStatus requestStatus, string requestMessage) = response.Success
+            ? (RequestStatus.Success, "Request Processed Successfully")
+            : (RequestStatus.Failed, response.Message);
+
+        userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+
+        UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
+
+        return response.Content;
     }
 
     public async Task<dynamic?> DemographicSearch( Identity filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions )

@@ -27,5 +27,7 @@ public static class  VeratoEndpoint
     public const string NativeIdQuery = "nativeIdQuery";
 
     public const string SearchNotifications = "searchNotifications";
+
+    public const string CreateDataSource = "createDataSource";
 }
 

@@ -4,16 +4,17 @@ using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Api.Mapper;
 using HCA.Core.Services;
+using HCA.Data.Repository;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
 using HCA.Models.Logging;
-using HCA.Models.Verato;
-using HCA.Models.Verato.Response;
 using HCA.Models.Request;
 using HCA.Models.Request.DOH;
 using HCA.Models.Response;
 using HCA.Models.SQS;
+using HCA.Models.Verato;
+using HCA.Models.Verato.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Newtonsoft.Json;
@@ -33,6 +34,8 @@ namespace HCA.Api.Controllers
 
         private readonly IClientIdentityService _clientIdentityService;
 
+        private readonly IOnboardedSystemRepository _onboardedSystemRepository;
+
         //private readonly ISourceSystemValidator _sourceSystemValidator;
 
 
@@ -41,10 +44,12 @@ namespace HCA.Api.Controllers
         /// </summary>
         /// <param name="clientIdentityService">Client identity service <see cref="IClientIdentityService"/></param>
         /// <param name="appLogger">Applicaiton logger <see cref="IAppLogger"/></param>
-        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger)
+        /// <param name="onboardedSystemRepository"></param>
+        public IdentitiesController(IClientIdentityService clientIdentityService, IAppLogger appLogger, IOnboardedSystemRepository onboardedSystemRepository)
         {
             _clientIdentityService = clientIdentityService;
             //_sourceSystemValidator = sourceSystemValidator;
+            _onboardedSystemRepository = onboardedSystemRepository;
             _logger = appLogger;
         }
 
@@ -66,6 +71,13 @@ namespace HCA.Api.Controllers
         {
             var searchFilter = GetSearchFilter(filter);
             var (count, records) = await _clientIdentityService.GetAll(HttpContext.GetCurrentUser(), searchFilter, pagNumber, recordsPerPage, orderBy);
+
+            var tenantMap = await _onboardedSystemRepository.GetTenantMapBySourceSystemsAsync(records.Select(record => record.SourceSystemName));
+            foreach (var record in records)
+            {
+                record.Tenant = tenantMap.TryGetValue(record.SourceSystemName, out var tenant) ? tenant : string.Empty;
+            }
+
             var showSensitiveData = HttpContext.CanShowSensitiveData();
             var identities = ClientIdentityDtoMapper.GetDto(records, showSensitiveData);
             if (identities.Count > count) count = identities.Count;
@@ -238,6 +250,52 @@ namespace HCA.Api.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
             var result = await _clientIdentityService.UnMergeIdentities(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// DeleteIdentity web service is used to physically delete one source record from identity provider (Verato).
+        /// </summary>
+        /// <param name="value">Delete source <see cref="DeleteClientIdentityRequest"/></param>
+        /// <param name="processingOptions">Processing options - indicates whether synchronous or asynchronous execution of the apis</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Request id for asynchronous call of the api", typeof(string))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Delete identities response", typeof(DeleteIdentityResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete([FromBody] DeleteClientIdentityRequest value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.DeleteIdentity(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
+            if (result == null) return BadRequest("Invalid Input");
+            return Ok(result);
+        }
+
+
+        /// <summary>
+        /// CreateDataSource web service is used to add one or more source systems in identity provider (Verato).
+        /// </summary>
+        /// <param name="value">Source systems to create <see cref="CreateDataSourceClientIdentityRequest"/></param>
+        /// <param name="processingOptions">Processing options - source creation currently supports synchronous execution only.</param>
+        /// <returns></returns>
+        [SwaggerResponse(StatusCodes.Status200OK, "Create data source response", typeof(CreateDataSourceResponseContent))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [HcaAuthorize(Roles.Admin)]
+        [HttpPost("createDataSource")]
+        public async Task<IActionResult> CreateDataSource([FromBody] CreateDataSourceClientIdentityRequest value, [FromQuery] string? processingOptions = null)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var (processType, notificationOptions) = GetProcessingOptions(processingOptions);
+            var result = await _clientIdentityService.CreateDataSource(value, HttpContext.GetCurrentUser(), processType, notificationOptions);
             if (result == null) return BadRequest("Invalid Input");
             return Ok(result);
         }

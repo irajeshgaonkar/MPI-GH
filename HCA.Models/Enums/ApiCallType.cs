@@ -26,6 +26,9 @@ public enum ApiCallType
     [StringValue("VE Delete")]
     VEDelete,
 
+    [StringValue("VE Create Data Source")]
+    VECreateDataSource,
+
     [StringValue("VE Demographic Search")]
     VEDemographicSearch,
 

@@ -16,6 +16,8 @@ public interface IVeratoRepository
     /// <returns>demographc serach response <see cref="DemographicSearchResponse"/></returns>
     Task<DemographicSearchResponse> DemographicSearch(PostIdentityRequest request);
 
+    Task<CreateDataSourceResponse> CreateDataSource(CreateDataSourceRequest request);
+
     Task<DOH_DemographicSearchResponse> DOH_DemographicSearch(DemographicSearchRequest request);
 
     /// <summary>

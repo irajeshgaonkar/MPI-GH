@@ -37,23 +37,31 @@ public static class ClientIdentityDtoMapper
 
         foreach (var model in models)
         {
-            foreach (var address in model.Addresses)
+            if(model.Addresses == null || model.Addresses.Count == 0)
             {
-                // If there are no communications, still create a record for the address
-                if (address.Communications == null || !address.Communications.Any())
+                var dto = CreateBaseDto(model, showSensitiveData);
+                dtos.Add(dto);
+            }
+            else
+            {
+                foreach (var address in model.Addresses)
                 {
-                    var dto = CreateBaseDto(model, showSensitiveData);
-                    AddAddressData(dto, address);
-                    dtos.Add(dto);
-                }
-                else
-                {
-                    foreach (var communication in address.Communications)
+                    // If there are no communications, still create a record for the address
+                    if (address.Communications == null || address.Communications.Count == 0)
                     {
                         var dto = CreateBaseDto(model, showSensitiveData);
                         AddAddressData(dto, address);
-                        AddCommunicationData(dto, communication);
                         dtos.Add(dto);
+                    }
+                    else
+                    {
+                        foreach (var communication in address.Communications)
+                        {
+                            var dto = CreateBaseDto(model, showSensitiveData);
+                            AddAddressData(dto, address);
+                            AddCommunicationData(dto, communication);
+                            dtos.Add(dto);
+                        }
                     }
                 }
             }
@@ -69,6 +77,7 @@ public static class ClientIdentityDtoMapper
             Id = model.Id,
             MPILinkId = model.MpiLinkId ?? "",
             SourceName = model.SourceSystemName,
+            Tenant = model.Tenant ?? "",
             SourceSystemId = model.SourceSystemId,
             SourceSystemLastUpdate = model.SourceSystemUpdated,
             FirstName = model.FirstName,
@@ -115,6 +124,7 @@ public static class ClientIdentityDtoMapper
                 Id = model.Id,
                 MPILinkId = model.MpiLinkId ?? "",
                 SourceName = model.SourceSystemName,
+                Tenant = model.Tenant ?? "",
                 SourceSystemId = model.SourceSystemId,
                 SourceSystemLastUpdate = model.SourceSystemUpdated,
                 FirstName = model.FirstName,

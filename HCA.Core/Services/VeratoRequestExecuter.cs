@@ -9,7 +9,10 @@ using HCA.Models.Response;
 using HCA.Models.Verato.Request;
 using HCA.Models.Verato.Response;
 using HCA.Verato;
+using HCA.Verato.Impl;
 using HCA.Verato.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace HCA.Core.Services
 {
@@ -43,7 +46,7 @@ namespace HCA.Core.Services
                     //if (i > 0)
                     //    await statusUpdater.UpdateStatus(request, RequestStatus.Retrying, $"Retrying request, iteration {i}");
 
-                    if( i > 0 )
+                    if (i > 0)
                     {
                         _appLogger.LogInformation($"Retrying request {request.TrackingId}, iteration{i}");
                     }
@@ -71,14 +74,14 @@ namespace HCA.Core.Services
                     _appLogger.LogError(e);
                     exception = e.ToString();
 
-                    if( !_appSettings.VeratoOptions.RetryOptions.ReTriableStatusCode.Contains( e.StatusCode ) )
+                    if (!_appSettings.VeratoOptions.RetryOptions.ReTriableStatusCode.Contains(e.StatusCode))
                     {
-                        throw new HcaVeratoException( exception );
+                        throw new HcaVeratoException(exception);
                     }
 
                     await Task.Delay(_delayCaculator.Calculate(i + 1));
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     _appLogger.LogInformation($"Retrying for the exception Exception");
                     _appLogger.LogError(e);
@@ -94,21 +97,22 @@ namespace HCA.Core.Services
         {
             var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, Task<BaseResponse>>>
             {
-                [ ApiCallType.VEPost ] = PostIdentity,
+                [ApiCallType.VEPost] = PostIdentity,
                 [ApiCallType.DOH_VEPost] = DOH_PostIdentity,
-                [ ApiCallType.VELink ] = LinkIdentities,
-                [ ApiCallType.DOH_VELink] = DOH_LinkIdentities,
-                [ ApiCallType.VEUnLink ] = UnLinkIdentities,
-                [ ApiCallType.DOH_VEUnLink] = DOH_UnLinkIdentities,
-                [ ApiCallType.VEMerge ] = MergeIdentities,
-                [ ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
-                [ ApiCallType.VEUnMerge ] = UnMergeIdentities,
-                [ ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
-                [ ApiCallType.VEDemographicSearch ] = DemographicSearch,
-                [ ApiCallType.DOH_VEDemographicSearch ] = DOH_DemographicSearch,
+                [ApiCallType.VELink] = LinkIdentities,
+                [ApiCallType.DOH_VELink] = DOH_LinkIdentities,
+                [ApiCallType.VEUnLink] = UnLinkIdentities,
+                [ApiCallType.DOH_VEUnLink] = DOH_UnLinkIdentities,
+                [ApiCallType.VEMerge] = MergeIdentities,
+                [ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
+                [ApiCallType.VEUnMerge] = UnMergeIdentities,
+                [ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
+                [ApiCallType.VEDemographicSearch] = DemographicSearch,
+                [ApiCallType.DOH_VEDemographicSearch] = DOH_DemographicSearch,
                 [ApiCallType.VEDemographicQuery] = DemographicQuery,
                 [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
                 [ApiCallType.VEDelete] = DeleteIdentity,
+                [ApiCallType.VECreateDataSource] = CreateDataSource,
                 [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity,
                 [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
                 [ApiCallType.VENativeIdQuery] = NativeIdQuery,
@@ -116,6 +120,50 @@ namespace HCA.Core.Services
             };
 
             return requestExecuters;
+        }
+
+        private async Task<BaseResponse> CreateDataSource(BaseRequest request)
+        {
+            var createDataSourceRequest = Cast<CreateDataSourceClientIdentityRequest>(request);
+            var veratoRequest = new CreateDataSourceRequest(createDataSourceRequest.TrackingId ?? string.Empty)
+            {
+                Content = new CreateDataSourceRequestContent
+                {
+                    Sources = createDataSourceRequest.Content.Sources
+                }
+            };
+            var veratoResponse = await _veratoRepository.CreateDataSource(veratoRequest);
+            var response = CreateResponse<CreateDataSourceClientIdentityResponse>(veratoResponse);
+            response.Content = veratoResponse.Content;
+
+            if (!response.Success && (response.Content?.DatasourceCreationResponses?.Any(IsAlreadyProvisionedStatus) == true
+                || IsAlreadyProvisionedMessage(response.Message)
+                || (response.Errors?.Any(IsAlreadyProvisionedMessage) == true)))
+            {
+                response.Success = true;
+                response.Message = string.IsNullOrWhiteSpace(response.Message)
+                                    ? "Source system already exists in Verato."
+                                    : response.Message;
+            }
+
+            return response;
+        }
+
+        private static bool IsAlreadyProvisionedStatus(DataSourceCreationResponse status)
+        {
+            var text = $"{status.Datasource} {status.Status}".ToLowerInvariant();
+            return text.Contains("already") || text.Contains("exists");
+        }
+
+        private static bool IsAlreadyProvisionedMessage(string? message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return false;
+            }
+
+            var text = message.ToLowerInvariant();
+            return text.Contains("already") || text.Contains("exists");
         }
 
         private async Task<BaseResponse> LinkIdentities(BaseRequest request)
@@ -182,7 +230,7 @@ namespace HCA.Core.Services
         private async Task<BaseResponse> DOH_LinkIdentities(BaseRequest request)
         {
             var linkIdentitiesRequest = Cast<DOH_LinkClientIdentityRequest>(request);
-            LinkIdentitiesRequest veratoRequest = new LinkIdentitiesRequest(linkIdentitiesRequest.TrackingId,linkIdentitiesRequest.Content);
+            LinkIdentitiesRequest veratoRequest = new LinkIdentitiesRequest(linkIdentitiesRequest.TrackingId, linkIdentitiesRequest.Content);
             var veratoResponse = await _veratoRepository.DOH_LinkIdentities(veratoRequest);
             var response = CreateResponse<DOH_LinkClientIdentityResponse>(veratoResponse);
             response.Content = veratoResponse.Content;
@@ -255,7 +303,7 @@ namespace HCA.Core.Services
         {
             var searchRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
             var veratoRequest = new DemographicSearchRequest(searchRequest.TrackingId, searchRequest.Content);  //_veratoRequestBuilder.BuildDOH_DemographicSearchRequest(searchRequest);
-            var veratoResponse = await _veratoRepository.CallVerato< DOH_DemographicSearchClientIdentityResponse>(VeratoEndpoint.DemographicSearch,veratoRequest);
+            var veratoResponse = await _veratoRepository.CallVerato<DOH_DemographicSearchClientIdentityResponse>(VeratoEndpoint.DemographicSearch, veratoRequest);
             //var response = CreateResponse<DOH_DemographicSearchClientIdentityResponse>(veratoResponse);
             //response.Content = veratoResponse.Content;
             return veratoResponse;
@@ -344,7 +392,7 @@ namespace HCA.Core.Services
 
         private static T Cast<T>(BaseRequest request) where T : BaseRequest
         {
-            if( request is not T veratoRequest )
+            if (request is not T veratoRequest)
             {
                 throw new HcaVeratoException("Invalid input");
             }

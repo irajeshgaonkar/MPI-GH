@@ -43,6 +43,20 @@ public class DOH_DeleteClientIdentityRequest : BaseRequest
     public DeleteIdentyRequestContent Content { get; set; }
 }
 
+public class CreateDataSourceClientIdentityRequest : BaseRequest
+{
+    public CreateDataSourceClientIdentityRequest(string? trackingId = "") : base(ApiCallType.VECreateDataSource, trackingId)
+    {
+    }
+
+    public CreateDataSourceClientIdentityRequestContent Content { get; set; } = new();
+}
+
+public class CreateDataSourceClientIdentityRequestContent
+{
+    public List<string> Sources { get; set; } = new();
+}
+
 /// <summary>
 /// 
 /// </summary>

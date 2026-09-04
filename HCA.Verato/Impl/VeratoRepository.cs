@@ -1,12 +1,12 @@
-﻿using System.Diagnostics;
-using System.Text;
-using HCA.Infrastructure.Exceptions;
+﻿using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Http;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Verato.Request;
 using HCA.Models.Verato.Response;
 using HCA.Verato.Options;
+using System.Diagnostics;
+using System.Text;
 
 namespace HCA.Verato.Impl;
 
@@ -54,6 +54,9 @@ public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpC
 
     public async Task<DeleteIdentityResponse> DeleteIdentity(DeleteIdentyRequest request)
         => await Execute<DeleteIdentityResponse>(VeratoEndpoint.DeleteIdentity, request);
+
+    public async Task<CreateDataSourceResponse> CreateDataSource(CreateDataSourceRequest request)
+        => await Execute<CreateDataSourceResponse>(VeratoEndpoint.CreateDataSource, request);
 
     public async Task<DOH_DeleteIdentityResponse> DOH_DeleteSourceIdentities(DeleteIdentyRequest request)
       => await Execute<DOH_DeleteIdentityResponse>(VeratoEndpoint.DeleteIdentity, request);
@@ -114,6 +117,7 @@ public class VeratoRepository(IAppLogger appLogger, VeratoHttpClient veratoHttpC
         _appLogger.LogInformation($"completed processing verato request {request?.TrackingId}, Elapsed Time: {sw.ElapsedMilliseconds}");
 
         var response = await httpResponse.Deserialize<T>();
+
         if( null == response ) {
             throw new HcaVeratoException("Error occurred while posting request to Verato");
         }

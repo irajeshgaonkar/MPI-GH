@@ -6,5 +6,8 @@ namespace HCA.Data.Repository
     public interface IOnboardedSystemRepository : IRepositoryBase<OnboardedSystemEntity>
     {
         Task<List<string>> GetActiveSourceSystemsByIPAsync(string incomingIpAddress);
+
+        Task<Dictionary<string, string>> GetTenantMapBySourceSystemsAsync(IEnumerable<string> sourceSystemNames);
+
     }
 }

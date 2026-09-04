@@ -5,9 +5,9 @@ using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
-using HCA.Models.Verato.Response;
 using HCA.Models.Request;
 using HCA.Models.Response;
+using HCA.Models.Verato.Response;
 using Newtonsoft.Json;
 
 namespace HCA.Core.Services;
@@ -64,8 +64,9 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             [ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
             [ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
             [ApiCallType.VEDelete] = DeleteIdentity,
+            [ApiCallType.VECreateDataSource] = CreateDataSource,
             [ApiCallType.VEDemographicSearch] = DemographicSearch,
-            [ApiCallType.DOH_VEDemographicSearch] =DOH_DemographicSearch,
+            [ApiCallType.DOH_VEDemographicSearch] = DOH_DemographicSearch,
             [ApiCallType.VEDemographicQuery] = DemographicQuery,
             [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
             [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
@@ -77,6 +78,18 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         return requestExecuters;
     }
 
+    private async Task<BaseResponse> CreateDataSource(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var response = await _veratoRequestExecuter.Execute<CreateDataSourceClientIdentityResponse>(request, requestStatusUpdater);
+
+        if (response != null)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Failed to process request");
+    }
+
     private async Task<BaseResponse> PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
@@ -86,7 +99,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             var sourceSystemName = postIdentityRequest.Content.First().SourceSystemName;
             var customDataMappings = await _customDataMappingService.GetCustomDataMappingBySourceSystem(sourceSystemName);
 
-            foreach(var item in postIdentityRequest.Content)
+            foreach (var item in postIdentityRequest.Content)
             {
                 if (item?.CustomJson == null)
                     continue;
@@ -121,8 +134,8 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
 
         try
         {
-           
-            
+
+
             var response = await _veratoRequestExecuter.Execute<DOH_PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
             await UpdatePostIdentitiesNotification(null, null);
 
@@ -390,7 +403,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             var response = await _veratoRequestExecuter.Execute<DOH_LinkClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateLinkIdentitiesNotification(null, null, null);
 
-            if (null != response && response.Success )
+            if (null != response && response.Success)
             {
                 LinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<LinkIdentitiesResponseContent>(response.Content.ToString());
 
@@ -428,7 +441,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             var response = await _veratoRequestExecuter.Execute<DOH_UnLinkClientIdentityResponse>(request, requestStatusUpdater);
             await UpdateUnLinkIdentitiesNotification(null, null, null);
 
-            if (null != response && response.Success )
+            if (null != response && response.Success)
             {
                 UnLinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<UnLinkIdentitiesResponseContent>(response.Content.ToString());
 
@@ -471,7 +484,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
                 _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, content.LinkId);
                 return response;
             }
-                return response;
+            return response;
             //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
             //throw new HcaVeratoException(errorMessage);
         }
@@ -526,7 +539,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         }
     }
 
-      private async Task<BaseResponse> DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    private async Task<BaseResponse> DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
     {
         var demographicSearchClientIdentityRequest = Cast<DemographicSearchClientIdentityRequest>(request);
         var notificationsUpdated = false;
@@ -637,7 +650,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
             //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
             notificationsUpdated = true;
 
-            if (null != response && response.Success )
+            if (null != response && response.Success)
             {
                 return response;
             }
@@ -687,7 +700,7 @@ public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
         var demographicSearchClientIdentityRequest = Cast<DOH_EnrichDemographicQueryClientIdentityRequest>(request);
 
         var response = await _veratoRequestExecuter.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
-        if(response != null && response.Success)
+        if (response != null && response.Success)
         {
             return response;
         }

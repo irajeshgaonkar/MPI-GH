@@ -34,3 +34,8 @@ public class DOH_DeleteClientIdentityResponse : BaseResponse
     /// </summary>
     public DeleteIdentityResponseContent Content { get; set; }
 }
+
+public class CreateDataSourceClientIdentityResponse : BaseResponse
+{
+    public CreateDataSourceResponseContent Content { get; set; }
+}

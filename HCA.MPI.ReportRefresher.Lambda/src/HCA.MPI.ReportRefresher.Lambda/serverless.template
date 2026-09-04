@@ -1,0 +1,39 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "AWS Lambda for refreshing MPI reporting materialized views.",
+  "Resources": {
+    "MpiReportRefresherFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "Handler": "HCA.MPI.ReportRefresher.Lambda::HCA.MPI.ReportRefresher.Lambda.Function::FunctionHandler",
+        "Runtime": "dotnet8",
+        "CodeUri": "",
+        "MemorySize": 512,
+        "Timeout": 300,
+        "ReservedConcurrentExecutions": 1,
+        "Policies": [
+          "AWSLambdaBasicExecutionRole"
+        ],
+        "Events": {
+          "MaterializedViewRefreshSchedule": {
+            "Type": "Schedule",
+            "Properties": {
+              "Schedule": "rate(2 minutes)",
+              "Enabled": true,
+              "Input": "{\"useConcurrentRefresh\":true,\"maxDegreeOfParallelism\":4}"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "MaterializedViewRefreshFunctionName": {
+      "Description": "Lambda function name for scheduled materialized view refreshes",
+      "Value": {
+        "Ref": "MpiReportRefresherFunction"
+      }
+    }
+  }
+}
