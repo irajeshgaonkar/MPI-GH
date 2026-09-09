@@ -13,7 +13,7 @@
     "function-memory-size" : 512,
     "function-timeout"     : 900,
     "function-handler"     : "HCA.Sftp.Lambda::HCA.Sftp.Lambda.Function::FunctionHandler",
-    "framework"            : "net6.0",
+    "framework"            : "net10.0",
     "function-name"        : "mpi-sftp",
     "function-description" : "Checks MFT regularly for new batch files and loads them.",
     "package-type"         : "Zip",

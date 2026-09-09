@@ -1536,7 +1536,9 @@ public class ClientIdentityService : IClientIdentityService
                 ? filter.TrackingId.ToString()
                 : $"{ApiCallType.DOH_VEEnrichDemographicQuery.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}";
 
-            if (filter.Content.ResponseIdentityFormatNames.IsNullOrEmpty() || filter.Content.ResponseIdentityFormatNames.Any(format => format.IsNullOrEmpty()))
+            if (filter.Content.ResponseIdentityFormatNames is null ||
+                filter.Content.ResponseIdentityFormatNames.Length == 0 ||
+                filter.Content.ResponseIdentityFormatNames.Any(string.IsNullOrEmpty))
             {
                 filter.Content.ResponseIdentityFormatNames = ["DEFAULT"];
             }

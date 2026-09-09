@@ -52,7 +52,7 @@ $environmentToProfile = @{
 $ErrorActionPreference = "Stop"
 
 # TODO: Pull in appsettings.json dynamically
-dotnet publish -f net8.0 -c Release
+dotnet publish -f net10.0 -c Release
 $result = $? -and -not $LASTEXITCODE
 if (-not ($result)) {
     Write-Error "Code build/publish error."
@@ -75,7 +75,7 @@ foreach ($project in $projectsToLambdas.Keys) {
         Remove-Item $zipName -verbose
     }
 
-    $publishFolder = "$project\src\$project\bin\Release\net8.0\publish"
+    $publishFolder = "$project\src\$project\bin\Release\net10.0\publish"
     # todo make parallel (see experimental branch)
     Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
     Write-Verbose "Zipped $project to $zipName"

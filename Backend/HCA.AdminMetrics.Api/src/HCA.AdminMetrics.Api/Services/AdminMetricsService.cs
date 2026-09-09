@@ -157,8 +157,8 @@ public class AdminMetricsService(
 
         var request = new GetMetricDataRequest
         {
-            StartTimeUtc = startTime,
-            EndTimeUtc = endTime,
+            StartTime = startTime,
+            EndTime = endTime,
             ScanBy = ScanBy.TimestampAscending,
             MetricDataQueries = queries
         };

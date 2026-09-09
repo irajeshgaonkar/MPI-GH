@@ -10,7 +10,7 @@ using HCA.Infrastructure;
 using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Logger;
 using Microsoft.Extensions.PlatformAbstractions;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Reflection;
 
 namespace HCA.AdminMetrics.Api;
@@ -63,18 +63,11 @@ public class Startup( IConfiguration configuration )
                 In = ParameterLocation.Header,
                 Description = "JWT Authorization header using the Bearer scheme."
             });
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = Constants.RequestHeaders.Bearer
-                        }
-                    },
-                    Array.Empty<string>()
+                    new OpenApiSecuritySchemeReference(Constants.RequestHeaders.Bearer, document, null),
+                    new List<string>()
                 }
             });
         });
