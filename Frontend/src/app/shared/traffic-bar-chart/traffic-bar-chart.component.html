@@ -1,0 +1,126 @@
+<section class="traffic-bar-chart">
+  <div class="traffic-bar-chart__head">
+    <div class="traffic-bar-chart__titles">
+      <h3>{{ title }}</h3>
+      <p *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
+  </div>
+
+  <div class="traffic-bar-chart__body" *ngIf="hasData(); else emptyChart" (mouseleave)="onBarLeave()">
+    <div
+      class="traffic-bar-chart__tooltip"
+      *ngIf="activePoint() as point"
+      role="status"
+      aria-live="polite"
+      [style.left.%]="tooltipLeftPercent()"
+      [style.top.%]="tooltipTopPercent()">
+      <strong>{{ point.label }}</strong>
+      <span>{{ valueLabel }}: {{ formatValue(point.value) }}</span>
+    </div>
+
+    <svg
+      class="traffic-bar-chart__svg"
+      [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      [attr.aria-label]="title">
+      <line
+        *ngFor="let tick of yTickValues()"
+        [attr.x1]="paddingLeft"
+        [attr.x2]="chartWidth - paddingRight"
+        [attr.y1]="getYTickY(tick)"
+        [attr.y2]="getYTickY(tick)"
+        class="traffic-bar-chart__grid">
+      </line>
+
+      <text
+        *ngFor="let tick of yTickValues()"
+        [attr.x]="paddingLeft - 10"
+        [attr.y]="getYTickY(tick) + 4"
+        class="traffic-bar-chart__y-label"
+        text-anchor="end">
+        {{ formatValue(tick) }}
+      </text>
+
+      <text
+        *ngIf="valueLabel"
+        class="traffic-bar-chart__axis-title"
+        text-anchor="middle"
+        [attr.x]="yAxisTitleX()"
+        [attr.y]="yAxisTitleY()"
+        [attr.transform]="'rotate(-90 ' + yAxisTitleX() + ' ' + yAxisTitleY() + ')'">
+        {{ valueLabel }}
+      </text>
+
+      <line
+        [attr.x1]="paddingLeft"
+        [attr.y1]="paddingTop"
+        [attr.x2]="paddingLeft"
+        [attr.y2]="baselineY()"
+        class="traffic-bar-chart__axis">
+      </line>
+      <line
+        [attr.x1]="paddingLeft"
+        [attr.y1]="baselineY()"
+        [attr.x2]="chartWidth - paddingRight"
+        [attr.y2]="baselineY()"
+        class="traffic-bar-chart__axis">
+      </line>
+
+      <g *ngFor="let point of data; let index = index">
+        <rect
+          [attr.x]="getBarX(index)"
+          [attr.y]="getBarY(point.value)"
+          [attr.width]="getBarWidth()"
+          [attr.height]="getBarHeight(point.value)"
+          [attr.fill]="barColor"
+          [attr.fill-opacity]="barFillOpacity(index, point.value)"
+          rx="6"
+          ry="6"
+          class="traffic-bar-chart__bar"
+          pointer-events="none">
+        </rect>
+        <text
+          [attr.x]="getBarX(index) + getBarWidth() / 2"
+          [attr.y]="baselineY() + (shouldRotateLabels() ? 20 : 18)"
+          class="traffic-bar-chart__x-label"
+          [attr.text-anchor]="shouldRotateLabels() ? 'end' : 'middle'"
+          [attr.transform]="xLabelTransform(index)"
+          pointer-events="none">
+          {{ point.label }}
+        </text>
+        <rect
+          class="traffic-bar-chart__hitbox"
+          [attr.x]="getHitboxX(index)"
+          [attr.y]="paddingTop"
+          [attr.width]="getHitboxWidth()"
+          [attr.height]="plotHeight()"
+          [class.traffic-bar-chart__hitbox--active]="isActive(index)"
+          fill="rgba(11, 132, 243, 0.001)"
+          (mouseenter)="onBarEnter(index)"
+          (click)="onBarClick($event, index)"
+          (focus)="onBarFocus(index)"
+          (keydown)="onBarKeydown($event, index)"
+          tabindex="0"
+          role="button"
+          [attr.aria-pressed]="isActive(index)"
+          [attr.aria-label]="point.label + ': ' + formatValue(point.value) + ' ' + valueLabel">
+        </rect>
+      </g>
+
+      <text
+        *ngIf="xAxisLabel"
+        class="traffic-bar-chart__axis-title"
+        text-anchor="middle"
+        [attr.x]="xAxisTitleX()"
+        [attr.y]="xAxisTitleY()"
+        pointer-events="none">
+        {{ xAxisLabel }}
+      </text>
+    </svg>
+  </div>
+
+  <ng-template #emptyChart>
+    <div class="traffic-bar-chart__empty">No chart data available for the selected lookback.</div>
+  </ng-template>
+</section>

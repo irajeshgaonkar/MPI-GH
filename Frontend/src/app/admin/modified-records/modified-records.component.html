@@ -1,0 +1,360 @@
+<app-header></app-header>
+<!-- <app-filter-header></app-filter-header> -->
+<div class="main-grid">
+    <div class="row pt-2 m-0">
+        <div class="col-md-2 p-0">
+            <app-left-nav></app-left-nav>
+        </div>
+        <div class="col-md-10 p-0">
+            <div class="grid-table">
+                <div class="d-flex">
+                    <h6 class="mb-0">Modify Records</h6>
+                    <div class="right-move" *ngIf="hasTwoSelections">
+                        <ul class="grid-right-ul">
+                            <li class="align-self-center grid-border-right" data-bs-toggle="modal"
+                                data-bs-target="#compareModal"><img src="../../../assets/images/dashboard-icon.svg"
+                                    class="icon-size">Compare</li>
+                            <li class="align-self-center grid-border-right" data-bs-toggle="modal"
+                                data-bs-target="#linkModal"><img src="../../../assets/images/link-icon.svg"
+                                    class="icon-size">Link</li>
+                            <li data-bs-toggle="modal" data-bs-target="#unlinkModal">
+                                <img src="../../../assets/images/unlink-icon.svg" class="icon-size" />
+                                Unlink
+                            </li>
+                        </ul>
+
+                        <ul class="grid-right-ul me-0">
+                            <li class="align-self-center grid-border-right" data-bs-toggle="modal"
+                                data-bs-target="#exampleModal"><img src="../../../assets/images/merge-icon.svg"
+                                    class="icon-size1">Merge
+                            </li>
+                            <li class="align-self-center" data-bs-toggle="modal" data-bs-target="#unmergeModal"><img
+                                    src="../../../assets/images/unmerge-icon.svg" class="icon-size2">Unmerge</li>
+                        </ul>
+                    </div>
+                    <div class="right-move" *ngIf="hasSingleSelection">
+                        <ul class="grid-right-ul me-0">
+                            <li class="align-self-center" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <img src="../../../assets/images/delete-icon.svg" class="icon-size" />
+                                Delete
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="grid-bg">
+                    <table class="table table-striped grid">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <!-- <input class="form-check-input" type="checkbox" value=""
+                                            id="flexCheckIndeterminate"> -->
+                                        <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                    </div>
+                                </th>
+                                <th>MPI Link ID</th>
+                                <th>Source System ID</th>
+                                <th>Source System Name</th>
+                                <th>Source System Last Updated</th>
+                                <th>Firstname</th>
+                                <th>Middlename</th>
+                                <th>Lastname</th>
+                                <th>Suffix</th>
+                                <th>Date of Birth</th>
+                                <th>Gender</th>
+                                <th>SSN</th>
+                                <th>Address Type</th>
+                                <th>Address Line 1</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of data">
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" [value]="item.id"
+                                            id="flexCheckIndeterminate" (change)="selectItem($event, item)">
+                                        <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                    </div>
+                                </td>
+                                <td>{{item.mpiLinkId}}</td>
+                                <td>{{item.sourceSystemId}}</td>
+                                <td>{{item.sourceName}}</td>
+                                <td>{{item.sourceSystemLastUpdate}}</td>
+                                <td>{{item.firstName}}</td>
+                                <td>{{item.middleName}}</td>
+                                <td>{{item.lastName}}</td>
+                                <td>{{item.suffix}}</td>
+                                <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.birthDate}}</td>
+                                <td>{{item.gender}}</td>
+                                <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.ssn}}</td>
+                                <td>{{item.addressType}}</td>
+                                <td>{{item.addressLine1}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="deleteModalLabel">Delete Record</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" *ngIf="selectedRecords.length">
+                <p class="mb-2">Delete the selected source record from MPI?</p>
+                <div class="modal-record-summary">
+                    <div><strong>Source System Name:</strong> {{selectedRecords[0].sourceName}}</div>
+                    <div><strong>Source System ID:</strong> {{selectedRecords[0].sourceSystemId}}</div>
+                    <div><strong>MPI Link ID:</strong> {{selectedRecords[0].mpiLinkId}}</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" (click)="deleteSelected()" class="btn btn-primary" data-bs-dismiss="modal" [disabled]="loading">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Compare Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1" aria-labelledby="compareModalLabel" aria-hidden="true">
+    <div class="modal-dialog compare-modal-dialog modal-dialog-centered">
+        <div class="modal-content compare-modal">
+            <div class="modal-header">
+                <div>
+                    <h6 class="modal-title" id="compareModalLabel">Compare Records</h6>
+                    <p class="compare-modal__subtitle mb-0">Review the two selected identities side by side before linking, merging, or unlinking.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="compare-modal__body" *ngIf="selectedRecords.length === 2">
+                    <div class="compare-summary">
+                        <span class="compare-summary__count">{{compareDifferenceCount()}} differences</span>
+                        <span class="compare-summary__hint">Highlighted rows have mismatched values.</span>
+                    </div>
+
+                    <div class="compare-record-grid">
+                        <article class="compare-record-card">
+                            <strong>{{selectedRecords[0].sourceName}}</strong>
+                            <span>{{selectedRecords[0].sourceSystemId}}</span>
+                        </article>
+                        <article class="compare-record-card">
+                            <strong>{{selectedRecords[1].sourceName}}</strong>
+                            <span>{{selectedRecords[1].sourceSystemId}}</span>
+                        </article>
+                    </div>
+
+                    <div class="compare-list">
+                        <div class="compare-row" *ngFor="let field of compareFields" [ngClass]="{'compare-row--different': isCompareFieldDifferent(field.key)}">
+                            <div class="compare-row__field">{{field.label}}</div>
+                            <div class="compare-row__values">
+                                <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                                    {{getCompareValue(selectedRecords[0], field.key)}}
+                                </div>
+                                <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                                    {{getCompareValue(selectedRecords[1], field.key)}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Merge Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="exampleModalLabel">Merging Records</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped grid">
+                    <thead>
+                        <tr>
+                            <!-- <th>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value=""
+                                        id="flexCheckIndeterminate" [checked]="true" disabled>
+                                    <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                </div>
+                            </th> -->
+                            <th>MPI Link ID</th>
+                            <th>Source System ID</th>
+                            <th>Source System Name</th>
+                            <th>Source System Last Updated</th>
+                            <th>Firstname</th>
+                            <th>Middlename</th>
+                            <th>Lastname</th>
+                            <th>Suffix</th>
+                            <th>Date of Birth</th>
+                            <th>Gender</th>
+                            <th>SSN</th>
+                            <th>Address Type</th>
+                            <th>Address Line 1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of selectedRecords">
+                            <!-- <td>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" [value]="item.id"
+                                        id="flexCheckIndeterminate" [checked]="true" disabled>
+                                    <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                </div>
+                            </td> -->
+                            <td>{{item.mpiLinkId}}</td>
+                            <td>{{item.sourceSystemId}}</td>
+                            <td>{{item.sourceName}}</td>
+                            <td>{{item.sourceSystemLastUpdate}}</td>
+                            <td>{{item.firstName}}</td>
+                            <td>{{item.middleName}}</td>
+                            <td>{{item.lastName}}</td>
+                            <td>{{item.suffix}}</td>
+                            <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.birthDate}}</td>
+                            <td>{{item.gender}}</td>
+                            <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.ssn}}</td>
+                            <td>{{item.addressType}}</td>
+                            <td>{{item.addressLine1}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" (click)="merge()" class="btn btn-primary" data-bs-dismiss="modal" [disabled]="loading">Merge</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Link Modal -->
+<div class="modal fade" id="linkModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="exampleModalLabel">Linking Records</h6>
+                <button type="button" class="
+                btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped grid">
+                    <thead>
+                        <tr>
+                            <!-- <th>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value=""
+                                        id="flexCheckIndeterminate" [checked]="true" disabled>
+                                    <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                </div>
+                            </th> -->
+                            <th>MPI Link ID</th>
+                            <th>Source System ID</th>
+                            <th>Source System Name</th>
+                            <th>Source System Last Updated</th>
+                            <th>Firstname</th>
+                            <th>Middlename</th>
+                            <th>Lastname</th>
+                            <th>Suffix</th>
+                            <th>Date of Birth</th>
+                            <th>Gender</th>
+                            <th>SSN</th>
+                            <th>Address Type</th>
+                            <th>Address Line 1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of selectedRecords">
+                            <!-- <td>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" [value]="item.id"
+                                        id="flexCheckIndeterminate" [checked]="true" disabled>
+                                    <label class="form-check-label" for="flexCheckIndeterminate"></label>
+                                </div>
+                            </td> -->
+                            <td>{{item.mpiLinkId}}</td>
+                            <td>{{item.sourceSystemId}}</td>
+                            <td>{{item.sourceName}}</td>
+                            <td>{{item.sourceSystemLastUpdate}}</td>
+                            <td>{{item.firstName}}</td>
+                            <td>{{item.middleName}}</td>
+                            <td>{{item.lastName}}</td>
+                            <td>{{item.suffix}}</td>
+                            <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.birthDate}}</td>
+                            <td>{{item.gender}}</td>
+                            <td [ngClass]="{'text-blur' : !showSensitiveData()}">{{item.ssn}}</td>
+                            <td>{{item.addressType}}</td>
+                            <td>{{item.addressLine1}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" (click)="link()" class="btn btn-primary" data-bs-dismiss="modal" [disabled]="loading">Link</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Unlink Modal -->
+<div class="modal fade" id="unlinkModal" tabindex="-1" aria-labelledby="unlinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="unlinkModalLabel">Unlink Records</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Unlink the two selected source records?</p>
+                <div class="modal-record-summary" *ngFor="let item of selectedRecords">
+                    <div><strong>Source System Name:</strong> {{item.sourceName}}</div>
+                    <div><strong>Source System ID:</strong> {{item.sourceSystemId}}</div>
+                    <div><strong>MPI Link ID:</strong> {{item.mpiLinkId}}</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" (click)="unlink()" class="btn btn-primary" data-bs-dismiss="modal" [disabled]="loading">Unlink</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Unmerge Modal -->
+<div class="modal fade" id="unmergeModal" tabindex="-1" aria-labelledby="unmergeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="unmergeModalLabel">Unmerge Records</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Unmerge the two selected source records?</p>
+                <div class="modal-record-summary" *ngFor="let item of selectedRecords">
+                    <div><strong>Source System Name:</strong> {{item.sourceName}}</div>
+                    <div><strong>Source System ID:</strong> {{item.sourceSystemId}}</div>
+                    <div><strong>MPI Link ID:</strong> {{item.mpiLinkId}}</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" (click)="unmerge()" class="btn btn-primary" data-bs-dismiss="modal" [disabled]="loading">Unmerge</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div *ngIf="loading" class="loader"></div>

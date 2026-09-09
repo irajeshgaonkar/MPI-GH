@@ -1,0 +1,344 @@
+<app-header></app-header>
+
+<div class="main-grid">
+  <div class="row pt-2 m-0">
+    <div class="col-md-2 p-0">
+      <app-left-nav></app-left-nav>
+    </div>
+    <div class="col-md-10 p-0">
+      <div class="grid-table usage-metrics-page">
+        <section class="usage-metrics-page__header">
+          <div>
+            <p class="usage-metrics-page__eyebrow">Administration</p>
+            <h1>{{ mode === 'combined' ? 'Combined Usage' : mode === 'api' ? 'API Usage' : 'Batch Usage' }}</h1>
+            <p *ngIf="mode === 'combined'">Review combined MPI usage by source system across API traffic and batch files, with each batch record counted as a call.</p>
+            <p *ngIf="mode === 'api'">Review API access usage by source system from CloudWatch access logs, including volume, failures, and distinct source IP counts.</p>
+            <p *ngIf="mode === 'batch'">Review batch file intake usage by source system, including file volume, failures, rejected records, and recent file activity.</p>
+          </div>
+          <div class="usage-metrics-page__actions app-page-actions">
+            <button type="button" class="btn btn-primary app-export-btn" (click)="openExportDialog()" [disabled]="loading">Export PDF</button>
+            <button type="button" class="btn btn-outline-primary" (click)="refresh()">Refresh</button>
+          </div>
+        </section>
+
+        <section class="usage-metrics-page__summary" *ngIf="mode === 'combined'">
+          <article class="summary-card">
+            <span class="summary-card__label">Systems Seen</span>
+            <strong class="summary-card__value">{{ combinedSystemsSeen() }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Total Calls</span>
+            <strong class="summary-card__value">{{ combinedTotalCalls() | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">API Calls</span>
+            <strong class="summary-card__value">{{ combinedApiCalls() | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Batch Records</span>
+            <strong class="summary-card__value">{{ combinedBatchRecords() | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Failures</span>
+            <strong class="summary-card__value">{{ combinedFailures() | number }}</strong>
+          </article>
+        </section>
+
+        <section class="usage-metrics-page__summary" *ngIf="mode === 'api'">
+          <article class="summary-card">
+            <span class="summary-card__label">Systems Seen</span>
+            <strong class="summary-card__value">{{ usageMetrics.totalSystems }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Calls</span>
+            <strong class="summary-card__value">{{ usageMetrics.totalCalls | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Failures</span>
+            <strong class="summary-card__value">{{ usageMetrics.totalFailedCount | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Distinct Source IPs</span>
+            <strong class="summary-card__value">{{ usageMetrics.totalDistinctSourceIps | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Avg Failure Rate</span>
+            <strong class="summary-card__value">{{ usageMetrics.averageFailureRate }}%</strong>
+          </article>
+        </section>
+
+        <section class="usage-metrics-page__summary" *ngIf="mode === 'batch'">
+          <article class="summary-card">
+            <span class="summary-card__label">Files</span>
+            <strong class="summary-card__value">{{ batchMetrics.totalFiles | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Total Records</span>
+            <strong class="summary-card__value">{{ totalBatchRecords() | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Failed Files</span>
+            <strong class="summary-card__value">{{ batchMetrics.failedFiles | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Rejected Records</span>
+            <strong class="summary-card__value">{{ batchMetrics.rejectedRecords | number }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Avg Processing</span>
+            <strong class="summary-card__value">{{ batchMetrics.averageProcessingMinutes }} min</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Systems Seen</span>
+            <strong class="summary-card__value">{{ batchMetrics.sourceSummaries.length }}</strong>
+          </article>
+        </section>
+
+        <section class="usage-metrics-page__controls">
+          <input *ngIf="mode === 'combined'" type="text" [(ngModel)]="search" placeholder="Search source system, tenant, or combined metric values" />
+          <input *ngIf="mode === 'api'" type="text" [(ngModel)]="search" placeholder="Search source system, tenant, or metric values" />
+          <input *ngIf="mode === 'batch'" type="text" [(ngModel)]="search" placeholder="Search source system, tenant, file name, request ID, status, or metric values" />
+          <select [(ngModel)]="tenantFilter">
+            <option value="all">All tenants</option>
+            <option *ngFor="let tenant of tenantOptions()" [value]="tenant">{{ tenant }}</option>
+          </select>
+          <select [ngModel]="selectedLookbackHours" (ngModelChange)="onLookbackChange($event)">
+            <option *ngFor="let option of lookbackOptions" [ngValue]="option.value">{{ option.label }}</option>
+          </select>
+          <span class="usage-metrics-page__timestamp">Last updated: {{ lastUpdatedLabel() }}</span>
+        </section>
+
+        <section class="usage-metrics-page__layout">
+          <app-administration-nav></app-administration-nav>
+
+          <div class="usage-metrics-page__content">
+            <div *ngIf="loadError" class="usage-metrics-page__message">
+              {{ loadError }}
+            </div>
+
+            <section class="usage-metrics-page__charts">
+              <app-metric-chart *ngIf="mode === 'combined'"
+                [title]="'Top Combined Volume'"
+                [subtitle]="'Highest combined MPI usage across API calls and batch records'"
+                [data]="topCallVolumeChart()"
+                [series]="usageVolumeSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'combined'"
+                [title]="'Highest Combined Failure Rate'"
+                [subtitle]="'Failure rate across API failures and rejected batch records'"
+                [data]="topFailureRateChart()"
+                [series]="failureRateSeries"
+                [variant]="'line'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'combined'"
+                [title]="'Top Source IP Footprint'"
+                [subtitle]="'Distinct source IP coverage from API traffic only'"
+                [data]="topSourceIpChart()"
+                [series]="sourceIpSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'api'"
+                [title]="'Top Call Volume'"
+                [subtitle]="'Highest-volume source systems in the current window'"
+                [data]="topCallVolumeChart()"
+                [series]="usageVolumeSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'api'"
+                [title]="'Highest Failure Rate'"
+                [subtitle]="'Source systems with the highest failure percentage'"
+                [data]="topFailureRateChart()"
+                [series]="failureRateSeries"
+                [variant]="'line'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'api'"
+                [title]="'Top Source IP Footprint'"
+                [subtitle]="'Systems using the largest number of distinct source IPs'"
+                [data]="topSourceIpChart()"
+                [series]="sourceIpSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'batch'"
+                [title]="'Top File Volume'"
+                [subtitle]="'Source systems with the highest batch file volume'"
+                [data]="topBatchVolumeChart()"
+                [series]="batchVolumeSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'batch'"
+                [title]="'Highest Failed File Count'"
+                [subtitle]="'Source systems with the highest failed batch files'"
+                [data]="topBatchFailureChart()"
+                [series]="batchFailureSeries"
+                [variant]="'line'">
+              </app-metric-chart>
+              <app-metric-chart *ngIf="mode === 'batch'"
+                [title]="'Top Rejected Records'"
+                [subtitle]="'Source systems generating the most rejected records'"
+                [data]="topBatchRejectChart()"
+                [series]="batchRejectSeries"
+                [variant]="'area'">
+              </app-metric-chart>
+            </section>
+
+            <div class="usage-table-card" *ngIf="mode === 'combined'">
+              <table class="usage-table">
+                <thead>
+                  <tr>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('system')">Source System {{ sortIndicator('system') }}</button></th>
+                    <th>Tenant</th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('callCount')">Total Calls {{ sortIndicator('callCount') }}</button></th>
+                    <th>API Calls</th>
+                    <th>Batch Records</th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('successCount')">Success {{ sortIndicator('successCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('failedCount')">Failed {{ sortIndicator('failedCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('failureRate')">Failure Rate {{ sortIndicator('failureRate') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('sourceIpCount')">Distinct Source IPs {{ sortIndicator('sourceIpCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('firstSeen')">First Seen {{ sortIndicator('firstSeen') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('lastSeen')">Last Seen {{ sortIndicator('lastSeen') }}</button></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let system of filteredCombinedSystems(); trackBy: trackBySystem">
+                    <td>{{ system.system }}</td>
+                    <td>{{ system.tenant || 'N/A' }}</td>
+                    <td>{{ system.callCount | number }}</td>
+                    <td>{{ system.apiCallCount | number }}</td>
+                    <td>{{ system.batchRecordCount | number }}</td>
+                    <td>{{ system.successCount | number }}</td>
+                    <td>{{ system.failedCount | number }}</td>
+                    <td>{{ system.failureRate }}%</td>
+                    <td>{{ system.sourceIpCount | number }}</td>
+                    <td>{{ system.firstSeen ? (system.firstSeen | date:'short') : 'N/A' }}</td>
+                    <td>{{ system.lastSeen ? (system.lastSeen | date:'short') : 'N/A' }}</td>
+                  </tr>
+                  <tr *ngIf="!filteredCombinedSystems().length">
+                    <td colspan="11" class="usage-table__empty">No combined usage metrics matched the current filters.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="usage-table-card" *ngIf="mode === 'api'">
+              <table class="usage-table">
+                <thead>
+                  <tr>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('system')">Source System {{ sortIndicator('system') }}</button></th>
+                    <th>Tenant</th>
+                    <th>Raw Certificate CN</th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('callCount')">Call Count {{ sortIndicator('callCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('successCount')">Success {{ sortIndicator('successCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('failedCount')">Failed {{ sortIndicator('failedCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('failureRate')">Failure Rate {{ sortIndicator('failureRate') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('sourceIpCount')">Distinct Source IPs {{ sortIndicator('sourceIpCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('firstSeen')">First Seen {{ sortIndicator('firstSeen') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBy('lastSeen')">Last Seen {{ sortIndicator('lastSeen') }}</button></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let system of filteredSystems(); trackBy: trackBySystem">
+                    <td>{{ system.system }}</td>
+                    <td>{{ system.tenant || 'N/A' }}</td>
+                    <td>
+                      <div class="raw-cert-cell" *ngIf="rawCertificateEntries(system.rawCertificateCn).length; else emptyRawCertificate">
+                        <div class="raw-cert-cell__entries">
+                          <span class="raw-cert-chip" *ngFor="let entry of visibleRawCertificateEntries(system)">{{ entry }}</span>
+                        </div>
+                        <button
+                          *ngIf="canToggleRawCertificate(system)"
+                          type="button"
+                          class="raw-cert-cell__toggle"
+                          (click)="toggleRawCertificate(system)">
+                          {{ isRawCertificateExpanded(system) ? 'Collapse' : '+' + remainingRawCertificateCount(system) + ' more' }}
+                        </button>
+                      </div>
+                      <ng-template #emptyRawCertificate>
+                        <span class="raw-cert-cell__empty">N/A</span>
+                      </ng-template>
+                    </td>
+                    <td>{{ system.callCount | number }}</td>
+                    <td>{{ system.successCount | number }}</td>
+                    <td>{{ system.failedCount | number }}</td>
+                    <td>{{ system.failureRate }}%</td>
+                    <td>{{ system.sourceIpCount | number }}</td>
+                    <td>{{ system.firstSeen ? (system.firstSeen | date:'short') : 'N/A' }}</td>
+                    <td>{{ system.lastSeen ? (system.lastSeen | date:'short') : 'N/A' }}</td>
+                  </tr>
+                  <tr *ngIf="!filteredSystems().length">
+                    <td colspan="10" class="usage-table__empty">No usage metrics matched the current filters.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="usage-table-card" *ngIf="mode === 'batch'">
+              <table class="usage-table">
+                <thead>
+                  <tr>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchBy('sourceSystemName')">Source System {{ sortBatchIndicator('sourceSystemName') }}</button></th>
+                    <th>Tenant</th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchBy('totalFiles')">Files {{ sortBatchIndicator('totalFiles') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchBy('failedFiles')">Failed Files {{ sortBatchIndicator('failedFiles') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchBy('rejectedRecords')">Rejected Records {{ sortBatchIndicator('rejectedRecords') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchBy('averageProcessingMinutes')">Avg Processing {{ sortBatchIndicator('averageProcessingMinutes') }}</button></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let source of filteredBatchSources(); trackBy: trackByBatchSource">
+                    <td>{{ source.sourceSystemName }}</td>
+                    <td>{{ source.tenant || 'N/A' }}</td>
+                    <td>{{ source.totalFiles | number }}</td>
+                    <td>{{ source.failedFiles | number }}</td>
+                    <td>{{ source.rejectedRecords | number }}</td>
+                    <td>{{ source.averageProcessingMinutes }} min</td>
+                  </tr>
+                  <tr *ngIf="!filteredBatchSources().length">
+                    <td colspan="6" class="usage-table__empty">No batch usage metrics matched the current filters.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="usage-table-card" *ngIf="mode === 'batch'">
+              <div class="usage-table-card__title">Recent Batch Files</div>
+              <table class="usage-table">
+                <thead>
+                  <tr>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('requestId')">Request ID {{ sortBatchFileIndicator('requestId') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('fileName')">File {{ sortBatchFileIndicator('fileName') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('sourceSystemName')">Source System {{ sortBatchFileIndicator('sourceSystemName') }}</button></th>
+                    <th>Tenant</th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('recordsCount')">Records {{ sortBatchFileIndicator('recordsCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('status')">Status {{ sortBatchFileIndicator('status') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('processingMinutes')">Processing {{ sortBatchFileIndicator('processingMinutes') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('rejectCount')">Rejects {{ sortBatchFileIndicator('rejectCount') }}</button></th>
+                    <th><button type="button" class="usage-table__sort" (click)="sortBatchFilesBy('requestDateTime')">Requested {{ sortBatchFileIndicator('requestDateTime') }}</button></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let file of filteredBatchFiles(); trackBy: trackByBatchFile">
+                    <td>{{ file.requestId }}</td>
+                    <td>{{ file.fileName }}</td>
+                    <td>{{ file.sourceSystemName }}</td>
+                    <td>{{ file.tenant || 'N/A' }}</td>
+                    <td>{{ file.recordsCount | number }}</td>
+                    <td>{{ file.status }}</td>
+                    <td>{{ file.processingMinutes }} min</td>
+                    <td>{{ file.rejectCount | number }}</td>
+                    <td>{{ file.requestDateTime | date:'short' }}</td>
+                  </tr>
+                  <tr *ngIf="!filteredBatchFiles().length">
+                    <td colspan="9" class="usage-table__empty">No batch files matched the current filters.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loader"></div>

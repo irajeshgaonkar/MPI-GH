@@ -1,0 +1,38 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12 text-center full-height">
+            <img src="../../../assets/images/mpi-logo.svg" class="mpi-logo">
+        </div>
+    </div>
+    <div *ngIf="loading" class="loader"></div>
+</div>
+<div class="welcome-popup" *ngIf="welpopup">
+    <div class="welcome-popup-op-layer">
+        <div class="notice-card">
+            <h4><u>NOTICE</u></h4>
+            <div class="cont-bg">
+                <p class="mb-3"><strong>Computer and network access is provided to conduct State of Washington business.</strong> </p>
+                <p class="mb-4">Personal use of these systems and Internet is limited, and strictly governed by agency policy and state
+                    ethics laws. It is the responsibility of every HCA employee to understand the laws and policies that
+                    govern the use of these systems, and abide by them. If you proceed, you are agreeing that you know,
+                    understand, and comply with these standards AND that you acknowledge that failure to comply may result
+                    in disciplinary action which could include discharge from employment. System use may be monitored for
+                    security and investigatory purposes.</p>
+                    <strong>Reference:</strong>
+                    <div class="ref-div">
+                        <p>HCA Policy 6-03, Using Information Technology Assets,</p>
+                        <p>HCA Policy 6-16, Information Security Policies and Standards,</p>
+                        <p>HCA Policy 10-01, Privacy and Compliance with the Health Insurance Portability and Accountability Act (HIPAA),</p>
+                        <p>To learn more, go to <a href="http://www.ethics.wa.gov/">http://www.ethics.wa.gov/</a> </p>
+                    </div>
+                    <div class="col-12 text-center my-4">
+                        <!-- <button type="submit" class="btn btn-primary my-2 login-btn understand-btn" (click)="close()">I Understand</button> -->
+                        <a class="btn btn-primary my-2 login-btn understand-btn" [href]="this.ssoUrl" >
+                            I Understand
+                        </a>
+                    </div>
+            </div>
+        </div>
+    </div>
+   
+</div>

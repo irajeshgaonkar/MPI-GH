@@ -1,0 +1,83 @@
+<div class="left-nav">
+    <ul class="leftnav-ul" *ngxPermissionsOnly="['Admin']">
+        <a routerLink="/admin/user-grid">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/dashboard-icon.svg">
+                MPI Dashboard
+            </li>
+        </a>
+        <a routerLink="/admin/reports">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/reports-icon.svg">
+                Reports
+            </li>
+        </a>
+        <a routerLink="/admin/metrics">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/reports-icon.svg">
+                MPI Health
+            </li>
+        </a>
+        <a routerLink="/admin/onboarded-systems">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/settings-icon.svg">
+                Administration
+            </li>
+        </a>
+        <!--<a routerLink="/admin/settings">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/settings-icon.svg">
+                Settings
+            </li>
+        </a> -->
+        <a routerLink="/admin/help">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/help-icon.svg">
+                Help
+            </li>
+        </a>
+        <a href="javascript:void(0)">
+            <li (click)="openSupportRequest()">
+                <img src="../../../assets/images/help-icon.svg">
+                Request Support
+            </li>
+        </a>
+    </ul>
+
+    <ul class="leftnav-ul" *ngxPermissionsOnly="['Viewer']">
+        <a routerLink="/viewer/user-grid">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/dashboard-icon.svg">
+                MPI Dashboard
+            </li>
+        </a>
+        <!--<a routerLink="/viewer/reports">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/reports-icon.svg">
+                Reports
+            </li>
+        </a>
+        <a routerLink="/viewer/settings">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/settings-icon.svg">
+                Settings
+            </li>
+        </a>-->
+        <a routerLink="/viewer/help">
+            <li routerLinkActive="leftnav-active">
+                <img src="../../../assets/images/help-icon.svg">
+                Help
+            </li>
+        </a>
+        <a href="javascript:void(0)">
+            <li (click)="openSupportRequest()">
+                <img src="../../../assets/images/help-icon.svg">
+                Request Support
+            </li>
+        </a>
+    </ul>
+
+</div>
+<!-- <div class="text-center">
+    <img src="../../../assets/images/mpi-logo.svg" class="leftnav-btm-img">
+</div> -->

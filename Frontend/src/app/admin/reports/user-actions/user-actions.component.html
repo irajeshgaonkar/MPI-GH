@@ -1,0 +1,111 @@
+<div>
+<app-header></app-header>
+
+<nav class="navbar navbar-expand-lg bg-light filter-header">
+  <div class="container-fluid" *ngIf="showUserFilter()">
+    <a class="navbar-brand" href="#"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <img src="../../../assets/images/3-bars.svg">
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 left-margin">
+        <li class="nav-item self-align me-2">
+          User Name
+        </li>
+       
+
+        <li class="nav-item d-flex me-2">
+          <div class="search">
+              <input class="form-control" type="search"
+                  placeholder="Search with User name"
+                  [(ngModel)]="userNameFilter"
+                  (input)="handleUserNameFilterChange($event)">
+              <span class="search-icon">
+                  <img src="../../../assets/images/search-icon.svg">
+              </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- <app-filter-header (handleInputChange)="handleUserNameFilterChange($event)"></app-filter-header> -->
+<div class="main-grid">
+    <div class="row pt-2 m-0">
+      
+        <div class="col-md-2 p-0">
+            <app-left-nav></app-left-nav>
+        </div>
+        <div class="col-md-10 p-0">
+          
+            <div class="grid-table">
+                <div class="d-flex">
+                    <h6 class="mb-0">Link Id Operations</h6>
+                </div>
+                <div class="grid-bg p-4 mt-2">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+                        <!--- Note that these columns can be defined in any order.
+                              The actual rendered columns are set as a property on the row definition" -->
+                          
+                          <ng-container matColumnDef="userName">
+                            <th mat-header-cell *matHeaderCellDef> User Name</th>
+                            <td mat-cell *matCellDef="let element"> {{element.userName}} </td>
+                          </ng-container>
+                          
+                        <ng-container matColumnDef="action">
+                          <th mat-header-cell *matHeaderCellDef> Api Call Type</th>
+                          <td mat-cell *matCellDef="let element"> {{element.apiCallType}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="requestDateTime">
+                            <th mat-header-cell *matHeaderCellDef> Request Start Time </th>
+                            <td mat-cell *matCellDef="let element"> {{element.requestDateTime}} </td>
+                        </ng-container>
+
+                          <ng-container matColumnDef="processStartTime">
+                            <th mat-header-cell *matHeaderCellDef> Process Start Time </th>
+                            <td mat-cell *matCellDef="let element"> {{element.processStartTime}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="processEndTime">
+                            <th mat-header-cell *matHeaderCellDef> Process End Time </th>
+                            <td mat-cell *matCellDef="let element"> {{element.processEndTime}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="status">
+                            <th mat-header-cell *matHeaderCellDef> Status </th>
+                            <td mat-cell *matCellDef="let element"> {{element.status}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="message">
+                            <th mat-header-cell *matHeaderCellDef> Message </th>
+                            <td mat-cell *matCellDef="let element"> {{element.message}} </td>
+                          </ng-container>
+                          
+
+                          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+                      </table>
+                </div>
+              
+            </div>
+        </div>
+    </div>
+    <div class="paginate-bottom paginate">
+      <mat-paginator 
+          [pageSize]="pageData.pageSize" 
+          [pageIndex]="pageData.pageIndex" 
+          [pageSizeOptions]="[10,20,30,40,50]" 
+          (page)="pageEvent = $event; onPaginationChange($event)" 
+          [length]="totalRecords" 
+          showFirstLastButtons
+      >
+      </mat-paginator>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loader"></div>
+</div>

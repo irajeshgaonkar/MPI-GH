@@ -1,0 +1,92 @@
+/* You can add global styles to this file, and also import other style files */
+@import "./assets/structure.scss";
+
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: #d9e7f3;
+  color: #19324d;
+  cursor: help;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+.info-tooltip::after {
+  display: none;
+}
+
+.info-tooltip:focus {
+  outline: 2px solid #0b84f3;
+  outline-offset: 2px;
+}
+
+.info-tooltip--inline {
+  margin-left: 4px;
+}
+
+.info-tooltip--header {
+  margin: 0 4px 0 2px;
+}
+
+.info-tooltip--label {
+  display: inline;
+  width: auto;
+  height: auto;
+  margin-left: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+  text-decoration: none;
+}
+
+button.app-export-btn,
+.btn.app-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  text-decoration: none !important;
+}
+
+.app-page-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.app-page-actions > button,
+.app-page-actions > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .app-page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .app-page-actions > button,
+  .app-page-actions > .btn {
+    flex: 1 1 160px;
+  }
+}

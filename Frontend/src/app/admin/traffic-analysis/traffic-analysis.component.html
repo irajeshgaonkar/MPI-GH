@@ -1,0 +1,131 @@
+<app-header></app-header>
+
+<div class="main-grid">
+  <div class="row pt-2 m-0">
+    <div class="col-md-2 p-0">
+      <app-left-nav></app-left-nav>
+    </div>
+    <div class="col-md-10 p-0">
+      <div class="grid-table traffic-analysis-page">
+        <section class="traffic-analysis-page__header">
+          <div>
+            <p class="traffic-analysis-page__eyebrow">Administration</p>
+            <h1>Traffic Analysis</h1>
+            <p>API call volume and peak periods from CloudWatch Logs Insights.</p>
+          </div>
+          <div class="traffic-analysis-page__actions app-page-actions">
+            <button type="button" class="btn btn-primary app-export-btn" (click)="openExportDialog()">
+              Export PDF
+            </button>
+            <button type="button" class="btn btn-outline-primary" (click)="refresh()" [disabled]="anyLoading">
+              Refresh
+            </button>
+          </div>
+        </section>
+
+        <section class="traffic-analysis-page__controls">
+          <span class="traffic-analysis-page__timestamp">Last updated: {{ lastUpdatedLabel() }}</span>
+        </section>
+
+        <section class="traffic-analysis-page__layout">
+          <app-administration-nav></app-administration-nav>
+
+          <div class="traffic-analysis-page__content">
+            <div *ngIf="showInitialLoader" class="traffic-analysis-page__message">Loading traffic analysis...</div>
+
+            <div class="traffic-lookback-card">
+              <div class="traffic-lookback-card__toolbar">
+                <div>
+                  <div class="traffic-lookback-card__title">API usage for selected period</div>
+                  <p class="traffic-lookback-card__hint">Lookback applies only to the tables below.</p>
+                </div>
+                <label class="traffic-analysis-page__lookback">
+                  Lookback
+                  <select [ngModel]="selectedLookbackHours" (ngModelChange)="onLookbackChange($event)">
+                    <option *ngFor="let option of lookbackOptions" [ngValue]="option.value">{{ option.label }}</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="traffic-lookback-card__tables">
+                <div class="traffic-table-panel">
+                  <div class="traffic-table-card__title">Calls Per Day</div>
+                  <div *ngIf="callsPerDay.loading" class="traffic-section-status">Loading...</div>
+                  <div *ngIf="!callsPerDay.loading && callsPerDay.error" class="traffic-section-status traffic-section-status--error">
+                    {{ callsPerDay.error }}
+                  </div>
+                  <table class="traffic-table" *ngIf="!callsPerDay.loading">
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th>API Calls</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of pagedCallsPerDay()">
+                        <td>{{ formatDayLabel(row.day) }}</td>
+                        <td>{{ row.apiCalls | number }}</td>
+                      </tr>
+                      <tr *ngIf="!pagedCallsPerDay().length && !callsPerDay.error">
+                        <td colspan="2" class="traffic-table__empty">No daily call data for the selected lookback.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="traffic-table-card__pager" *ngIf="!callsPerDay.loading && showCallsPager()">
+                    <button type="button" (click)="prevCallsPage()" [disabled]="callsPage <= 1">Prev</button>
+                    <span>Page {{ callsPage }} of {{ callsTotalPages() }}</span>
+                    <button type="button" (click)="nextCallsPage()" [disabled]="callsPage >= callsTotalPages()">Next</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="traffic-chart-section">
+              <div *ngIf="busiestHours.loading" class="traffic-section-status">Loading busiest hours in a day...</div>
+              <div *ngIf="!busiestHours.loading && busiestHours.error" class="traffic-section-status traffic-section-status--error">
+                {{ busiestHours.error }}
+              </div>
+              <app-traffic-bar-chart
+                *ngIf="!busiestHours.loading"
+                [title]="'Busiest Hours in a Day'"
+                [subtitle]="'Busiest hour buckets in the last 24 hours.'"
+                [xAxisLabel]="'Hour'"
+                [data]="hoursChartData">
+              </app-traffic-bar-chart>
+            </div>
+
+            <div class="traffic-chart-section">
+              <div *ngIf="busiestDays.loading" class="traffic-section-status">Loading busiest days in a month...</div>
+              <div *ngIf="!busiestDays.loading && busiestDays.error" class="traffic-section-status traffic-section-status--error">
+                {{ busiestDays.error }}
+              </div>
+              <app-traffic-bar-chart
+                *ngIf="!busiestDays.loading"
+                [title]="'Busiest Days in a Month'"
+                [subtitle]="'Busiest days in the last 30 days.'"
+                [xAxisLabel]="'Day'"
+                [data]="daysChartData">
+              </app-traffic-bar-chart>
+            </div>
+
+            <div class="traffic-chart-section">
+              <div *ngIf="busiestMonths.loading" class="traffic-section-status">Loading busiest months...</div>
+              <div *ngIf="!busiestMonths.loading && busiestMonths.error" class="traffic-section-status traffic-section-status--error">
+                {{ busiestMonths.error }}
+              </div>
+              <app-traffic-bar-chart
+                *ngIf="!busiestMonths.loading"
+                [title]="'Busiest Months'"
+                [subtitle]="'API call volume by month for the last 6 months.'"
+                [xAxisLabel]="'Month'"
+                [data]="monthsChartData">
+              </app-traffic-bar-chart>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showInitialLoader" class="loader"></div>

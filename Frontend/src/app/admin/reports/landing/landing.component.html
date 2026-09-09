@@ -1,0 +1,519 @@
+<app-header></app-header>
+
+<div class="main-grid">
+  <div class="row pt-2 m-0">
+    <div class="col-md-2 p-0">
+      <app-left-nav></app-left-nav>
+    </div>
+    <div class="col-md-10 p-0">
+      <div class="grid-table reports-dashboard">
+        <div class="reports-dashboard__header">
+          <div>
+            <h1>Reports</h1>
+            <p>Operational and stewardship reporting across source quality, MPI linkage, intake reliability, manual review, and data sharing.</p>
+          </div>
+
+          <div class="reports-dashboard__controls">
+            <label class="reports-dashboard__lookback">
+              <span>Lookback</span>
+              <select [ngModel]="selectedLookbackDays" (ngModelChange)="onLookbackChange($event)">
+                <option *ngFor="let option of lookbackOptions" [value]="option.value">{{ option.label }}</option>
+              </select>
+            </label>
+
+            <div class="reports-dashboard__actions app-page-actions">
+              <button type="button" class="reports-dashboard__export" (click)="exportPdf()" [disabled]="loading || exporting">
+                {{ exporting ? "Exporting..." : "Export PDF" }}
+              </button>
+
+              <button type="button" class="reports-dashboard__refresh" (click)="refreshNow()" [disabled]="refreshing">
+                {{ refreshing ? "Refreshing..." : "Refresh" }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-dashboard__meta">
+          <span>Last refreshed {{ lastUpdatedLabel() }}</span>
+          <span>Stale threshold: {{ dashboard.staleThresholdDays }} days</span>
+          <span>Analysis window: {{ dashboard.lookbackDays }} days</span>
+        </div>
+
+        <div class="reports-dashboard__error" *ngIf="loadError">
+          {{ loadError }}
+        </div>
+
+        <div class="reports-dashboard__loading" *ngIf="loading">
+          Loading reports...
+        </div>
+
+        <ng-container *ngIf="!loading">
+          <section class="reports-dashboard__overview">
+            <article class="overview-card" *ngFor="let card of overviewCards()">
+              <span class="overview-card__label">{{ card.label }} <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="card.tooltip" [attr.title]="card.tooltip" [attr.aria-label]="'About ' + card.label">i</span></span>
+              <strong class="overview-card__value">{{ card.value }}</strong>
+              <span class="overview-card__detail">{{ card.detail }}</span>
+            </article>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>Source System Data Quality Scorecard <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['dataQuality']" [attr.title]="reportTooltips['dataQuality']" aria-label="About Source System Data Quality Scorecard">i</span></h2>
+                <p>Completeness, stale data exposure, delete rate, and protected population distribution by source.</p>
+              </div>
+              <div class="report-section__summary">
+                <span>{{ dashboard.dataQuality.totalActiveIdentities }} active</span>
+                <span>{{ dashboard.dataQuality.totalDeletedIdentities }} deleted</span>
+              </div>
+            </div>
+
+            <div class="report-table-wrap">
+              <div class="report-tools">
+                <input type="text" [(ngModel)]="dataQualitySearch" placeholder="Search sources, agencies, or protected population" />
+              </div>
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th class="sortable" (click)="setSort('dataQuality', 'sourceSystemName')">Source {{ sortIndicator('dataQuality', 'sourceSystemName') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'agency')">Agency {{ sortIndicator('dataQuality', 'agency') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'completenessScore')">Completeness <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['completeness']" [attr.title]="metricTooltips['completeness']" aria-label="About Completeness">i</span> {{ sortIndicator('dataQuality', 'completenessScore') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'minimumDataSetScore')">Minimum Data Set <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['minimumDataSet']" [attr.title]="metricTooltips['minimumDataSet']" aria-label="About Minimum Data Set">i</span> {{ sortIndicator('dataQuality', 'minimumDataSetScore') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'staleRate')">Stale Rate <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['staleRate']" [attr.title]="metricTooltips['staleRate']" aria-label="About Stale Rate">i</span> {{ sortIndicator('dataQuality', 'staleRate') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'deleteRate')">Delete Rate <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['deleteRate']" [attr.title]="metricTooltips['deleteRate']" aria-label="About Delete Rate">i</span> {{ sortIndicator('dataQuality', 'deleteRate') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'missingDobCount')">Missing DOB {{ sortIndicator('dataQuality', 'missingDobCount') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'missingSsnCount')">Missing SSN {{ sortIndicator('dataQuality', 'missingSsnCount') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'missingContactCount')">Missing Contact {{ sortIndicator('dataQuality', 'missingContactCount') }}</th>
+                    <th class="sortable" (click)="setSort('dataQuality', 'protectedPopulationCount')">Protected Population {{ sortIndicator('dataQuality', 'protectedPopulationCount') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let source of dataQualityRows(); trackBy: trackBySource" [class]="qualityClass(source)">
+                    <td>{{ source.sourceSystemName }}</td>
+                    <td>{{ source.agency }}</td>
+                    <td>{{ source.completenessScore }}%</td>
+                    <td>{{ source.minimumDataSetScore }}% ({{ source.minimumDataSetQualifiedCount }})</td>
+                    <td>{{ source.staleRate }}% ({{ source.staleIdentities }})</td>
+                    <td>{{ source.deleteRate }}% ({{ source.deletedIdentities }})</td>
+                    <td>{{ source.missingDobCount }}</td>
+                    <td>{{ source.missingSsnCount }}</td>
+                    <td>{{ source.missingAddressCount + source.missingCommunicationCount }}</td>
+                    <td>{{ protectedDistribution(source) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>MPI Linkage Effectiveness <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['linkage']" [attr.title]="reportTooltips['linkage']" aria-label="About MPI Linkage Effectiveness">i</span></h2>
+                <p>Cluster depth, shared-link fragmentation, and recent merge or unmerge activity.</p>
+              </div>
+              <div class="report-section__summary">
+                <span>{{ dashboard.linkage.uniqueLinkIds }} link IDs</span>
+                <span>{{ dashboard.linkage.averageSourceIdentitiesPerLinkId }} avg identities/link</span>
+                <span>{{ dashboard.linkage.multiSourceLinkIds }} multi-source links</span>
+              </div>
+            </div>
+
+            <div class="report-grid">
+              <div class="report-card">
+                <h3>Recent Merge and Unmerge Activity</h3>
+                <p>This trend shows how often identities are being combined or separated over time.</p>
+                <app-metric-chart
+                  [title]="'Operations by Day'"
+                  [subtitle]="'Recent stewardship reshaping activity'"
+                  [data]="dashboard.linkage.recentActivity"
+                  [series]="linkageSeries"
+                ></app-metric-chart>
+              </div>
+
+              <div class="report-card">
+                <h3>MPI Link IDs Across Multiple Source Systems</h3>
+                <p>These MPI link IDs connect records from more than one source system, making cross-system person resolution easier to review.</p>
+                <div class="report-tools">
+                  <input type="text" [(ngModel)]="linkageSearch" placeholder="Search cluster ID or source system" />
+                </div>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('topClusters', 'mpiLinkId')">MPI Link ID {{ sortIndicator('topClusters', 'mpiLinkId') }}</th>
+                      <th class="sortable" (click)="setSort('topClusters', 'sourceIdentityCount')">Source Identities {{ sortIndicator('topClusters', 'sourceIdentityCount') }}</th>
+                      <th class="sortable" (click)="setSort('topClusters', 'distinctSourceSystems')">Distinct Systems {{ sortIndicator('topClusters', 'distinctSourceSystems') }}</th>
+                      <th class="sortable" (click)="setSort('topClusters', 'sourceSystems')">Systems {{ sortIndicator('topClusters', 'sourceSystems') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let cluster of topClusterRows(); trackBy: trackByText">
+                      <td>{{ cluster.mpiLinkId }}</td>
+                      <td>{{ cluster.sourceIdentityCount }}</td>
+                      <td>{{ cluster.distinctSourceSystems }}</td>
+                      <td>{{ cluster.sourceSystems.join(', ') }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card report-card--full">
+                <h3>Highest Fragmentation Sources</h3>
+                <p>This highlights source systems with the greatest concentration of identities in shared link groups.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('fragmentation', 'sourceSystemName')">Source {{ sortIndicator('fragmentation', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('fragmentation', 'totalActiveIdentities')">Total Active Identities {{ sortIndicator('fragmentation', 'totalActiveIdentities') }}</th>
+                      <th class="sortable" (click)="setSort('fragmentation', 'identitiesInSharedLinkIds')">Identities In Shared Link IDs {{ sortIndicator('fragmentation', 'identitiesInSharedLinkIds') }}</th>
+                      <th class="sortable" (click)="setSort('fragmentation', 'fragmentationRate')">Fragmentation Rate <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['fragmentationRate']" [attr.title]="metricTooltips['fragmentationRate']" aria-label="About Fragmentation Rate">i</span> {{ sortIndicator('fragmentation', 'fragmentationRate') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let source of fragmentationRows(); trackBy: trackByText">
+                      <td>{{ source.sourceSystemName }}</td>
+                      <td>{{ source.totalActiveIdentities }}</td>
+                      <td>{{ source.identitiesInSharedLinkIds }}</td>
+                      <td>{{ source.fragmentationRate }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>Batch Intake Reliability <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['batchIntake']" [attr.title]="reportTooltips['batchIntake']" aria-label="About Batch Intake Reliability">i</span></h2>
+                <p>Recent file volume, processing duration, reject counts, and dominant error messages.</p>
+              </div>
+              <div class="report-section__summary">
+                <span>{{ dashboard.batchIntake.totalFiles }} files</span>
+                <span>{{ dashboard.batchIntake.failedFiles }} failed</span>
+                <span>{{ dashboard.batchIntake.rejectedRecords }} rejected records</span>
+                <span>{{ dashboard.batchIntake.averageProcessingMinutes }} min avg</span>
+              </div>
+            </div>
+
+            <div class="report-grid">
+              <div class="report-card report-card--full">
+                <h3>Recent Files</h3>
+                <p>Use this to review the latest inbound files, their processing status, and whether records were rejected.</p>
+                <div class="report-tools">
+                  <input type="text" [(ngModel)]="batchSearch" placeholder="Search files, request IDs, source systems, status, or errors" />
+                </div>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('files', 'requestId')">Request ID {{ sortIndicator('files', 'requestId') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'fileName')">File {{ sortIndicator('files', 'fileName') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'sourceSystemName')">Source {{ sortIndicator('files', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'recordsCount')">Records {{ sortIndicator('files', 'recordsCount') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'status')">Status {{ sortIndicator('files', 'status') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'processingMinutes')">Processing <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['processingMinutes']" [attr.title]="metricTooltips['processingMinutes']" aria-label="About Processing Minutes">i</span> {{ sortIndicator('files', 'processingMinutes') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'rejectCount')">Rejects <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['rejectedRecords']" [attr.title]="metricTooltips['rejectedRecords']" aria-label="About Rejected Records">i</span> {{ sortIndicator('files', 'rejectCount') }}</th>
+                      <th class="sortable" (click)="setSort('files', 'topErrorMessage')">Top Error {{ sortIndicator('files', 'topErrorMessage') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let file of recentFileRows(); trackBy: trackByText">
+                      <td>{{ file.requestId }}</td>
+                      <td>{{ file.fileName }}</td>
+                      <td>{{ file.sourceSystemName }}</td>
+                      <td>{{ file.recordsCount }}</td>
+                      <td>{{ file.status }}</td>
+                      <td>{{ file.processingMinutes }} min</td>
+                      <td>{{ file.rejectCount }}</td>
+                      <td>{{ file.topErrorMessage || 'None' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card">
+                <h3>Source Reliability</h3>
+                <p>This summarizes which source systems are producing the most failed files or rejected records.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('sourceReliability', 'sourceSystemName')">Source {{ sortIndicator('sourceReliability', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('sourceReliability', 'totalFiles')">Files {{ sortIndicator('sourceReliability', 'totalFiles') }}</th>
+                      <th class="sortable" (click)="setSort('sourceReliability', 'failedFiles')">Failed {{ sortIndicator('sourceReliability', 'failedFiles') }}</th>
+                      <th class="sortable" (click)="setSort('sourceReliability', 'rejectedRecords')">Rejected {{ sortIndicator('sourceReliability', 'rejectedRecords') }}</th>
+                      <th class="sortable" (click)="setSort('sourceReliability', 'averageProcessingMinutes')">Avg Min {{ sortIndicator('sourceReliability', 'averageProcessingMinutes') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let source of sourceReliabilityRows(); trackBy: trackByText">
+                      <td>{{ source.sourceSystemName }}</td>
+                      <td>{{ source.totalFiles }}</td>
+                      <td>{{ source.failedFiles }}</td>
+                      <td>{{ source.rejectedRecords }}</td>
+                      <td>{{ source.averageProcessingMinutes }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card">
+                <h3>Top Error Messages</h3>
+                <p>These are the most common processing errors so teams can spot recurring intake issues quickly.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('topErrors', 'sourceSystemName')">Source {{ sortIndicator('topErrors', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('topErrors', 'message')">Error {{ sortIndicator('topErrors', 'message') }}</th>
+                      <th class="sortable" (click)="setSort('topErrors', 'count')">Count {{ sortIndicator('topErrors', 'count') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let error of topErrorRows(); trackBy: trackByText">
+                      <td>{{ error.sourceSystemName }}</td>
+                      <td>{{ error.message }}</td>
+                      <td>{{ error.count }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>Manual Stewardship Workbench Analytics <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['stewardship']" [attr.title]="reportTooltips['stewardship']" aria-label="About Manual Stewardship Workbench Analytics">i</span></h2>
+                <p>Who is queueing records for manual action, which identities are touched most often, and what outcomes are being executed.</p>
+              </div>
+              <div class="report-section__summary">
+                <span>{{ dashboard.stewardship.distinctUsers }} users</span>
+                <span>{{ dashboard.stewardship.distinctTouchedIdentities }} identities</span>
+              </div>
+            </div>
+
+            <div class="report-grid">
+              <div class="report-card">
+                <h3>Top Queue Users</h3>
+                <p>This shows which users are placing the most records into the manual modify workflow.</p>
+                <div class="report-tools">
+                  <input type="text" [(ngModel)]="stewardshipSearch" placeholder="Search users, identities, systems, or outcomes" />
+                </div>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('topUsers', 'userName')">User {{ sortIndicator('topUsers', 'userName') }}</th>
+                      <th class="sortable" (click)="setSort('topUsers', 'modifyCount')">Queued Records <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['queuedRecords']" [attr.title]="metricTooltips['queuedRecords']" aria-label="About Queued Records">i</span> {{ sortIndicator('topUsers', 'modifyCount') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let user of topUserRows(); trackBy: trackByText">
+                      <td>{{ user.userName }}</td>
+                      <td>{{ user.modifyCount }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card">
+                <h3>Most Touched Identities</h3>
+                <p>These identities appear most often in manual review, which can indicate repeated cleanup effort.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('touchedIdentities', 'mpiLinkId')">MPI Link ID {{ sortIndicator('touchedIdentities', 'mpiLinkId') }}</th>
+                      <th class="sortable" (click)="setSort('touchedIdentities', 'sourceSystemName')">Source {{ sortIndicator('touchedIdentities', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('touchedIdentities', 'sourceSystemId')">Source ID {{ sortIndicator('touchedIdentities', 'sourceSystemId') }}</th>
+                      <th class="sortable" (click)="setSort('touchedIdentities', 'touchCount')">Touches <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['touches']" [attr.title]="metricTooltips['touches']" aria-label="About Touches">i</span> {{ sortIndicator('touchedIdentities', 'touchCount') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let identity of touchedIdentityRows(); trackBy: trackByText">
+                      <td>{{ identity.mpiLinkId }}</td>
+                      <td>{{ identity.sourceSystemName }}</td>
+                      <td>{{ identity.sourceSystemId }}</td>
+                      <td>{{ identity.touchCount }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card report-card--full">
+                <h3>Recent Downstream Outcomes</h3>
+                <p>This tracks what actions were ultimately executed after stewardship review, such as link, unlink, merge, or delete.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('outcomes', 'operationType')">Operation {{ sortIndicator('outcomes', 'operationType') }}</th>
+                      <th class="sortable" (click)="setSort('outcomes', 'status')">Status {{ sortIndicator('outcomes', 'status') }}</th>
+                      <th class="sortable" (click)="setSort('outcomes', 'count')">Count {{ sortIndicator('outcomes', 'count') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let outcome of outcomeRows(); trackBy: trackByText">
+                      <td>{{ outcome.operationType }}</td>
+                      <td>{{ outcome.status }}</td>
+                      <td>{{ outcome.count }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card report-card--full">
+                <h3>Operations On MPI Link IDs</h3>
+                <p>This shows the recent link, unlink, merge, unmerge, and delete actions performed against specific MPI link IDs.</p>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'requestDateTime')">Request Time {{ sortIndicator('linkIdOperations', 'requestDateTime') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'operationType')">Operation {{ sortIndicator('linkIdOperations', 'operationType') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'status')">Status {{ sortIndicator('linkIdOperations', 'status') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'primaryMpiLinkId')">Primary MPI Link ID {{ sortIndicator('linkIdOperations', 'primaryMpiLinkId') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'secondaryMpiLinkId')">Secondary MPI Link ID {{ sortIndicator('linkIdOperations', 'secondaryMpiLinkId') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'affectedLinkIds')">Affected Link IDs {{ sortIndicator('linkIdOperations', 'affectedLinkIds') }}</th>
+                      <th class="sortable" (click)="setSort('linkIdOperations', 'trackingId')">Tracking ID {{ sortIndicator('linkIdOperations', 'trackingId') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let operation of linkIdOperationRows(); trackBy: trackByLinkOperation">
+                      <td>{{ formatDateTime(operation.requestDateTime) }}</td>
+                      <td>{{ operation.operationType }}</td>
+                      <td>{{ operation.status }}</td>
+                      <td>{{ operation.primaryMpiLinkId || '--' }}</td>
+                      <td>{{ operation.secondaryMpiLinkId || '--' }}</td>
+                      <td>{{ operation.affectedLinkIds || '--' }}</td>
+                      <td>{{ operation.trackingId }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>Data Sharing Coverage Map <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['dataSharing']" [attr.title]="reportTooltips['dataSharing']" aria-label="About Data Sharing Coverage Map">i</span></h2>
+                <p>Active and inactive sharing relationships across onboarded systems, with missing mappings highlighted as gaps.</p>
+              </div>
+              <div class="report-section__summary">
+                <span>{{ dashboard.dataSharing.totalSystems }} total systems</span>
+                <span>{{ dashboard.dataSharing.activeMappings }} active mappings</span>
+                <span>{{ dashboard.dataSharing.inactiveMappings }} inactive mappings</span>
+              </div>
+            </div>
+
+            <div class="report-grid">
+              <div class="report-card">
+                <h3>Onboarded Systems</h3>
+                <p>This list shows which systems are onboarded to MPI and whether each one is currently active.</p>
+                <div class="report-tools">
+                  <input type="text" [(ngModel)]="dataSharingSearch" placeholder="Search systems or agencies" />
+                </div>
+                <table class="report-table report-table--compact">
+                  <thead>
+                    <tr>
+                      <th class="sortable" (click)="setSort('onboardedSystems', 'sourceSystemName')">System {{ sortIndicator('onboardedSystems', 'sourceSystemName') }}</th>
+                      <th class="sortable" (click)="setSort('onboardedSystems', 'agencyName')">Agency {{ sortIndicator('onboardedSystems', 'agencyName') }}</th>
+                        <th class="sortable" (click)="setSort('onboardedSystems', 'isActive')">Status <span class="info-tooltip info-tooltip--native" tabindex="0" [attr.data-tooltip]="metricTooltips['sharingStatus']" [attr.title]="metricTooltips['sharingStatus']" aria-label="About Sharing Status">i</span> {{ sortIndicator('onboardedSystems', 'isActive') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let system of onboardedSystemRows(); trackBy: trackBySystem">
+                      <td>{{ system.sourceSystemName }}</td>
+                      <td>{{ system.agencyName }}</td>
+                      <td>
+                        <span [class]="sharingClass(system.isActive ? 'active' : 'inactive')">
+                          {{ system.isActive ? "Active" : "Inactive" }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="report-card report-card--wide">
+                <h3>Coverage By Source System</h3>
+                <p>This scalable view shows, for each source system, how many active, inactive, and missing sharing relationships exist.</p>
+                <div class="report-table-wrap">
+                  <table class="report-table report-table--compact">
+                    <thead>
+                      <tr>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'sourceSystemName')">Source {{ sortIndicator('coverageSummary', 'sourceSystemName') }}</th>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'agencyName')">Agency {{ sortIndicator('coverageSummary', 'agencyName') }}</th>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'activeMappings')">Active {{ sortIndicator('coverageSummary', 'activeMappings') }}</th>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'inactiveMappings')">Inactive {{ sortIndicator('coverageSummary', 'inactiveMappings') }}</th>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'gapCount')">Gaps {{ sortIndicator('coverageSummary', 'gapCount') }}</th>
+                        <th class="sortable" (click)="setSort('coverageSummary', 'totalTargets')">Target Systems {{ sortIndicator('coverageSummary', 'totalTargets') }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of coverageSummaryRows(); trackBy: trackByCoverageSummary">
+                        <td>{{ row.sourceSystemName }}</td>
+                        <td>{{ row.agencyName }}</td>
+                        <td>{{ row.activeMappings }}</td>
+                        <td>{{ row.inactiveMappings }}</td>
+                        <td>{{ row.gapCount }}</td>
+                        <td>{{ row.totalTargets }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="report-card report-card--wide">
+                <h3>Coverage Explorer</h3>
+                <p>Select one source system at a time to inspect its sharing relationships without rendering a full system-by-system matrix.</p>
+                <div class="report-tools report-tools--multi">
+                  <label class="report-tools__field">
+                    <span>Source System</span>
+                    <select [ngModel]="selectedCoverageSourceSystemId" (ngModelChange)="onCoverageSourceChange($event)">
+                      <option *ngFor="let source of allActiveSystems(); trackBy: trackBySystem" [ngValue]="source.id">{{ source.sourceSystemName }}</option>
+                    </select>
+                  </label>
+                  <label class="report-tools__field">
+                    <span>Status</span>
+                    <select [ngModel]="selectedCoverageStatusFilter" (ngModelChange)="onCoverageStatusFilterChange($event)">
+                      <option value="all">All</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="gap">Gap</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="report-section__summary" *ngIf="selectedCoverageSource() as source">
+                  <span>Viewing {{ source.sourceSystemName }}</span>
+                  <span>{{ coverageExplorerRows().length }} relationships</span>
+                </div>
+
+                <div class="report-table-wrap">
+                  <table class="report-table report-table--compact">
+                    <thead>
+                      <tr>
+                        <th class="sortable" (click)="setSort('coverageExplorer', 'allowedSystemName')">Allowed System {{ sortIndicator('coverageExplorer', 'allowedSystemName') }}</th>
+                        <th class="sortable" (click)="setSort('coverageExplorer', 'agencyName')">Agency {{ sortIndicator('coverageExplorer', 'agencyName') }}</th>
+                        <th class="sortable" (click)="setSort('coverageExplorer', 'status')">Status {{ sortIndicator('coverageExplorer', 'status') }}</th>
+                        <th class="sortable" (click)="setSort('coverageExplorer', 'dataSharingLevel')">Sharing Level {{ sortIndicator('coverageExplorer', 'dataSharingLevel') }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of coverageExplorerRows(); trackBy: trackByCoverageRelationship">
+                        <td>{{ row.allowedSystemName }}</td>
+                        <td>{{ row.agencyName }}</td>
+                        <td>
+                          <span [class]="sharingClass(row.status)">
+                            {{ row.status === 'gap' ? 'Gap' : (row.status | titlecase) }}
+                          </span>
+                        </td>
+                        <td>{{ row.dataSharingLevel }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

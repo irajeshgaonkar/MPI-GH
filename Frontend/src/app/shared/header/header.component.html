@@ -1,0 +1,50 @@
+<header class="main-header">
+    <div class="row">
+        <div class="col-md-6 align-self-center">
+            <span class="logo">
+                <h4 class="mb-0">
+                    <span class="top-text-vert">
+                        <img src="../../../assets/images/mpi-logo.svg" class="me-3 header-bars">
+                </span>
+                 <span class="align-vert">HHS Coalition MPI</span></h4>
+            </span>
+        </div>
+        <div class="col-md-6 align-self-center">
+            <ul class="top-header-right">
+                <!-- <li class="notifications-bell">
+                    <img src="../../../assets/images/notification-bell.svg">
+                    <span class="notification-count">6</span>
+                </li> -->
+                <li class="user-point">
+                    <span class="user-name me-2">{{getUserName()}}</span> 
+                    <div class="profile-cotainer">
+                        <ng-container *ngIf="getProfileImageUrl(); else headerAvatarFallback">
+                            <img [src]="getProfileImageUrl()!" class="profile-avatar-image" alt="Profile picture">
+                        </ng-container>
+                        <ng-template #headerAvatarFallback>
+                            <span class="profile-avatar-fallback">{{getUserInitials()}}</span>
+                        </ng-template>
+                    </div>
+                    <div class="user-dropdown">
+                        <ul>
+                            <li class="profile-summary">
+                                <div class="profile-summary__avatar">
+                                    <ng-container *ngIf="getProfileImageUrl(); else dropdownAvatarFallback">
+                                        <img [src]="getProfileImageUrl()!" class="profile-avatar-image profile-avatar-image--large" alt="Profile picture">
+                                    </ng-container>
+                                    <ng-template #dropdownAvatarFallback>
+                                        <span class="profile-avatar-fallback profile-avatar-fallback--large">{{getUserInitials()}}</span>
+                                    </ng-template>
+                                </div>
+                                <span class="profile-summary__label">Profile</span>
+                                <strong class="profile-summary__value">{{getUserName()}}</strong>
+                                <span class="profile-summary__meta">Role: {{getUserRole() || '--'}}</span>
+                            </li>
+                            <li (click)="logout()"><img src="../../../assets/images/logout-icon.png" class="logout-icon" > Logout</li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>
