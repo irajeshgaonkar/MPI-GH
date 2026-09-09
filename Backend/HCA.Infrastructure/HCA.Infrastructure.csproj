@@ -42,7 +42,7 @@
     <PackageReference Include="AWSSDK.SQS" Version="3.7.400.95" />
 	<PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.2" />
-    <PackageReference Include="SSH.NET" Version="2024.2.0" />
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
 	<PackageReference Include="Amazon.S3" Version="0.34.0" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.13" />
