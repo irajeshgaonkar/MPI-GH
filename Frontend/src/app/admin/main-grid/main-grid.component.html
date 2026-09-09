@@ -1,0 +1,541 @@
+<app-header></app-header>
+
+<div class="main-grid">
+    <div class="row pt-2 m-0">
+        <div class="col-md-2 p-0">
+            <app-left-nav></app-left-nav>
+        </div>
+        <div class="col-md-10 p-0">
+            <div class="grid-table mpi-dashboard">
+                <section class="mpi-dashboard__hero">
+                    <div>
+                        <p class="mpi-dashboard__eyebrow">Workspace</p>
+                        <h1>MPI Dashboard</h1>
+                        <p class="mpi-dashboard__subtitle">Search, sort, review, and move identities into modify from one compact grid.</p>
+                    </div>
+                </section>
+
+                <section class="mpi-dashboard__overview">
+                    <article class="mpi-dashboard__stat" *ngFor="let card of resultSummaryCards()">
+                        <span>{{ card.label }}</span>
+                        <strong>{{ card.value }}</strong>
+                        <p>{{ card.detail }}</p>
+                    </article>
+                </section>
+
+                <section class="mpi-dashboard__workspace-nav" *ngIf="shouldShowButtons()">
+                    <button
+                        type="button"
+                        class="mpi-dashboard__workspace-tab"
+                        [class.mpi-dashboard__workspace-tab--active]="activeWorkspace === 'results'"
+                        (click)="showResultsWorkspace()">
+                        Results
+                    </button>
+                    <button
+                        type="button"
+                        class="mpi-dashboard__workspace-tab"
+                        [class.mpi-dashboard__workspace-tab--active]="activeWorkspace === 'modify'"
+                        (click)="showModifyWorkspace()">
+                        Modify Queue
+                        <span class="mpi-dashboard__workspace-count">{{ modifyQueue.length }}</span>
+                    </button>
+                </section>
+
+                <section class="mpi-dashboard__results" *ngIf="activeWorkspace === 'results' || !shouldShowButtons()">
+                    <div class="mpi-dashboard__results-head">
+                        <div>
+                            <h2>Results</h2>
+                            <p>{{ totalRecords }} matching identities across the current filter set.</p>
+                        </div>
+
+                        <div class="mpi-dashboard__actions">
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="clearInlineFilters()" [disabled]="!hasActiveFilters()">
+                                Clear Filters
+                            </button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" *ngIf="isViewerRole()" (click)="openResultsModal('compare')" [disabled]="!hasTwoResultSelections">
+                                Compare
+                            </button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" *ngIf="shouldShowButtons() && modifyQueue.length" (click)="showModifyWorkspace()">
+                                Open Modify Queue ({{ modifyQueue.length }})
+                            </button>
+                            <button class="mpi-dashboard__action-btn" *ngIf="shouldShowButtons()" (click)="moveToModify()" [disabled]="!shouldEnableButton()">
+                                <img [src]="shouldEnableButton() ? '../../../assets/images/move-to-modify.svg' : '../../../assets/images/move-to-modify-disabled.svg'" class="move-to-modify-icon" />
+                                Move To Modify
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mpi-dashboard__table-wrap">
+                        <table class="mpi-dashboard__table">
+                            <thead>
+                                <tr>
+                                    <th class="mpi-dashboard__select-col">
+                                        <input class="form-check-input" type="checkbox" [checked]="isAllChecked()" (change)="selectToggleAll()" *ngIf="canSelectRows()">
+                                    </th>
+                                    <th>
+                                        <button type="button" class="mpi-dashboard__sort-trigger" (click)="toggleSort('mpiLinkId')">
+                                            MPI Link ID
+                                            <span>{{ isSortedBy('mpiLinkId') ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="mpi-dashboard__sort-trigger" (click)="toggleSort('sourceName')">
+                                            Source System Name
+                                            <span>{{ isSortedBy('sourceName') ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="mpi-dashboard__sort-trigger" (click)="toggleSort('sourceSystemId')">
+                                            Source System ID
+                                            <span>{{ isSortedBy('sourceSystemId') ? (sortDirection === 'asc' ? '↑' : '↓') : '↕' }}</span>
+                                        </button>
+                                    </th>
+                                    <th class="mpi-dashboard__details-col">Details</th>
+                                </tr>
+                                <tr class="mpi-dashboard__filter-row">
+                                    <th class="mpi-dashboard__select-col"></th>
+                                    <th>
+                                        <div class="mpi-dashboard__filter-grid">
+                                            <input class="mpi-dashboard__filter-input" type="search" placeholder="MPI Link ID" [(ngModel)]="filterValues.linkId" (ngModelChange)="onInlineFilterChange()">
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="mpi-dashboard__filter-grid">
+                                            <input class="mpi-dashboard__filter-input" type="search" placeholder="Source name" [(ngModel)]="filterValues.sourceSystemName" (ngModelChange)="onInlineFilterChange()">
+                                        </div>
+                                    </th>
+                                    <th>
+                                        <div class="mpi-dashboard__filter-grid">
+                                            <input class="mpi-dashboard__filter-input" type="search" placeholder="Source ID" [(ngModel)]="filterValues.sourceSystemId" (ngModelChange)="onInlineFilterChange()">
+                                        </div>
+                                    </th>
+                                    <th class="mpi-dashboard__details-col"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of sortedData; trackBy: trackByRow" [class.hidden]="item.hide">
+                                    <td class="mpi-dashboard__select-col">
+                                        <input class="form-check-input" type="checkbox" [value]="item.groupKey" (change)="selectItem(item)" [checked]="!!item.isChecked" *ngIf="canSelectRows()">
+                                    </td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.mpiLinkId || '--' }}</div></td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.sourceName || '--' }}</div></td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.sourceSystemId || '--' }}</div></td>
+                                    <td class="mpi-dashboard__details-col">
+                                        <button type="button" class="mpi-dashboard__detail-btn" (click)="openDetails(item)">View Details</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="mpi-dashboard__modify" *ngIf="shouldShowButtons() && activeWorkspace === 'modify'">
+                    <div class="mpi-dashboard__results-head">
+                        <div>
+                            <h2>Modify Queue</h2>
+                            <p>Records moved from the dashboard stay here for compare, link, unlink, merge, unmerge, and delete actions.</p>
+                        </div>
+
+                        <div class="mpi-dashboard__actions">
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="showResultsWorkspace()">
+                                Back To Results
+                            </button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="clearModifyQueue()" [disabled]="!modifyQueue.length">
+                                Clear Queue
+                            </button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('compare')" [disabled]="loading || !hasTwoModifySelections">Compare</button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('link')" [disabled]="loading || !hasTwoModifySelections">Link</button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('unlink')" [disabled]="loading || !hasTwoModifySelections">Unlink</button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('merge')" [disabled]="loading || !hasTwoModifySelections">Merge</button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('unmerge')" [disabled]="loading || !hasTwoModifySelections">Unmerge</button>
+                            <button class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" type="button" (click)="openModifyModal('delete')" [disabled]="loading || !hasSingleModifySelection">Delete</button>
+                        </div>
+                    </div>
+
+                    <div class="mpi-dashboard__modify-cards">
+                        <article class="mpi-dashboard__stat mpi-dashboard__stat--compact" *ngFor="let card of modifySummaryCards()">
+                            <span>{{ card.label }}</span>
+                            <strong>{{ card.value }}</strong>
+                            <p>{{ card.detail }}</p>
+                        </article>
+                    </div>
+
+                    <div class="mpi-dashboard__table-wrap">
+                        <table class="mpi-dashboard__table mpi-dashboard__table--modify">
+                            <thead>
+                                <tr>
+                                    <th class="mpi-dashboard__select-col"></th>
+                                    <th>MPI Link ID</th>
+                                    <th>Source System Name</th>
+                                    <th>Source System ID</th>
+                                    <th>Last Updated</th>
+                                    <th class="mpi-dashboard__details-col">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of modifyQueue">
+                                    <td class="mpi-dashboard__select-col">
+                                        <input class="form-check-input" type="checkbox" [value]="item.id" [checked]="modifySelectedItems.has(item.id)" (change)="selectModifyItem($event, item)">
+                                    </td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.mpiLinkId || '--' }}</div></td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.sourceName || '--' }}</div></td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.sourceSystemId || '--' }}</div></td>
+                                    <td><div class="mpi-dashboard__cell-title">{{ item.sourceSystemLastUpdate || '--' }}</div></td>
+                                    <td class="mpi-dashboard__details-col">
+                                        <div class="mpi-dashboard__detail-actions mpi-dashboard__detail-actions--inline">
+                                            <button type="button" class="mpi-dashboard__detail-btn" (click)="openModifyDetails(item)">View Details</button>
+                                            <button type="button" class="mpi-dashboard__detail-btn" (click)="openLinkGraph({
+                                                groupKey: item.sourceName + '::' + item.sourceSystemId,
+                                                mpiLinkId: item.mpiLinkId,
+                                                sourceName: item.sourceName,
+                                                sourceSystemId: item.sourceSystemId,
+                                                isChecked: false,
+                                                sourceRecords: [item]
+                                            })">Link Graph</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="!modifyQueue.length">
+                                    <td colspan="6" class="mpi-dashboard__empty-row">No records in the modify queue.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div class="paginate-bottom paginate">
+        <mat-paginator
+            [pageSize]="pageData.pageSize"
+            [pageIndex]="pageData.pageIndex"
+            [pageSizeOptions]="[10,20,30,40,50]"
+            (page)="pageEvent = $event; onPaginationChange($event)"
+            [length]="totalRecords"
+            showFirstLastButtons>
+        </mat-paginator>
+    </div>
+</div>
+
+<div *ngIf="loading" class="loader"></div>
+
+<div class="mpi-dashboard__modal-backdrop" *ngIf="activeResultsModal === 'compare'" (click)="closeResultsModal()">
+    <div class="mpi-dashboard__modal mpi-dashboard__modal--wide" (click)="$event.stopPropagation()">
+        <div class="mpi-dashboard__modal-head">
+            <div>
+                <h3>Compare Records</h3>
+                <p>{{ resultCompareDifferenceCount() }} differences across the selected records.</p>
+            </div>
+            <button type="button" class="mpi-dashboard__modal-close" (click)="closeResultsModal()">×</button>
+        </div>
+
+        <div class="mpi-dashboard__modal-body" *ngIf="selectedResultRows().length === 2">
+            <div class="compare-summary">
+                <span class="compare-summary__count">{{resultCompareDifferenceCount()}} differences</span>
+                <span class="compare-summary__hint">Highlighted rows have mismatched values.</span>
+            </div>
+
+            <div class="compare-record-grid">
+                <article class="compare-record-card">
+                    <strong>{{selectedResultRows()[0].sourceName}}</strong>
+                    <span>{{selectedResultRows()[0].sourceSystemId}}</span>
+                </article>
+                <article class="compare-record-card">
+                    <strong>{{selectedResultRows()[1].sourceName}}</strong>
+                    <span>{{selectedResultRows()[1].sourceSystemId}}</span>
+                </article>
+            </div>
+
+            <div class="compare-list">
+                <div class="compare-row" *ngFor="let field of compareFields" [ngClass]="{'compare-row--different': isResultCompareFieldDifferent(field.key)}">
+                    <div class="compare-row__field">{{field.label}}</div>
+                    <div class="compare-row__values">
+                        <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                            {{getCompareValue(selectedResultRows()[0].sourceRecords[0], field.key)}}
+                        </div>
+                        <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                            {{getCompareValue(selectedResultRows()[1].sourceRecords[0], field.key)}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mpi-dashboard__modal-footer">
+            <button type="button" class="mpi-dashboard__action-btn" (click)="closeResultsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="mpi-dashboard__modal-backdrop" *ngIf="activeResultsModal === 'graph'" (click)="closeResultsModal()">
+    <div class="mpi-dashboard__modal mpi-dashboard__modal--wide" (click)="$event.stopPropagation()">
+        <div class="mpi-dashboard__modal-head">
+            <div>
+                <h3>MPI Link Graph</h3>
+                <p *ngIf="linkGraphPayload">{{ linkGraphPayload.mpiLinkId }} • {{ linkGraphPayload.sourceRecords.length }} connected records</p>
+                <p *ngIf="!linkGraphPayload && !graphLoading">Link graph data is unavailable.</p>
+            </div>
+            <button type="button" class="mpi-dashboard__modal-close" (click)="closeResultsModal()">×</button>
+        </div>
+
+        <div class="mpi-dashboard__modal-body">
+            <div *ngIf="graphLoading" class="mpi-dashboard__graph-loading">Loading connected source systems...</div>
+
+            <ng-container *ngIf="!graphLoading && linkGraphPayload">
+                <div class="mpi-dashboard__graph-toolbar">
+                    <button type="button" class="mpi-dashboard__workspace-tab" [class.mpi-dashboard__workspace-tab--active]="graphViewMode === 'visual'" (click)="setGraphViewMode('visual')">
+                        Graph View
+                    </button>
+                    <button type="button" class="mpi-dashboard__workspace-tab" [class.mpi-dashboard__workspace-tab--active]="graphViewMode === 'json'" (click)="setGraphViewMode('json')">
+                        JSON View
+                    </button>
+                </div>
+
+                <div *ngIf="graphViewMode === 'visual'" class="mpi-dashboard__graph-layout">
+                    <div class="mpi-dashboard__graph-canvas">
+                        <svg viewBox="0 0 760 420" class="mpi-dashboard__graph-svg" role="img" aria-label="MPI link graph">
+                            <g *ngFor="let node of graphSourceNodes()">
+                                <line
+                                    [attr.x1]="graphCenterNode()?.x"
+                                    [attr.y1]="graphCenterNode()?.y"
+                                    [attr.x2]="node.x"
+                                    [attr.y2]="node.y"
+                                    class="mpi-dashboard__graph-edge"
+                                    [class.mpi-dashboard__graph-edge--active]="graphEdgeActive(node.id)">
+                                </line>
+                            </g>
+
+                            <g *ngFor="let node of renderedGraphNodes()"
+                               class="mpi-dashboard__graph-node-group"
+                               [class.mpi-dashboard__graph-node-group--active]="activeGraphNode()?.id === node.id"
+                               (mouseenter)="hoverGraphNode(node.id)"
+                               (mouseleave)="hoverGraphNode(null)"
+                                (click)="selectGraphNode(node.id)">
+                                <circle
+                                    [attr.cx]="node.x"
+                                    [attr.cy]="node.y"
+                                    [attr.r]="node.type === 'mpi' ? 62 : 44"
+                                    class="mpi-dashboard__graph-bubble"
+                                    [class.mpi-dashboard__graph-bubble--mpi]="node.type === 'mpi'">
+                                </circle>
+                                <text [attr.x]="node.x" [attr.y]="graphNodeLabelY(node)" text-anchor="middle" class="mpi-dashboard__graph-label">
+                                    <tspan
+                                        *ngFor="let line of graphNodeLabelLines(node); let lineIndex = index"
+                                        [attr.x]="node.x"
+                                        [attr.dy]="lineIndex === 0 ? 0 : 12">
+                                        {{ line }}
+                                    </tspan>
+                                </text>
+                                <text [attr.x]="node.x" [attr.y]="graphNodeMetaY(node)" text-anchor="middle" class="mpi-dashboard__graph-meta">
+                                    {{ graphNodeMetaLine(node) }}
+                                </text>
+                                <title>{{ node.label }} {{ node.meta ? '• ' + node.meta : '' }}</title>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <aside class="mpi-dashboard__graph-inspector" *ngIf="activeGraphNode() as activeNode">
+                        <h4>{{ activeNode.type === 'mpi' ? 'MPI Link Node' : 'Connected Source' }}</h4>
+                        <div class="mpi-dashboard__graph-inspector-grid">
+                            <div>
+                                <span>Label</span>
+                                <strong>{{ activeNode.label }}</strong>
+                            </div>
+                            <div>
+                                <span>{{ activeNode.type === 'mpi' ? 'Records' : 'Source System ID' }}</span>
+                                <strong>{{ activeNode.type === 'mpi' ? graphNodeRecords(activeNode).length : activeNode.meta }}</strong>
+                            </div>
+                            <div>
+                                <span>Node Id</span>
+                                <strong>{{ activeNode.id }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="mpi-dashboard__difference-panel">
+                            <h4>Connected Records</h4>
+                            <div class="mpi-dashboard__graph-record-list">
+                                <article class="mpi-dashboard__graph-record" *ngFor="let record of graphNodeRecords(activeNode)">
+                                    <strong>{{ record.sourceName || '--' }} / {{ record.sourceSystemId || '--' }}</strong>
+                                    <span>{{ record.firstName || '--' }} {{ record.lastName || '--' }}</span>
+                                </article>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div *ngIf="graphViewMode === 'json'" class="mpi-dashboard__difference-panel">
+                    <h4>Graph JSON</h4>
+                    <pre class="mpi-dashboard__graph-json">{{ linkGraphJson() }}</pre>
+                </div>
+            </ng-container>
+        </div>
+
+        <div class="mpi-dashboard__modal-footer">
+            <button type="button" class="mpi-dashboard__action-btn" (click)="closeResultsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="mpi-dashboard__modal-backdrop" *ngIf="detailRow" (click)="closeDetails()">
+    <div class="mpi-dashboard__modal" (click)="$event.stopPropagation()">
+        <div class="mpi-dashboard__modal-head">
+            <div>
+                <h3>Identity Details</h3>
+                <p>{{ detailRow?.mpiLinkId || '--' }} • {{ detailRow?.sourceName || '--' }}</p>
+            </div>
+            <button type="button" class="mpi-dashboard__modal-close" (click)="closeDetails()">×</button>
+        </div>
+
+        <div class="mpi-dashboard__modal-body">
+            <div class="mpi-dashboard__detail-grid">
+                <div class="mpi-dashboard__detail-item" *ngFor="let detail of detailRows()">
+                    <span>{{ detail.label }}</span>
+                    <strong *ngIf="detail.label !== 'Grouped Records'">{{ detail.value }}</strong>
+                    <button
+                        *ngIf="detail.label === 'Grouped Records'"
+                        type="button"
+                        class="mpi-dashboard__group-count-btn"
+                        (click)="toggleGroupedRecords()">
+                        {{ detail.value }} {{ showGroupedRecords ? '• Hide grouped records' : '• View grouped records' }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="mpi-dashboard__difference-panel" *ngIf="detailDifferences().length">
+                <h4>Differences Across Grouped Records</h4>
+                <div class="mpi-dashboard__difference-list">
+                    <div class="mpi-dashboard__difference-item" *ngFor="let difference of detailDifferences()">
+                        <span>{{ difference.label }}</span>
+                        <div class="mpi-dashboard__difference-values">
+                            <strong *ngFor="let value of difference.values">{{ value }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mpi-dashboard__difference-panel" *ngIf="showGroupedRecords && groupedRecordRows().length">
+                <h4>Grouped Records</h4>
+                <div>
+                    <article *ngFor="let record of groupedRecordRows()">
+                        <div class="mpi-dashboard__detail-grid">
+                            <div class="mpi-dashboard__detail-item" *ngFor="let detail of record">
+                                <span>{{ detail.label }}</span>
+                                <strong>{{ detail.value }}</strong>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mpi-dashboard__modal-backdrop" *ngIf="activeModifyModal" (click)="closeModifyModal()">
+    <div class="mpi-dashboard__modal mpi-dashboard__modal--wide" (click)="$event.stopPropagation()">
+        <div class="mpi-dashboard__modal-head">
+            <div *ngIf="activeModifyModal === 'compare'">
+                <h3>Compare Records</h3>
+                <p>{{ compareDifferenceCount() }} differences across the selected records.</p>
+            </div>
+            <div *ngIf="activeModifyModal === 'delete'">
+                <h3>Delete Record</h3>
+                <p>Delete the selected source record from MPI.</p>
+            </div>
+            <div *ngIf="activeModifyModal === 'merge'">
+                <h3>Merge Records</h3>
+                <p>Confirm the two selected records before merging.</p>
+            </div>
+            <div *ngIf="activeModifyModal === 'unmerge'">
+                <h3>Unmerge Records</h3>
+                <p>Confirm the two selected records before unmerging.</p>
+            </div>
+            <div *ngIf="activeModifyModal === 'link'">
+                <h3>Link Records</h3>
+                <p>Confirm the two selected records before linking.</p>
+            </div>
+            <div *ngIf="activeModifyModal === 'unlink'">
+                <h3>Unlink Records</h3>
+                <p>Confirm the two selected records before unlinking.</p>
+            </div>
+            <button type="button" class="mpi-dashboard__modal-close" (click)="closeModifyModal()" [disabled]="loading">×</button>
+        </div>
+
+        <div class="mpi-dashboard__modal-body" *ngIf="activeModifyModal === 'compare'">
+            <div class="compare-summary">
+                <span class="compare-summary__count">{{compareDifferenceCount()}} differences</span>
+                <span class="compare-summary__hint">Highlighted rows have mismatched values.</span>
+            </div>
+
+            <div class="compare-record-grid" *ngIf="modifySelectedRecords.length === 2">
+                <article class="compare-record-card">
+                    <strong>{{modifySelectedRecords[0].sourceName}}</strong>
+                    <span>{{modifySelectedRecords[0].sourceSystemId}}</span>
+                </article>
+                <article class="compare-record-card">
+                    <strong>{{modifySelectedRecords[1].sourceName}}</strong>
+                    <span>{{modifySelectedRecords[1].sourceSystemId}}</span>
+                </article>
+            </div>
+
+            <div class="compare-list" *ngIf="modifySelectedRecords.length === 2">
+                <div class="compare-row" *ngFor="let field of compareFields" [ngClass]="{'compare-row--different': isCompareFieldDifferent(field.key)}">
+                    <div class="compare-row__field">{{field.label}}</div>
+                    <div class="compare-row__values">
+                        <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                            {{getCompareValue(modifySelectedRecords[0], field.key)}}
+                        </div>
+                        <div class="compare-row__value" [ngClass]="{'text-blur': field.sensitive && !showSensitiveData()}">
+                            {{getCompareValue(modifySelectedRecords[1], field.key)}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mpi-dashboard__modal-body" *ngIf="activeModifyModal === 'delete' && modifySelectedRecords.length">
+            <div class="modal-record-summary">
+                <div><strong>Source System Name:</strong> {{modifySelectedRecords[0].sourceName}}</div>
+                <div><strong>Source System ID:</strong> {{modifySelectedRecords[0].sourceSystemId}}</div>
+                <div><strong>MPI Link ID:</strong> {{modifySelectedRecords[0].mpiLinkId}}</div>
+            </div>
+        </div>
+
+        <div class="mpi-dashboard__modal-body" *ngIf="(activeModifyModal === 'merge' || activeModifyModal === 'link' || activeModifyModal === 'unlink' || activeModifyModal === 'unmerge') && modifySelectedRecords.length">
+            <div class="mpi-dashboard__table-wrap">
+                <table class="mpi-dashboard__table mpi-dashboard__table--modal">
+                    <thead>
+                        <tr>
+                            <th>MPI Link ID</th>
+                            <th>Source System Name</th>
+                            <th>Source System ID</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of modifySelectedRecords">
+                            <td>{{item.mpiLinkId || '--'}}</td>
+                            <td>{{item.sourceName || '--'}}</td>
+                            <td>{{item.sourceSystemId || '--'}}</td>
+                            <td>{{item.sourceSystemLastUpdate || '--'}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mpi-dashboard__modal-footer">
+            <div class="mpi-dashboard__operation-progress" *ngIf="loading">
+                <span class="mpi-dashboard__operation-spinner" aria-hidden="true"></span>
+                <span>{{ operationLoadingLabel() }}</span>
+            </div>
+            <button type="button" class="mpi-dashboard__action-btn mpi-dashboard__action-btn--secondary" (click)="closeModifyModal()" [disabled]="loading">Cancel</button>
+            <button *ngIf="activeModifyModal === 'delete'" type="button" class="mpi-dashboard__action-btn" (click)="deleteSelected()" [disabled]="loading">Delete</button>
+            <button *ngIf="activeModifyModal === 'merge'" type="button" class="mpi-dashboard__action-btn" (click)="mergeSelected()" [disabled]="loading">Merge</button>
+            <button *ngIf="activeModifyModal === 'unmerge'" type="button" class="mpi-dashboard__action-btn" (click)="unmergeSelected()" [disabled]="loading">Unmerge</button>
+            <button *ngIf="activeModifyModal === 'link'" type="button" class="mpi-dashboard__action-btn" (click)="linkSelected()" [disabled]="loading">Link</button>
+            <button *ngIf="activeModifyModal === 'unlink'" type="button" class="mpi-dashboard__action-btn" (click)="unlinkSelected()" [disabled]="loading">Unlink</button>
+            <button *ngIf="activeModifyModal === 'compare'" type="button" class="mpi-dashboard__action-btn" (click)="closeModifyModal()" [disabled]="loading">Close</button>
+        </div>
+    </div>
+</div>

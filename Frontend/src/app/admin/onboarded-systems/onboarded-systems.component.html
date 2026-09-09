@@ -1,0 +1,217 @@
+<app-header></app-header>
+
+<div class="main-grid">
+  <div class="row pt-2 m-0">
+    <div class="col-md-2 p-0">
+      <app-left-nav></app-left-nav>
+    </div>
+    <div class="col-md-10 p-0">
+      <div class="grid-table onboarded-systems-page">
+        <section class="onboarded-systems-page__header">
+          <div>
+            <p class="onboarded-systems-page__eyebrow">Administration</p>
+            <h1>Onboarded Systems</h1>
+            <p>Manage source systems, agency metadata, notification settings, and IP whitelist entries from one admin workspace.</p>
+          </div>
+          <div class="onboarded-systems-page__actions app-page-actions">
+            <button type="button" class="btn btn-primary app-export-btn" (click)="openExportDialog()" [disabled]="loading">Export PDF</button>
+            <button type="button" class="btn btn-primary" (click)="openCreate()">Add System</button>
+          </div>
+        </section>
+
+        <section class="onboarded-systems-page__summary">
+          <article class="summary-card">
+            <span class="summary-card__label">Total Systems</span>
+            <strong class="summary-card__value">{{ totalSystems }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Active</span>
+            <strong class="summary-card__value">{{ activeSystems }}</strong>
+          </article>
+          <article class="summary-card">
+            <span class="summary-card__label">Inactive</span>
+            <strong class="summary-card__value">{{ inactiveSystems }}</strong>
+          </article>
+        </section>
+
+        <section class="onboarded-systems-page__controls">
+          <input type="text" [(ngModel)]="search" placeholder="Search source system, agency, tenant, connectivity mode, or whitelist" />
+          <select [(ngModel)]="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="active">Active only</option>
+            <option value="inactive">Inactive only</option>
+          </select>
+          <select [(ngModel)]="tenantFilter">
+            <option value="all">All tenants</option>
+            <option *ngFor="let tenant of tenantOptions" [value]="tenant">{{ tenant }}</option>
+          </select>
+        </section>
+
+        <section class="onboarded-systems-page__layout">
+          <app-administration-nav></app-administration-nav>
+
+          <div class="onboarded-systems-page__content">
+          <div class="systems-table-card">
+            <table class="systems-table">
+              <thead>
+                <tr>
+                  <th>Source System</th>
+                  <th>Agency</th>
+                  <th>Tenant</th>
+                  <th>Connectivity</th>
+                  <th>Notification</th>
+                  <th>Status</th>
+                  <th>Whitelisted IPs</th>
+                  <th>IP Whitelist</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let system of filteredSystems(); trackBy: trackBySystem">
+                  <td>{{ system.sourceSystemName }}</td>
+                  <td>{{ system.agencyName }}</td>
+                  <td>{{ system.tenant }}</td>
+                  <td>{{ system.connectivityMode || 'Not set' }}</td>
+                  <td>{{ system.enableNotification ? 'Enabled' : 'Disabled' }}</td>
+                  <td>
+                    <span class="status-pill" [ngClass]="system.isActive ? 'status-pill--active' : 'status-pill--inactive'">
+                      {{ system.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td>{{ whitelistedIpCount(system) }}</td>
+                  <td>
+                    <div class="whitelist-cell" *ngIf="whitelistEntries(system).length; else emptyWhitelist">
+                      <div class="whitelist-cell__entries">
+                        <span class="whitelist-chip" *ngFor="let entry of visibleWhitelistEntries(system)">{{ entry }}</span>
+                      </div>
+                      <button
+                        *ngIf="canToggleWhitelist(system)"
+                        type="button"
+                        class="whitelist-cell__toggle"
+                        (click)="toggleWhitelist(system)">
+                        {{ isWhitelistExpanded(system) ? 'Collapse' : ('+' + remainingWhitelistCount(system) + ' more') }}
+                      </button>
+                    </div>
+                    <ng-template #emptyWhitelist>
+                      <span class="whitelist-cell__empty">No whitelist entries</span>
+                    </ng-template>
+                  </td>
+                  <td class="systems-table__actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="editSystem(system)">Edit</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteSystem(system)">Delete</button>
+                  </td>
+                </tr>
+                <tr *ngIf="!filteredSystems().length">
+                  <td colspan="9" class="systems-table__empty">No onboarded systems match the current filters.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="editor-modal" *ngIf="editorOpen">
+  <div class="editor-modal__backdrop" (click)="closeEditor()"></div>
+  <aside class="editor-card" role="dialog" aria-modal="true" aria-label="Onboarded system editor">
+    <div class="editor-card__head">
+      <div>
+        <h2>{{ selectedSystemId ? 'Edit Onboarded System' : 'Add New System' }}</h2>
+        <p>Update system metadata, notifications, and allowed IP entries.</p>
+      </div>
+      <button type="button" class="btn btn-link" (click)="closeEditor()">Close</button>
+    </div>
+
+    <form [formGroup]="systemForm" (ngSubmit)="saveSystem()">
+      <div class="editor-grid">
+        <label>
+          <span>Source System Name</span>
+          <input type="text" formControlName="sourceSystemName" />
+        </label>
+        <label>
+          <span>Agency Name</span>
+          <input type="text" formControlName="agencyName" />
+        </label>
+        <label>
+          <span>Tenant</span>
+          <select formControlName="tenant">
+            <option value="">Select tenant</option>
+            <option *ngFor="let tenant of tenantValues" [value]="tenant">{{ tenant }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Connectivity Mode</span>
+          <input type="text" formControlName="connectivityMode" />
+        </label>
+        <label>
+          <span>Onboarding Date</span>
+          <input type="date" formControlName="onboardingDate" />
+        </label>
+      </div>
+
+      <div class="editor-toggles">
+        <label class="toggle-row">
+          <input type="checkbox" formControlName="isActive" />
+          <span>System is active</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" formControlName="enableNotification" />
+          <span>Notifications enabled</span>
+        </label>
+      </div>
+
+      <div class="whitelist-card">
+        <div class="whitelist-card__head">
+          <div>
+            <h3>IP Whitelist</h3>
+            <p>Add one or more CIDR blocks or start/end ranges for this system.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addWhitelistRow()">Add IP Rule</button>
+        </div>
+
+        <div formArrayName="ipWhitelists" class="whitelist-list">
+          <div class="whitelist-row" *ngFor="let group of whitelistRows.controls; let i = index; trackBy: trackByIndex" [formGroupName]="i">
+            <div class="whitelist-field">
+              <input type="text" formControlName="ipAddressCidr" placeholder="CIDR block, e.g. 10.10.0.0/24" />
+              <small class="field-error" *ngIf="group.get('ipAddressCidr')?.touched && group.get('ipAddressCidr')?.hasError('invalidCidr')">
+                Enter a valid CIDR block like `10.10.0.0/24`.
+              </small>
+            </div>
+            <div class="whitelist-field">
+              <input type="text" formControlName="startIpAddress" placeholder="Start IP" />
+              <small class="field-error" *ngIf="group.get('startIpAddress')?.touched && group.get('startIpAddress')?.hasError('invalidIp')">
+                Enter a valid IPv4 address.
+              </small>
+            </div>
+            <div class="whitelist-field">
+              <input type="text" formControlName="endIpAddress" placeholder="End IP" />
+              <small class="field-error" *ngIf="group.get('endIpAddress')?.touched && group.get('endIpAddress')?.hasError('invalidIp')">
+                Enter a valid IPv4 address.
+              </small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeWhitelistRow(i)">Remove</button>
+            <div class="whitelist-row__error" *ngIf="group.touched && group.errors?.['mixedWhitelistMode']">
+              Use either a CIDR block or a start/end range, not both.
+            </div>
+            <div class="whitelist-row__error" *ngIf="group.touched && group.errors?.['incompleteRange']">
+              Start IP and End IP must both be provided for a range.
+            </div>
+            <div class="whitelist-row__error" *ngIf="group.touched && group.errors?.['invalidRangeOrder']">
+              End IP must be greater than or equal to Start IP.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeEditor()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving">{{ saving ? 'Saving...' : 'Save System' }}</button>
+      </div>
+    </form>
+  </aside>
+</div>
+
+<div *ngIf="loading" class="loader"></div>

@@ -1,0 +1,291 @@
+/*Variables*/
+.btn-primary {
+  background-color: #0077bd !important;
+}
+.btn-secondary {
+  background-color: transparent !important;
+  border: 1px solid #ccc !important;
+  border-radius: 3px;
+  color: #000 !important;
+}
+.btn {
+  padding: 5px 20px !important;
+  font-size: 15px !important;
+  &:focus {
+    box-shadow: none !important;
+  }
+}
+
+.main-grid {
+  background-color: #f3f3f3;
+  min-height: calc(100vh - 131px);
+  position: relative;
+}
+.hello-user {
+  font-weight: 500;
+  padding: 0 1rem;
+}
+.left-nav {
+  position: relative;
+}
+.leftnav-btm-img {
+  width: 100%;
+  max-width: 200px;
+}
+.min-width{
+  min-width: 50px !important;
+}
+// .paginate{
+//   position: fixed;
+//   bottom: 0;
+//   right: 20px;
+// }
+// .cdk-overlay-container{
+//   position: absolute;
+//     width: 150px;
+//     top: 0;
+// }
+.grid-table {
+  padding: 0 1rem;
+  position: relative;
+  th, td{
+    font-size: 12px;    
+  }
+  th{
+    min-width: 100px;
+  }
+  td{
+    min-width: 140px;
+    padding: 0 1rem;
+    line-break: auto;
+  }
+}
+.leftnav-ul {
+  padding: 0;
+  margin: 0;
+  line-height: 2.7;
+  list-style: none;
+}
+.leftnav-ul li {
+  padding: 0 1rem;
+}
+.leftnav-ul li:hover {
+  background: #0077bd;
+  color: #fff;
+  cursor: pointer;
+  img {
+    filter: brightness(3);
+  }
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: none !important;
+}
+.leftnav-ul li img {
+  height: 13px;
+  margin-right: 0.5rem;
+  vertical-align: baseline;
+}
+.leftnav-btm-img {
+  width: 100%;
+  max-width: 200px;
+}
+.leftnav-active {
+  background: #0077bd;
+  color: #fff;
+  cursor: pointer;
+  img {
+    filter: brightness(3);
+  }
+}
+.result-list-count {
+  color: #57808d;
+  font-size: 13px;
+  margin-top: auto;
+}
+.grid-right-ul {
+  padding: 0;
+  margin-bottom: 0.6rem;
+  list-style: none;
+  display: flex;
+  border: 1px solid #c6d8ee;
+  border-radius: 3px;
+  background: #fff;
+  margin-right: 10px;
+}
+.right-move {
+  display: flex;
+  margin-left: auto;
+}
+.grid-right-ul li {
+  padding: 3px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  align-self: center;
+}
+
+.disabled-move-right-button {
+  cursor: default !important;
+  color: #EBEBE4;
+}
+
+.grid-right-ul img {
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.move-to-modify-icon {
+  font-size: 10px;
+}
+
+.move-to-modify-icon-diabled {
+  font-size: 10px;
+}
+.icon-size {
+  height: 12px;
+}
+.grid-bg {
+  background: #fff;
+  padding: 1rem;
+  max-height: 78vh;
+  overflow: auto;
+  min-height: 78vh;
+}
+.grid-border-right {
+  border-right: 1.5px solid #c6d8ee;
+}
+.grid {
+  font-size: 12px;
+}
+.grid .form-check {
+  min-height: auto !important;
+  margin-bottom: 0 !important;
+}
+.form-check-input:focus {
+  box-shadow: none !important;
+}
+.icon-size1 {
+  height: 10px;
+}
+.icon-size2 {
+  height: 20px;
+}
+.text-blur {
+  filter: blur(2px);
+  user-select: none;
+}
+.modal-dialog {
+  width: 90% !important;
+  max-width: 100% !important;
+  height: 90vh;
+  max-height: 100%;
+  .modal-content {
+    height: 100%;
+  }
+  .btn-close {
+    font-size: 14px;
+  }
+}
+
+
+
+#snackbar {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: #333;
+  border-radius: 4px;
+  color: #fff;
+  font-family: sans-serif;
+  border-radius: 2px;
+  padding: 12px;
+  position: fixed;
+  z-index: 100000;
+  left: 50%;
+  bottom: 30px;
+  font-size: 14px;
+}
+
+#snackbar.show {
+  visibility: visible;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 30px;
+    opacity: 1;
+  }
+}
+
+@keyframes fadein {
+  from {
+    bottom: 0;
+    opacity: 0;
+  }
+  to {
+    bottom: 30px;
+    opacity: 1;
+  }
+}
+
+@-webkit-keyframes fadeout {
+  from {
+    bottom: 30px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes fadeout {
+  from {
+    bottom: 30px;
+    opacity: 1;
+  }
+  to {
+    bottom: 0;
+    opacity: 0;
+  }
+}
+
+// LOADER
+.loader {
+  border: 5px solid #ccc;
+  border-radius: 50%;
+  border-top: 5px solid #111;
+  width: 60px;
+  height: 60px;
+  animation: spin 0.7s linear infinite;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 3000;
+  margin: -30px 0 0 -30px;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
