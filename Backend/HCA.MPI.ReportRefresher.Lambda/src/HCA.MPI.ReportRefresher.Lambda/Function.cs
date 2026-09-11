@@ -26,7 +26,8 @@ public class Function
         "coalitionmpi.mv_report_batch_error_events",
         "coalitionmpi.mv_report_manual_stewardship_queue",
         "coalitionmpi.mv_report_system_reference",
-        "coalitionmpi.mv_report_data_sharing_coverage"
+        "coalitionmpi.mv_report_data_sharing_coverage",
+        "coalitionmpi.mv_report_link_id_ingest_trend"
     ];
 
     private readonly IServiceProvider _serviceProvider;

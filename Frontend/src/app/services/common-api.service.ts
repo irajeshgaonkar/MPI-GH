@@ -213,6 +213,14 @@ export interface OperationTrendPoint {
   unmerge: number;
 }
 
+export interface LinkIdIngestTrendRow {
+  date: string;
+  sourceSystemName: string;
+  incomingRecords: number;
+  newPersonRecords: number;
+  alreadyInMpiRecords: number;
+}
+
 export interface SourceFragmentationRow {
   sourceSystemName: string;
   totalActiveIdentities: number;
@@ -227,6 +235,7 @@ export interface MpiLinkageEffectivenessReport {
   multiSourceLinkDetails: LinkClusterRow[];
   recentActivity: OperationTrendPoint[];
   highestFragmentationSources: SourceFragmentationRow[];
+  linkIdIngestTrend: LinkIdIngestTrendRow[];
 }
 
 export interface BatchFileRow {

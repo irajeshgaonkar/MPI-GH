@@ -55,17 +55,26 @@
     position: relative;
 }
 
+.metric-chart-card__plot {
+    position: relative;
+}
+
 .metric-chart-card__tooltip {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
     gap: 6px;
-    align-self: flex-start;
+    position: absolute;
+    z-index: 2;
+    max-width: min(280px, 70%);
     padding: 10px 12px;
     border: 1px solid #dbe5ef;
     border-radius: 12px;
-    background: #f8fbfd;
+    background: rgba(248, 251, 253, 0.97);
+    box-shadow: 0 8px 20px rgba(31, 56, 88, 0.12);
     color: #30485f;
     font-size: 12px;
+    pointer-events: none;
+    transition: left 0.08s ease, top 0.08s ease, transform 0.08s ease;
 }
 
 .metric-chart-card__tooltip strong {
@@ -77,6 +86,22 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+}
+
+.metric-chart-card__tooltip-divider {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #dbe5ef;
+    color: #17324d;
+    font-weight: 700;
+}
+
+.metric-chart-card__tooltip-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .metric-chart-svg {

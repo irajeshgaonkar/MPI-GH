@@ -24,7 +24,8 @@ public class AdminReportsService( HcaDbContext dbContext ) : IAdminReportsServic
         "coalitionmpi.mv_report_batch_error_events",
         "coalitionmpi.mv_report_manual_stewardship_queue",
         "coalitionmpi.mv_report_system_reference",
-        "coalitionmpi.mv_report_data_sharing_coverage"
+        "coalitionmpi.mv_report_data_sharing_coverage",
+        "coalitionmpi.mv_report_link_id_ingest_trend"
     ];
 
     private const int DefaultLookbackDays = 30;
@@ -73,7 +74,8 @@ public class AdminReportsService( HcaDbContext dbContext ) : IAdminReportsServic
                 MultiSourceLinkIds = linkage.MultiSourceLinkIds,
                 MultiSourceLinkDetails = linkage.MultiSourceLinkDetails.Take(DashboardClusterLimit).ToList(),
                 RecentActivity = linkage.RecentActivity,
-                HighestFragmentationSources = linkage.HighestFragmentationSources.Take(DashboardFragmentationLimit).ToList()
+                HighestFragmentationSources = linkage.HighestFragmentationSources.Take(DashboardFragmentationLimit).ToList(),
+                LinkIdIngestTrend = linkage.LinkIdIngestTrend
             },
             BatchIntake = new BatchIntakeReliabilityReport
             {
@@ -321,6 +323,29 @@ public class AdminReportsService( HcaDbContext dbContext ) : IAdminReportsServic
             },
             cancellationToken);
 
+        var linkIdIngestTrend = await QueryListAsync(
+            """
+            SELECT
+                ingest_date,
+                source_system_name,
+                incoming_records,
+                new_person_records,
+                already_in_mpi_records
+            FROM coalitionmpi.mv_report_link_id_ingest_trend
+            WHERE ingest_date >= @cutoff::date
+            ORDER BY ingest_date, source_system_name
+            """,
+            reader => new LinkIdIngestTrendRow
+            {
+                Date = GetDateTime(reader, "ingest_date"),
+                SourceSystemName = GetString(reader, "source_system_name"),
+                IncomingRecords = GetInt32(reader, "incoming_records"),
+                NewPersonRecords = GetInt32(reader, "new_person_records"),
+                AlreadyInMpiRecords = GetInt32(reader, "already_in_mpi_records")
+            },
+            cancellationToken,
+            ("@cutoff", lookbackCutoff));
+
         return new MpiLinkageEffectivenessReport
         {
             UniqueLinkIds = summary.UniqueLinkIds,
@@ -328,7 +353,8 @@ public class AdminReportsService( HcaDbContext dbContext ) : IAdminReportsServic
             MultiSourceLinkIds = summary.MultiSourceLinkIds,
             MultiSourceLinkDetails = multiSourceLinkDetails,
             RecentActivity = recentActivity,
-            HighestFragmentationSources = fragmentation
+            HighestFragmentationSources = fragmentation,
+            LinkIdIngestTrend = linkIdIngestTrend
         };
     }
 

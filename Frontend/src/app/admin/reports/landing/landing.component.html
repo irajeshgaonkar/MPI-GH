@@ -22,8 +22,8 @@
             </label>
 
             <div class="reports-dashboard__actions app-page-actions">
-              <button type="button" class="reports-dashboard__export" (click)="exportPdf()" [disabled]="loading || exporting">
-                {{ exporting ? "Exporting..." : "Export PDF" }}
+              <button type="button" class="reports-dashboard__export" (click)="openExportDialog()" [disabled]="loading || exporting">
+                Export PDF
               </button>
 
               <button type="button" class="reports-dashboard__refresh" (click)="refreshNow()" [disabled]="refreshing">
@@ -54,6 +54,204 @@
               <strong class="overview-card__value">{{ card.value }}</strong>
               <span class="overview-card__detail">{{ card.detail }}</span>
             </article>
+          </section>
+
+          <section class="report-section">
+            <div class="report-section__title">
+              <div>
+                <h2>Incoming Match Trend <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['linkIdIngest']" [attr.title]="reportTooltips['linkIdIngest']" aria-label="About Incoming Match Trend">i</span></h2>
+                <p>First-time records received by MPI, split between new Link IDs and matches to someone already in MPI.</p>
+              </div>
+            </div>
+
+            <div class="report-grid">
+              <div class="report-card report-card--full">
+                <div class="report-tools report-tools--multi">
+                  <label class="report-tools__field">
+                    <span>Time range</span>
+                    <select [ngModel]="selectedLinkIdIngestLookbackDays" (ngModelChange)="onLinkIdIngestLookbackChange($event)">
+                      <option *ngFor="let option of lookbackOptions" [ngValue]="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <div class="report-tools__field report-tools__field--sources">
+                    <span>Sources</span>
+                    <div
+                      class="link-id-ingest-source-dropdown"
+                      [class.is-open]="linkIdIngestSourceMenuOpen"
+                      (focusout)="onLinkIdIngestSourceMenuFocusOut($event)">
+                      <button
+                        type="button"
+                        class="link-id-ingest-source-trigger"
+                        (click)="toggleLinkIdIngestSourceMenu()"
+                        [attr.aria-expanded]="linkIdIngestSourceMenuOpen"
+                        aria-haspopup="listbox">
+                        <span class="link-id-ingest-source-trigger__label">{{ linkIdIngestSourceFilterLabel() }}</span>
+                        <span
+                          class="link-id-ingest-source-trigger__meta"
+                          *ngIf="!isLinkIdIngestAllSourcesSelected() && selectedLinkIdIngestSources.length">
+                          {{ selectedLinkIdIngestSources.length }}
+                        </span>
+                        <span class="link-id-ingest-source-trigger__caret" aria-hidden="true"></span>
+                      </button>
+
+                      <div class="link-id-ingest-source-menu" *ngIf="linkIdIngestSourceMenuOpen" role="listbox">
+                        <input
+                          type="text"
+                          class="link-id-ingest-source-search"
+                          [(ngModel)]="linkIdIngestSourceSearch"
+                          placeholder="Search sources"
+                          aria-label="Search sources" />
+                        <div class="link-id-ingest-source-list">
+                          <label class="link-id-ingest-source-option">
+                            <input
+                              type="checkbox"
+                              [checked]="isLinkIdIngestAllSourcesSelected()"
+                              (change)="onLinkIdIngestSelectAllChange($any($event.target).checked)" />
+                            <span>Select all</span>
+                          </label>
+                          <label
+                            class="link-id-ingest-source-option"
+                            *ngFor="let source of linkIdIngestFilteredSourceOptions()">
+                            <input
+                              type="checkbox"
+                              [checked]="isLinkIdIngestSourceSelected(source)"
+                              (change)="onLinkIdIngestSourceToggle(source, $any($event.target).checked)" />
+                            <span>{{ source }}</span>
+                          </label>
+                          <p
+                            class="link-id-ingest-source-empty"
+                            *ngIf="!linkIdIngestFilteredSourceOptions().length">
+                            No sources match your search.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <ng-container *ngIf="linkIdIngestHasNoSourcesSelected(); else ingestContent">
+                  <p class="link-id-ingest-empty">Select at least one source.</p>
+                </ng-container>
+
+                <ng-template #ingestContent>
+                <ng-container *ngIf="linkIdIngestHasData(); else noIngestData">
+                  <div class="link-id-ingest-kpis">
+                    <div class="link-id-ingest-kpi">
+                      <span class="link-id-ingest-kpi__label">Incoming</span>
+                      <strong>{{ linkIdIngestView().totals.incomingRecords }}</strong>
+                    </div>
+                    <div class="link-id-ingest-kpi">
+                      <span class="link-id-ingest-kpi__label">New Link ID</span>
+                      <strong>{{ formatIngestBucket(linkIdIngestView().totals.newPersonRecords, linkIdIngestView().totals.newPersonPercent) }}</strong>
+                    </div>
+                    <div class="link-id-ingest-kpi">
+                      <span class="link-id-ingest-kpi__label">Already in MPI</span>
+                      <strong>{{ formatIngestBucket(linkIdIngestView().totals.alreadyInMpiRecords, linkIdIngestView().totals.alreadyInMpiPercent) }}</strong>
+                    </div>
+                    <div class="link-id-ingest-kpi">
+                      <span class="link-id-ingest-kpi__label">Match rate</span>
+                      <strong>{{ linkIdIngestView().totals.alreadyInMpiPercent }}%</strong>
+                    </div>
+                  </div>
+                  <p class="link-id-ingest-summary__headline">{{ linkIdIngestSummaryHeadline() }}</p>
+
+                  <div class="link-id-ingest-charts">
+                    <app-metric-chart
+                      title="Daily incoming mix"
+                      subtitle="Records per day split between new Link ID and already in MPI"
+                      [data]="linkIdIngestChartPoints"
+                      [series]="linkIdIngestVolumeSeries"
+                      variant="bar"
+                      [stackedBars]="true">
+                    </app-metric-chart>
+                    <app-metric-chart
+                      title="Match rate over time"
+                      subtitle="Percent of incoming records that matched someone already in MPI"
+                      [data]="linkIdIngestChartPoints"
+                      [series]="linkIdIngestMatchRateSeries"
+                      variant="line"
+                      [yMax]="100">
+                    </app-metric-chart>
+                  </div>
+
+                  <h4 class="link-id-ingest-section-title">By day</h4>
+                  <div class="report-table-wrap">
+                    <table class="report-table report-table--compact">
+                      <thead>
+                        <tr>
+                          <th class="sortable" (click)="setSort('linkIdIngest', 'date')">Date {{ sortIndicator('linkIdIngest', 'date') }}</th>
+                          <th class="sortable" (click)="setSort('linkIdIngest', 'incomingRecords')">Incoming {{ sortIndicator('linkIdIngest', 'incomingRecords') }}</th>
+                          <th class="sortable" (click)="setSort('linkIdIngest', 'newPersonRecords')">New Link ID {{ sortIndicator('linkIdIngest', 'newPersonRecords') }}</th>
+                          <th class="sortable" (click)="setSort('linkIdIngest', 'alreadyInMpiRecords')">Already in MPI {{ sortIndicator('linkIdIngest', 'alreadyInMpiRecords') }}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let row of linkIdIngestPagedRows(); trackBy: trackByIngestDate">
+                          <td>{{ formatIngestDate(row.date) }}</td>
+                          <td>{{ row.incomingRecords }}</td>
+                          <td>{{ formatIngestBucket(row.newPersonRecords, row.newPersonPercent) }}</td>
+                          <td>{{ formatIngestBucket(row.alreadyInMpiRecords, row.alreadyInMpiPercent) }}</td>
+                        </tr>
+                        <tr class="report-table__total-row">
+                          <td>Total</td>
+                          <td>{{ linkIdIngestView().totals.incomingRecords }}</td>
+                          <td>{{ formatIngestBucket(linkIdIngestView().totals.newPersonRecords, linkIdIngestView().totals.newPersonPercent) }}</td>
+                          <td>{{ formatIngestBucket(linkIdIngestView().totals.alreadyInMpiRecords, linkIdIngestView().totals.alreadyInMpiPercent) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="link-id-ingest-pager" *ngIf="linkIdIngestRows().length > linkIdIngestPageSize">
+                    <button type="button" (click)="goLinkIdIngestDayPrev()" [disabled]="!canGoLinkIdIngestDayPrev()">Previous</button>
+                    <span>{{ linkIdIngestDayPagerLabel() }}</span>
+                    <button type="button" (click)="goLinkIdIngestDayNext()" [disabled]="!canGoLinkIdIngestDayNext()">Next</button>
+                  </div>
+
+                  <ng-container *ngIf="showLinkIdIngestBySource()">
+                    <h4 class="link-id-ingest-section-title">By source</h4>
+                    <div class="report-table-wrap">
+                      <table class="report-table report-table--compact">
+                        <thead>
+                          <tr>
+                            <th class="sortable" (click)="setSort('linkIdIngestSource', 'sourceSystemName')">Source {{ sortIndicator('linkIdIngestSource', 'sourceSystemName') }}</th>
+                            <th class="sortable" (click)="setSort('linkIdIngestSource', 'incomingRecords')">Incoming {{ sortIndicator('linkIdIngestSource', 'incomingRecords') }}</th>
+                            <th class="sortable" (click)="setSort('linkIdIngestSource', 'newPersonRecords')">New Link ID {{ sortIndicator('linkIdIngestSource', 'newPersonRecords') }}</th>
+                            <th class="sortable" (click)="setSort('linkIdIngestSource', 'alreadyInMpiRecords')">Already in MPI {{ sortIndicator('linkIdIngestSource', 'alreadyInMpiRecords') }}</th>
+                            <th class="sortable" (click)="setSort('linkIdIngestSource', 'alreadyInMpiPercent')">Match rate {{ sortIndicator('linkIdIngestSource', 'alreadyInMpiPercent') }}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let row of linkIdIngestPagedSourceRows(); trackBy: trackByIngestSource">
+                            <td>{{ row.sourceSystemName }}</td>
+                            <td>{{ row.incomingRecords }}</td>
+                            <td>{{ formatIngestBucket(row.newPersonRecords, row.newPersonPercent) }}</td>
+                            <td>{{ formatIngestBucket(row.alreadyInMpiRecords, row.alreadyInMpiPercent) }}</td>
+                            <td>{{ row.alreadyInMpiPercent }}%</td>
+                          </tr>
+                          <tr class="report-table__total-row">
+                            <td>Total</td>
+                            <td>{{ linkIdIngestView().totals.incomingRecords }}</td>
+                            <td>{{ formatIngestBucket(linkIdIngestView().totals.newPersonRecords, linkIdIngestView().totals.newPersonPercent) }}</td>
+                            <td>{{ formatIngestBucket(linkIdIngestView().totals.alreadyInMpiRecords, linkIdIngestView().totals.alreadyInMpiPercent) }}</td>
+                            <td>{{ linkIdIngestView().totals.alreadyInMpiPercent }}%</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="link-id-ingest-pager" *ngIf="linkIdIngestSourceRows().length > linkIdIngestPageSize">
+                      <button type="button" (click)="goLinkIdIngestSourcePrev()" [disabled]="!canGoLinkIdIngestSourcePrev()">Previous</button>
+                      <span>{{ linkIdIngestSourcePagerLabel() }}</span>
+                      <button type="button" (click)="goLinkIdIngestSourceNext()" [disabled]="!canGoLinkIdIngestSourceNext()">Next</button>
+                    </div>
+                  </ng-container>
+                </ng-container>
+
+                <ng-template #noIngestData>
+                  <p class="link-id-ingest-empty">No new records in this period.</p>
+                </ng-template>
+                </ng-template>
+              </div>
+            </div>
           </section>
 
           <section class="report-section">
@@ -514,6 +712,49 @@
           </section>
         </ng-container>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="reports-export-modal" *ngIf="exportDialogOpen" role="dialog" aria-modal="true" aria-labelledby="reports-export-title">
+  <div class="reports-export-modal__backdrop" (click)="closeExportDialog()"></div>
+  <div class="reports-export-modal__dialog">
+    <div class="reports-export-modal__header">
+      <div>
+        <h2 id="reports-export-title">Export Reports</h2>
+        <p>Select sections to include in one PDF. Current page filters are applied.</p>
+      </div>
+      <button type="button" class="reports-export-modal__close" (click)="closeExportDialog()" [disabled]="exporting" aria-label="Close export dialog">×</button>
+    </div>
+
+    <div class="reports-export-modal__body">
+      <label class="reports-export-modal__option reports-export-modal__option--all">
+        <input
+          type="checkbox"
+          [checked]="exportSelectAll"
+          [disabled]="exporting"
+          (change)="toggleExportSelectAll($any($event.target).checked)" />
+        <span>All</span>
+      </label>
+
+      <div class="reports-export-modal__divider"></div>
+
+      <label class="reports-export-modal__option" *ngFor="let section of reportsExportSections">
+        <input
+          type="checkbox"
+          [checked]="isExportSectionSelected(section.id)"
+          [disabled]="exporting"
+          (change)="toggleExportSection(section.id, $any($event.target).checked)" />
+        <span>{{ section.label }}</span>
+      </label>
+    </div>
+
+    <div class="reports-export-modal__footer">
+      <span class="reports-export-modal__status" *ngIf="exporting">Generating PDF...</span>
+      <button type="button" class="btn btn-outline-secondary" (click)="closeExportDialog()" [disabled]="exporting">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="exportPdf()" [disabled]="!canRunExport()">
+        {{ exporting ? "Exporting..." : "Export PDF" }}
+      </button>
     </div>
   </div>
 </div>

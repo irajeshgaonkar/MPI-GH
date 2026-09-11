@@ -19,8 +19,37 @@ import {
 } from "src/app/services/common-api.service";
 import { SharedService } from "src/app/services/sharedService";
 import { MetricChartSeries } from "src/app/shared/metric-chart/metric-chart.component";
+import {
+  buildLinkIdIngestChartData,
+  buildLinkIdIngestSourceRows,
+  buildLinkIdIngestView,
+  extractLinkIdIngestSourceOptions,
+  filterLinkIdIngestViewByLookback,
+  filterTrendRowsByLookback,
+  formatIngestCountWithPercent,
+  LINK_ID_INGEST_PAGE_SIZE,
+  LinkIdIngestChartPoint,
+  LinkIdIngestDailyRow,
+  LinkIdIngestSourceRow,
+  paginateItems,
+  syncSelectedSources,
+} from "./link-id-ingest.util";
 
 type SortDirection = "asc" | "desc";
+
+type ReportsExportSectionId =
+  | "overview"
+  | "data-quality"
+  | "incoming-match-trend"
+  | "mpi-linkage"
+  | "batch-intake"
+  | "stewardship"
+  | "data-sharing";
+
+interface ReportsExportSectionOption {
+  id: ReportsExportSectionId;
+  label: string;
+}
 
 interface SortState {
   key: string;
@@ -69,10 +98,30 @@ export class ReportsLandingComponent implements OnInit {
     { key: "merge", label: "Merge", color: "#0b84f3" },
     { key: "unmerge", label: "Unmerge", color: "#ff7f50" },
   ];
+  readonly linkIdIngestVolumeSeries: MetricChartSeries[] = [
+    { key: "newPerson", label: "New Link ID", color: "#0b84f3" },
+    { key: "alreadyInMpi", label: "Already in MPI", color: "#00a389" },
+  ];
+  readonly linkIdIngestMatchRateSeries: MetricChartSeries[] = [
+    { key: "alreadyInMpiPercent", label: "Already in MPI %", color: "#d14343" },
+  ];
+  readonly linkIdIngestPageSize = LINK_ID_INGEST_PAGE_SIZE;
+  readonly reportsExportSections: ReportsExportSectionOption[] = [
+    { id: "overview", label: "Overview" },
+    { id: "incoming-match-trend", label: "Incoming Match Trend" },
+    { id: "data-quality", label: "Source System Data Quality" },
+    { id: "mpi-linkage", label: "MPI Linkage" },
+    { id: "batch-intake", label: "Batch Intake Reliability" },
+    { id: "stewardship", label: "Manual Stewardship" },
+    { id: "data-sharing", label: "Data Sharing Coverage" },
+  ];
 
   loading = false;
   refreshing = false;
   exporting = false;
+  exportDialogOpen = false;
+  exportSelectAll = false;
+  selectedExportSections = new Set<ReportsExportSectionId>();
   loadError = "";
   selectedLookbackDays = 30;
   dataQualitySearch = "";
@@ -82,9 +131,19 @@ export class ReportsLandingComponent implements OnInit {
   dataSharingSearch = "";
   selectedCoverageSourceSystemId: number | null = null;
   selectedCoverageStatusFilter = "all";
+  selectedLinkIdIngestSources: string[] = [];
+  selectedLinkIdIngestLookbackDays = 30;
+  linkIdIngestSourceSearch = "";
+  linkIdIngestSourceMenuOpen = false;
+  linkIdIngestDayPageIndex = 0;
+  linkIdIngestSourcePageIndex = 0;
+  linkIdIngestChartPoints: LinkIdIngestChartPoint[] = [];
+  private linkIdIngestSourcesInitialized = false;
   dashboard: AdminReportsDashboardResponse = this.buildEmptyDashboard();
   sortStates: Record<string, SortState> = {
     dataQuality: { key: "sourceSystemName", direction: "asc" },
+    linkIdIngest: { key: "date", direction: "asc" },
+    linkIdIngestSource: { key: "incomingRecords", direction: "desc" },
     topClusters: { key: "sourceIdentityCount", direction: "desc" },
     fragmentation: { key: "fragmentationRate", direction: "desc" },
     files: { key: "requestDateTime", direction: "desc" },
@@ -100,7 +159,8 @@ export class ReportsLandingComponent implements OnInit {
   };
   readonly reportTooltips: Record<string, string> = {
     dataQuality: "Shows source-by-source data quality so leaders can see which agencies or systems are contributing stale, incomplete, deleted, or protected-population-heavy records.",
-    linkage: "Shows MPI link IDs that span multiple source systems, along with fragmentation and recent merge or unmerge activity that may signal identity quality issues.",
+    linkage: "Shows MPI link IDs that span multiple source systems, along with fragmentation, incoming match trends, and recent merge or unmerge activity that may signal identity quality issues.",
+    linkIdIngest: "Shows first-time records received by MPI and whether each created a new Link ID or matched someone already in MPI. Matching is evaluated across all sources, even when one source is selected.",
     batchIntake: "Shows how reliably inbound files are processed, including failures, rejects, processing speed, and recurring data issues.",
     stewardship: "Shows the volume and concentration of manual review work, plus the link-ID-level operations executed after review such as link, unlink, merge, unmerge, or delete.",
     dataSharing: "Shows whether onboarded systems have the expected sharing relationships configured and where active gaps remain."
@@ -137,8 +197,12 @@ export class ReportsLandingComponent implements OnInit {
     this.refreshing = true;
     this.commonApiService.getAdminReportsDashboard(this.selectedLookbackDays).subscribe({
       next: (response) => {
+        const previousOptions = extractLinkIdIngestSourceOptions(this.dashboard.linkage.linkIdIngestTrend || []);
+        const previouslyAllSelected = this.linkIdIngestSourcesInitialized
+          && this.isLinkIdIngestAllSourcesSelectedAgainst(previousOptions, this.selectedLinkIdIngestSources);
         this.dashboard = response;
         this.ensureCoverageSourceSelection();
+        this.syncLinkIdIngestSourceSelection(previouslyAllSelected);
         this.loading = false;
         this.refreshing = false;
         this.loadError = "";
@@ -155,13 +219,59 @@ export class ReportsLandingComponent implements OnInit {
     this.loadReports();
   }
 
-  async exportPdf(): Promise<void> {
+  openExportDialog(): void {
     if (this.exporting || this.loading) {
+      return;
+    }
+
+    this.selectedExportSections = new Set(this.reportsExportSections.map((section) => section.id));
+    this.exportSelectAll = true;
+    this.exportDialogOpen = true;
+  }
+
+  closeExportDialog(): void {
+    if (this.exporting) {
+      return;
+    }
+
+    this.exportDialogOpen = false;
+  }
+
+  isExportSectionSelected(id: ReportsExportSectionId): boolean {
+    return this.selectedExportSections.has(id);
+  }
+
+  toggleExportSelectAll(checked: boolean): void {
+    this.exportSelectAll = checked;
+    this.selectedExportSections = checked
+      ? new Set(this.reportsExportSections.map((section) => section.id))
+      : new Set();
+  }
+
+  toggleExportSection(id: ReportsExportSectionId, checked: boolean): void {
+    const next = new Set(this.selectedExportSections);
+    if (checked) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+
+    this.selectedExportSections = next;
+    this.exportSelectAll = this.reportsExportSections.every((section) => next.has(section.id));
+  }
+
+  canRunExport(): boolean {
+    return this.selectedExportSections.size > 0 && !this.exporting && !this.loading;
+  }
+
+  async exportPdf(): Promise<void> {
+    if (!this.canRunExport()) {
       return;
     }
 
     this.exporting = true;
     try {
+      const selected = this.selectedExportSections;
       const doc = new jsPDF({
         orientation: "landscape",
         unit: "pt",
@@ -172,151 +282,168 @@ export class ReportsLandingComponent implements OnInit {
       const contentWidth = pageWidth - margin * 2;
       let y = this.renderExportCover(doc, margin, contentWidth);
 
-      y = this.appendExportSection(doc, "Overview", y, margin, [
-        ["Metric", "Value", "Detail"],
-        ...this.overviewCards().map((card) => [card.label, card.value, card.detail]),
-      ]);
+      if (selected.has("overview")) {
+        y = this.appendExportSection(doc, "Overview", y, margin, [
+          ["Metric", "Value", "Detail"],
+          ...this.overviewCards().map((card) => [card.label, card.value, card.detail]),
+        ]);
+      }
 
-      y = this.appendExportSection(doc, "Source System Data Quality Scorecard", y, margin, [
-        ["Source", "Agency", "Completeness", "Minimum Data Set", "Stale Rate", "Delete Rate", "Missing DOB", "Missing SSN", "Missing Contact", "Protected Population"],
-        ...this.dataQualityRows().map((source) => [
-          source.sourceSystemName,
-          source.agency,
-          `${source.completenessScore}%`,
-          `${source.minimumDataSetScore}% (${source.minimumDataSetQualifiedCount})`,
-          `${source.staleRate}% (${source.staleIdentities})`,
-          `${source.deleteRate}% (${source.deletedIdentities})`,
-          `${source.missingDobCount}`,
-          `${source.missingSsnCount}`,
-          `${source.missingAddressCount + source.missingCommunicationCount}`,
-          this.protectedDistribution(source),
-        ]),
-      ]);
+      if (selected.has("incoming-match-trend")) {
+        y = this.appendIncomingMatchTrendExport(doc, y, margin);
+      }
 
-      y = this.appendExportSection(doc, "MPI Link IDs Across Multiple Source Systems", y, margin, [
-        ["MPI Link ID", "Source Identities", "Distinct Systems", "Systems"],
-        ...this.topClusterRows().map((cluster) => [
-          cluster.mpiLinkId,
-          `${cluster.sourceIdentityCount}`,
-          `${cluster.distinctSourceSystems}`,
-          cluster.sourceSystems.join(", "),
-        ]),
-      ]);
+      if (selected.has("data-quality")) {
+        y = this.appendExportSection(doc, "Source System Data Quality Scorecard", y, margin, [
+          ["Source", "Agency", "Completeness", "Minimum Data Set", "Stale Rate", "Delete Rate", "Missing DOB", "Missing SSN", "Missing Contact", "Protected Population"],
+          ...this.dataQualityRows().map((source) => [
+            source.sourceSystemName,
+            source.agency,
+            `${source.completenessScore}%`,
+            `${source.minimumDataSetScore}% (${source.minimumDataSetQualifiedCount})`,
+            `${source.staleRate}% (${source.staleIdentities})`,
+            `${source.deleteRate}% (${source.deletedIdentities})`,
+            `${source.missingDobCount}`,
+            `${source.missingSsnCount}`,
+            `${source.missingAddressCount + source.missingCommunicationCount}`,
+            this.protectedDistribution(source),
+          ]),
+        ]);
+      }
 
-      y = this.appendExportSection(doc, "Highest Fragmentation Sources", y, margin, [
-        ["Source", "Total Active Identities", "Identities In Shared Link IDs", "Fragmentation Rate"],
-        ...this.fragmentationRows().map((source) => [
-          source.sourceSystemName,
-          `${source.totalActiveIdentities}`,
-          `${source.identitiesInSharedLinkIds}`,
-          `${source.fragmentationRate}%`,
-        ]),
-      ]);
+      if (selected.has("mpi-linkage")) {
+        y = this.appendExportSection(doc, "MPI Link IDs Across Multiple Source Systems", y, margin, [
+          ["MPI Link ID", "Source Identities", "Distinct Systems", "Systems"],
+          ...this.topClusterRows().map((cluster) => [
+            cluster.mpiLinkId,
+            `${cluster.sourceIdentityCount}`,
+            `${cluster.distinctSourceSystems}`,
+            cluster.sourceSystems.join(", "),
+          ]),
+        ]);
 
-      y = this.appendExportSection(doc, "Recent Files", y, margin, [
-        ["Request ID", "File", "Source", "Records", "Status", "Processing", "Rejects", "Top Error"],
-        ...this.recentFileRows().map((file) => [
-          file.requestId,
-          file.fileName,
-          file.sourceSystemName,
-          `${file.recordsCount}`,
-          file.status,
-          `${file.processingMinutes} min`,
-          `${file.rejectCount}`,
-          file.topErrorMessage || "None",
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Highest Fragmentation Sources", y, margin, [
+          ["Source", "Total Active Identities", "Identities In Shared Link IDs", "Fragmentation Rate"],
+          ...this.fragmentationRows().map((source) => [
+            source.sourceSystemName,
+            `${source.totalActiveIdentities}`,
+            `${source.identitiesInSharedLinkIds}`,
+            `${source.fragmentationRate}%`,
+          ]),
+        ]);
+      }
 
-      y = this.appendExportSection(doc, "Source Reliability", y, margin, [
-        ["Source", "Files", "Failed", "Rejected", "Avg Min"],
-        ...this.sourceReliabilityRows().map((source) => [
-          source.sourceSystemName,
-          `${source.totalFiles}`,
-          `${source.failedFiles}`,
-          `${source.rejectedRecords}`,
-          `${source.averageProcessingMinutes}`,
-        ]),
-      ]);
+      if (selected.has("batch-intake")) {
+        y = this.appendExportSection(doc, "Recent Files", y, margin, [
+          ["Request ID", "File", "Source", "Records", "Status", "Processing", "Rejects", "Top Error"],
+          ...this.recentFileRows().map((file) => [
+            file.requestId,
+            file.fileName,
+            file.sourceSystemName,
+            `${file.recordsCount}`,
+            file.status,
+            `${file.processingMinutes} min`,
+            `${file.rejectCount}`,
+            file.topErrorMessage || "None",
+          ]),
+        ]);
 
-      y = this.appendExportSection(doc, "Top Error Messages", y, margin, [
-        ["Source", "Error", "Count"],
-        ...this.topErrorRows().map((error) => [
-          error.sourceSystemName,
-          error.message,
-          `${error.count}`,
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Source Reliability", y, margin, [
+          ["Source", "Files", "Failed", "Rejected", "Avg Min"],
+          ...this.sourceReliabilityRows().map((source) => [
+            source.sourceSystemName,
+            `${source.totalFiles}`,
+            `${source.failedFiles}`,
+            `${source.rejectedRecords}`,
+            `${source.averageProcessingMinutes}`,
+          ]),
+        ]);
 
-      y = this.appendExportSection(doc, "Top Queue Users", y, margin, [
-        ["User", "Queued Records"],
-        ...this.topUserRows().map((user) => [user.userName, `${user.modifyCount}`]),
-      ]);
+        y = this.appendExportSection(doc, "Top Error Messages", y, margin, [
+          ["Source", "Error", "Count"],
+          ...this.topErrorRows().map((error) => [
+            error.sourceSystemName,
+            error.message,
+            `${error.count}`,
+          ]),
+        ]);
+      }
 
-      y = this.appendExportSection(doc, "Most Touched Identities", y, margin, [
-        ["MPI Link ID", "Source", "Source ID", "Touches"],
-        ...this.touchedIdentityRows().map((identity) => [
-          identity.mpiLinkId,
-          identity.sourceSystemName,
-          identity.sourceSystemId,
-          `${identity.touchCount}`,
-        ]),
-      ]);
+      if (selected.has("stewardship")) {
+        y = this.appendExportSection(doc, "Top Queue Users", y, margin, [
+          ["User", "Queued Records"],
+          ...this.topUserRows().map((user) => [user.userName, `${user.modifyCount}`]),
+        ]);
 
-      y = this.appendExportSection(doc, "Recent Downstream Outcomes", y, margin, [
-        ["Operation", "Status", "Count"],
-        ...this.outcomeRows().map((outcome) => [
-          outcome.operationType,
-          outcome.status,
-          `${outcome.count}`,
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Most Touched Identities", y, margin, [
+          ["MPI Link ID", "Source", "Source ID", "Touches"],
+          ...this.touchedIdentityRows().map((identity) => [
+            identity.mpiLinkId,
+            identity.sourceSystemName,
+            identity.sourceSystemId,
+            `${identity.touchCount}`,
+          ]),
+        ]);
 
-      y = this.appendExportSection(doc, "Operations On MPI Link IDs", y, margin, [
-        ["Request Time", "Operation", "Status", "Primary MPI Link ID", "Secondary MPI Link ID", "Affected Link IDs", "Tracking ID"],
-        ...this.linkIdOperationRows().map((operation) => [
-          this.formatDateTime(operation.requestDateTime),
-          operation.operationType,
-          operation.status,
-          operation.primaryMpiLinkId || "--",
-          operation.secondaryMpiLinkId || "--",
-          operation.affectedLinkIds || "--",
-          operation.trackingId,
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Recent Downstream Outcomes", y, margin, [
+          ["Operation", "Status", "Count"],
+          ...this.outcomeRows().map((outcome) => [
+            outcome.operationType,
+            outcome.status,
+            `${outcome.count}`,
+          ]),
+        ]);
 
-      y = this.appendExportSection(doc, "Onboarded Systems", y, margin, [
-        ["System", "Agency", "Status"],
-        ...this.onboardedSystemRows().map((system) => [
-          system.sourceSystemName,
-          system.agencyName,
-          system.isActive ? "Active" : "Inactive",
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Operations On MPI Link IDs", y, margin, [
+          ["Request Time", "Operation", "Status", "Primary MPI Link ID", "Secondary MPI Link ID", "Affected Link IDs", "Tracking ID"],
+          ...this.linkIdOperationRows().map((operation) => [
+            this.formatDateTime(operation.requestDateTime),
+            operation.operationType,
+            operation.status,
+            operation.primaryMpiLinkId || "--",
+            operation.secondaryMpiLinkId || "--",
+            operation.affectedLinkIds || "--",
+            operation.trackingId,
+          ]),
+        ]);
+      }
 
-      y = this.appendExportSection(doc, "Coverage By Source System", y, margin, [
-        ["Source", "Agency", "Active", "Inactive", "Gaps", "Target Systems"],
-        ...this.coverageSummaryRows().map((row) => [
-          row.sourceSystemName,
-          row.agencyName,
-          `${row.activeMappings}`,
-          `${row.inactiveMappings}`,
-          `${row.gapCount}`,
-          `${row.totalTargets}`,
-        ]),
-      ]);
+      if (selected.has("data-sharing")) {
+        y = this.appendExportSection(doc, "Onboarded Systems", y, margin, [
+          ["System", "Agency", "Status"],
+          ...this.onboardedSystemRows().map((system) => [
+            system.sourceSystemName,
+            system.agencyName,
+            system.isActive ? "Active" : "Inactive",
+          ]),
+        ]);
 
-      this.appendExportSection(doc, "Coverage Explorer", y, margin, [
-        ["Allowed System", "Agency", "Status", "Sharing Level"],
-        ...this.coverageExplorerRows().map((row) => [
-          row.allowedSystemName,
-          row.agencyName,
-          row.status === "gap" ? "Gap" : this.toTitleCase(row.status),
-          row.dataSharingLevel,
-        ]),
-      ]);
+        y = this.appendExportSection(doc, "Coverage By Source System", y, margin, [
+          ["Source", "Agency", "Active", "Inactive", "Gaps", "Target Systems"],
+          ...this.coverageSummaryRows().map((row) => [
+            row.sourceSystemName,
+            row.agencyName,
+            `${row.activeMappings}`,
+            `${row.inactiveMappings}`,
+            `${row.gapCount}`,
+            `${row.totalTargets}`,
+          ]),
+        ]);
+
+        this.appendExportSection(doc, "Coverage Explorer", y, margin, [
+          ["Allowed System", "Agency", "Status", "Sharing Level"],
+          ...this.coverageExplorerRows().map((row) => [
+            row.allowedSystemName,
+            row.agencyName,
+            row.status === "gap" ? "Gap" : this.toTitleCase(row.status),
+            row.dataSharingLevel,
+          ]),
+        ]);
+      }
 
       const safeDate = new Date().toISOString().slice(0, 10);
       doc.save(`mpi-reports-${safeDate}.pdf`);
+      this.exportDialogOpen = false;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to export reports.";
       this.sharedService.showToast(message);
@@ -325,8 +452,75 @@ export class ReportsLandingComponent implements OnInit {
     }
   }
 
+  private appendIncomingMatchTrendExport(doc: jsPDF, startY: number, margin: number): number {
+    const ingestView = this.linkIdIngestView();
+    const ingestFilterLabel = this.linkIdIngestSourceFilterLabel();
+    let y = this.appendExportSection(doc, `Incoming Match Trend (${ingestFilterLabel})`, startY, margin, [
+      ["Metric", "Value"],
+      [this.linkIdIngestSummaryHeadline(), ""],
+      [
+        "Incoming",
+        `${ingestView.totals.incomingRecords}`,
+      ],
+      [
+        "New Link ID",
+        formatIngestCountWithPercent(ingestView.totals.newPersonRecords, ingestView.totals.newPersonPercent),
+      ],
+      [
+        "Already in MPI",
+        formatIngestCountWithPercent(ingestView.totals.alreadyInMpiRecords, ingestView.totals.alreadyInMpiPercent),
+      ],
+      [
+        "Match rate",
+        `${ingestView.totals.alreadyInMpiPercent}%`,
+      ],
+    ]);
+
+    y = this.appendExportSection(doc, "Incoming Match Trend By Day", y, margin, [
+      ["Date", "Incoming", "New Link ID", "Already in MPI"],
+      ...this.linkIdIngestRows().map((row) => [
+        this.formatIngestDate(row.date),
+        `${row.incomingRecords}`,
+        formatIngestCountWithPercent(row.newPersonRecords, row.newPersonPercent),
+        formatIngestCountWithPercent(row.alreadyInMpiRecords, row.alreadyInMpiPercent),
+      ]),
+      [
+        "Total",
+        `${ingestView.totals.incomingRecords}`,
+        formatIngestCountWithPercent(ingestView.totals.newPersonRecords, ingestView.totals.newPersonPercent),
+        formatIngestCountWithPercent(ingestView.totals.alreadyInMpiRecords, ingestView.totals.alreadyInMpiPercent),
+      ],
+    ]);
+
+    if (this.showLinkIdIngestBySource()) {
+      const sourceRows = this.linkIdIngestSourceRows();
+      y = this.appendExportSection(doc, "Incoming Match Trend By Source", y, margin, [
+        ["Source", "Incoming", "New Link ID", "Already in MPI", "Match rate"],
+        ...sourceRows.map((row) => [
+          row.sourceSystemName,
+          `${row.incomingRecords}`,
+          formatIngestCountWithPercent(row.newPersonRecords, row.newPersonPercent),
+          formatIngestCountWithPercent(row.alreadyInMpiRecords, row.alreadyInMpiPercent),
+          `${row.alreadyInMpiPercent}%`,
+        ]),
+        [
+          "Total",
+          `${ingestView.totals.incomingRecords}`,
+          formatIngestCountWithPercent(ingestView.totals.newPersonRecords, ingestView.totals.newPersonPercent),
+          formatIngestCountWithPercent(ingestView.totals.alreadyInMpiRecords, ingestView.totals.alreadyInMpiPercent),
+          `${ingestView.totals.alreadyInMpiPercent}%`,
+        ],
+      ]);
+    }
+
+    return y;
+  }
+
   onLookbackChange(value: string): void {
     this.selectedLookbackDays = Number(value);
+    if (this.selectedLinkIdIngestLookbackDays > this.selectedLookbackDays) {
+      this.selectedLinkIdIngestLookbackDays = this.selectedLookbackDays;
+    }
     this.loadReports();
   }
 
@@ -467,6 +661,231 @@ export class ReportsLandingComponent implements OnInit {
     return this.sortItems(filtered, this.sortStates["fragmentation"], (source, key) => this.fragmentationSortValue(source, key));
   }
 
+  linkIdIngestView() {
+    const baseView = buildLinkIdIngestView(
+      this.dashboard.linkage.linkIdIngestTrend || [],
+      this.selectedLinkIdIngestSources,
+    );
+
+    return filterLinkIdIngestViewByLookback(baseView, this.selectedLinkIdIngestLookbackDays);
+  }
+
+  linkIdIngestSourceOptions(): string[] {
+    return extractLinkIdIngestSourceOptions(this.dashboard.linkage.linkIdIngestTrend || []);
+  }
+
+  linkIdIngestFilteredSourceOptions(): string[] {
+    const search = this.linkIdIngestSourceSearch.trim().toLowerCase();
+    const options = this.linkIdIngestSourceOptions();
+    if (!search) {
+      return options;
+    }
+
+    return options.filter((source) => source.toLowerCase().includes(search));
+  }
+
+  linkIdIngestRows(): LinkIdIngestDailyRow[] {
+    const rows = this.linkIdIngestView().dailyRows;
+    return this.sortItems(rows, this.sortStates["linkIdIngest"], (row, key) => this.linkIdIngestSortValue(row, key));
+  }
+
+  linkIdIngestPagedRows(): LinkIdIngestDailyRow[] {
+    return paginateItems(
+      this.linkIdIngestRows(),
+      this.linkIdIngestDayPageIndex,
+      this.linkIdIngestPageSize,
+    ).pageItems;
+  }
+
+  linkIdIngestDayPagerLabel(): string {
+    return this.pagerLabel(this.linkIdIngestRows().length, this.linkIdIngestDayPageIndex, "days");
+  }
+
+  linkIdIngestSourceRows(): LinkIdIngestSourceRow[] {
+    const lookbackRows = filterTrendRowsByLookback(
+      this.dashboard.linkage.linkIdIngestTrend || [],
+      this.selectedLinkIdIngestLookbackDays,
+    );
+    const rows = buildLinkIdIngestSourceRows(lookbackRows, this.selectedLinkIdIngestSources);
+    return this.sortItems(
+      rows,
+      this.sortStates["linkIdIngestSource"],
+      (row, key) => this.linkIdIngestSourceSortValue(row, key),
+    );
+  }
+
+  linkIdIngestPagedSourceRows(): LinkIdIngestSourceRow[] {
+    return paginateItems(
+      this.linkIdIngestSourceRows(),
+      this.linkIdIngestSourcePageIndex,
+      this.linkIdIngestPageSize,
+    ).pageItems;
+  }
+
+  linkIdIngestSourcePagerLabel(): string {
+    return this.pagerLabel(this.linkIdIngestSourceRows().length, this.linkIdIngestSourcePageIndex, "sources");
+  }
+
+  linkIdIngestChartData(): LinkIdIngestChartPoint[] {
+    return this.linkIdIngestChartPoints;
+  }
+
+  linkIdIngestHasData(): boolean {
+    return this.selectedLinkIdIngestSources.length > 0
+      && this.linkIdIngestView().totals.incomingRecords > 0;
+  }
+
+  linkIdIngestHasNoSourcesSelected(): boolean {
+    return this.linkIdIngestSourceOptions().length > 0
+      && this.selectedLinkIdIngestSources.length === 0;
+  }
+
+  showLinkIdIngestBySource(): boolean {
+    return this.linkIdIngestHasData() && this.selectedLinkIdIngestSources.length !== 1;
+  }
+
+  isLinkIdIngestAllSourcesSelected(): boolean {
+    const options = this.linkIdIngestSourceOptions();
+    return options.length > 0
+      && this.selectedLinkIdIngestSources.length === options.length
+      && options.every((source) => this.selectedLinkIdIngestSources.includes(source));
+  }
+
+  linkIdIngestSourceFilterLabel(): string {
+    if (this.isLinkIdIngestAllSourcesSelected()) {
+      return "All sources";
+    }
+
+    if (this.selectedLinkIdIngestSources.length === 0) {
+      return "No sources";
+    }
+
+    if (this.selectedLinkIdIngestSources.length <= 3) {
+      return this.selectedLinkIdIngestSources.join(", ");
+    }
+
+    return `${this.selectedLinkIdIngestSources.length} sources`;
+  }
+
+  linkIdIngestSummaryHeadline(): string {
+    const totals = this.linkIdIngestView().totals;
+    const lookbackLabel = `${this.selectedLinkIdIngestLookbackDays} days`;
+    if (this.isLinkIdIngestAllSourcesSelected()) {
+      return `${totals.incomingRecords} records in the last ${lookbackLabel}`;
+    }
+
+    return `${totals.incomingRecords} records from ${this.linkIdIngestSourceFilterLabel()} in the last ${lookbackLabel}`;
+  }
+
+  onLinkIdIngestSelectAllChange(checked: boolean): void {
+    this.selectedLinkIdIngestSources = checked ? [...this.linkIdIngestSourceOptions()] : [];
+    this.resetLinkIdIngestPages();
+    this.refreshLinkIdIngestChartData();
+  }
+
+  onLinkIdIngestSourceToggle(source: string, checked: boolean): void {
+    if (checked) {
+      if (!this.selectedLinkIdIngestSources.includes(source)) {
+        this.selectedLinkIdIngestSources = [...this.selectedLinkIdIngestSources, source];
+      }
+    } else {
+      this.selectedLinkIdIngestSources = this.selectedLinkIdIngestSources.filter((item) => item !== source);
+    }
+
+    this.resetLinkIdIngestPages();
+    this.refreshLinkIdIngestChartData();
+  }
+
+  isLinkIdIngestSourceSelected(source: string): boolean {
+    return this.selectedLinkIdIngestSources.includes(source);
+  }
+
+  toggleLinkIdIngestSourceMenu(): void {
+    this.linkIdIngestSourceMenuOpen = !this.linkIdIngestSourceMenuOpen;
+    if (!this.linkIdIngestSourceMenuOpen) {
+      this.linkIdIngestSourceSearch = "";
+    }
+  }
+
+  closeLinkIdIngestSourceMenu(): void {
+    this.linkIdIngestSourceMenuOpen = false;
+    this.linkIdIngestSourceSearch = "";
+  }
+
+  onLinkIdIngestSourceMenuFocusOut(event: FocusEvent): void {
+    const nextTarget = event.relatedTarget as Node | null;
+    const currentTarget = event.currentTarget as HTMLElement | null;
+    if (currentTarget && nextTarget && currentTarget.contains(nextTarget)) {
+      return;
+    }
+
+    this.closeLinkIdIngestSourceMenu();
+  }
+
+  onLinkIdIngestLookbackChange(value: number): void {
+    const days = Number(value);
+    this.selectedLinkIdIngestLookbackDays = days;
+    this.resetLinkIdIngestPages();
+    this.refreshLinkIdIngestChartData();
+
+    if (days > this.selectedLookbackDays) {
+      this.selectedLookbackDays = days;
+      this.loadReports();
+    }
+  }
+
+  canGoLinkIdIngestDayPrev(): boolean {
+    return this.linkIdIngestDayPageIndex > 0;
+  }
+
+  canGoLinkIdIngestDayNext(): boolean {
+    return this.linkIdIngestDayPageIndex < this.pageCountFor(this.linkIdIngestRows().length) - 1;
+  }
+
+  goLinkIdIngestDayPrev(): void {
+    if (this.canGoLinkIdIngestDayPrev()) {
+      this.linkIdIngestDayPageIndex -= 1;
+    }
+  }
+
+  goLinkIdIngestDayNext(): void {
+    if (this.canGoLinkIdIngestDayNext()) {
+      this.linkIdIngestDayPageIndex += 1;
+    }
+  }
+
+  canGoLinkIdIngestSourcePrev(): boolean {
+    return this.linkIdIngestSourcePageIndex > 0;
+  }
+
+  canGoLinkIdIngestSourceNext(): boolean {
+    return this.linkIdIngestSourcePageIndex < this.pageCountFor(this.linkIdIngestSourceRows().length) - 1;
+  }
+
+  goLinkIdIngestSourcePrev(): void {
+    if (this.canGoLinkIdIngestSourcePrev()) {
+      this.linkIdIngestSourcePageIndex -= 1;
+    }
+  }
+
+  goLinkIdIngestSourceNext(): void {
+    if (this.canGoLinkIdIngestSourceNext()) {
+      this.linkIdIngestSourcePageIndex += 1;
+    }
+  }
+
+  formatIngestDate(value: string): string {
+    if (!value || value === "total") {
+      return "Total";
+    }
+
+    return new Date(`${value}T00:00:00`).toLocaleDateString();
+  }
+
+  formatIngestBucket(count: number, percent: number): string {
+    return formatIngestCountWithPercent(count, percent);
+  }
+
   recentFileRows(): BatchFileRow[] {
     const filtered = this.filterItems(
       this.dashboard.batchIntake.files,
@@ -601,13 +1020,20 @@ export class ReportsLandingComponent implements OnInit {
     const current = this.sortStates[table];
     if (!current || current.key !== key) {
       this.sortStates[table] = { key, direction: "asc" };
-      return;
+    } else {
+      this.sortStates[table] = {
+        key,
+        direction: current.direction === "asc" ? "desc" : "asc",
+      };
     }
 
-    this.sortStates[table] = {
-      key,
-      direction: current.direction === "asc" ? "desc" : "asc",
-    };
+    if (table === "linkIdIngest") {
+      this.linkIdIngestDayPageIndex = 0;
+    }
+
+    if (table === "linkIdIngestSource") {
+      this.linkIdIngestSourcePageIndex = 0;
+    }
   }
 
   sortIndicator(table: string, key: string): string {
@@ -645,6 +1071,73 @@ export class ReportsLandingComponent implements OnInit {
 
   trackByLinkOperation(_: number, item: LinkIdOperationRow): string {
     return `${item.requestDateTime}-${item.trackingId}-${item.operationType}-${item.affectedLinkIds}`;
+  }
+
+  trackByIngestDate(_: number, item: LinkIdIngestDailyRow): string {
+    return item.date;
+  }
+
+  trackByIngestSource(_: number, item: LinkIdIngestSourceRow): string {
+    return item.sourceSystemName;
+  }
+
+  private syncLinkIdIngestSourceSelection(previouslyAllSelected: boolean): void {
+    const options = extractLinkIdIngestSourceOptions(this.dashboard.linkage.linkIdIngestTrend || []);
+    this.selectedLinkIdIngestSources = syncSelectedSources(
+      this.selectedLinkIdIngestSources,
+      options,
+      previouslyAllSelected,
+      !this.linkIdIngestSourcesInitialized,
+    );
+    this.linkIdIngestSourcesInitialized = true;
+    this.resetLinkIdIngestPages();
+    this.refreshLinkIdIngestChartData();
+  }
+
+  private refreshLinkIdIngestChartData(): void {
+    const view = this.linkIdIngestView();
+    if (!view.dailyRows.length || this.selectedLinkIdIngestSources.length === 0) {
+      this.linkIdIngestChartPoints = [];
+      return;
+    }
+
+    const includeBreakdown = this.selectedLinkIdIngestSources.length !== 1;
+    const lookbackRows = filterTrendRowsByLookback(
+      this.dashboard.linkage.linkIdIngestTrend || [],
+      this.selectedLinkIdIngestLookbackDays,
+    );
+
+    this.linkIdIngestChartPoints = buildLinkIdIngestChartData(
+      view.dailyRows,
+      lookbackRows,
+      this.selectedLinkIdIngestSources,
+      includeBreakdown,
+    );
+  }
+
+  private isLinkIdIngestAllSourcesSelectedAgainst(options: string[], selected: string[]): boolean {
+    return options.length > 0
+      && selected.length === options.length
+      && options.every((source) => selected.includes(source));
+  }
+
+  private resetLinkIdIngestPages(): void {
+    this.linkIdIngestDayPageIndex = 0;
+    this.linkIdIngestSourcePageIndex = 0;
+  }
+
+  private pageCountFor(totalCount: number): number {
+    return totalCount === 0 ? 0 : Math.ceil(totalCount / this.linkIdIngestPageSize);
+  }
+
+  private pagerLabel(totalCount: number, pageIndex: number, unit: string): string {
+    if (totalCount === 0) {
+      return `Showing 0 of 0 ${unit}`;
+    }
+
+    const start = pageIndex * this.linkIdIngestPageSize + 1;
+    const end = Math.min(totalCount, (pageIndex + 1) * this.linkIdIngestPageSize);
+    return `Showing ${start}–${end} of ${totalCount} ${unit}`;
   }
 
   private filterItems<T>(items: T[], search: string, stringify: (item: T) => string): T[] {
@@ -703,6 +1196,27 @@ export class ReportsLandingComponent implements OnInit {
       case "identitiesInSharedLinkIds": return source.identitiesInSharedLinkIds;
       case "fragmentationRate": return source.fragmentationRate;
       default: return source.sourceSystemName;
+    }
+  }
+
+  private linkIdIngestSortValue(row: LinkIdIngestDailyRow, key: string): string | number {
+    switch (key) {
+      case "incomingRecords": return row.incomingRecords;
+      case "newPersonRecords": return row.newPersonRecords;
+      case "alreadyInMpiRecords": return row.alreadyInMpiRecords;
+      case "newPersonPercent": return row.newPersonPercent;
+      case "alreadyInMpiPercent": return row.alreadyInMpiPercent;
+      default: return row.date;
+    }
+  }
+
+  private linkIdIngestSourceSortValue(row: LinkIdIngestSourceRow, key: string): string | number {
+    switch (key) {
+      case "incomingRecords": return row.incomingRecords;
+      case "newPersonRecords": return row.newPersonRecords;
+      case "alreadyInMpiRecords": return row.alreadyInMpiRecords;
+      case "alreadyInMpiPercent": return row.alreadyInMpiPercent;
+      default: return row.sourceSystemName;
     }
   }
 
@@ -908,6 +1422,7 @@ export class ReportsLandingComponent implements OnInit {
         multiSourceLinkDetails: [],
         recentActivity: [],
         highestFragmentationSources: [],
+        linkIdIngestTrend: [],
       },
       batchIntake: {
         totalFiles: 0,

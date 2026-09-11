@@ -117,6 +117,19 @@ public class MpiLinkageEffectivenessReport
     public List<LinkClusterRow> MultiSourceLinkDetails { get; set; } = [];
     public List<OperationTrendPoint> RecentActivity { get; set; } = [];
     public List<SourceFragmentationRow> HighestFragmentationSources { get; set; } = [];
+    public List<LinkIdIngestTrendRow> LinkIdIngestTrend { get; set; } = [];
+}
+
+/// <summary>
+/// Represents first-time identity ingest counts by day and source system.
+/// </summary>
+public class LinkIdIngestTrendRow
+{
+    public DateTime Date { get; set; }
+    public string SourceSystemName { get; set; } = string.Empty;
+    public int IncomingRecords { get; set; }
+    public int NewPersonRecords { get; set; }
+    public int AlreadyInMpiRecords { get; set; }
 }
 
 /// <summary>
