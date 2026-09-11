@@ -90,6 +90,7 @@ public class Startup( IConfiguration configuration )
         services.AddDbContext(Configuration);
         services.AddScoped<IAdminMetricsService, AdminMetricsService>();
         services.AddScoped<IAdminUsageMetricsService, AdminUsageMetricsService>();
+        services.AddScoped<IAdminApiTrafficService, AdminApiTrafficService>();
         services.AddScoped<IAdminReportsService, AdminReportsService>();
         services.AddScoped<IAdminOnboardedSystemService, AdminOnboardedSystemService>();
     }

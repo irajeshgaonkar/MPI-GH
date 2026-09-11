@@ -860,7 +860,18 @@ public class AdminReportsService( HcaDbContext dbContext ) : IAdminReportsServic
     private static DateTime GetDateTime(DbDataReader reader, string columnName)
     {
         var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? DateTime.MinValue : Convert.ToDateTime(reader.GetValue(ordinal));
+        if (reader.IsDBNull(ordinal))
+        {
+            return DateTime.MinValue;
+        }
+
+        var value = reader.GetValue(ordinal);
+        return value switch
+        {
+            DateTime dateTime => dateTime,
+            DateOnly dateOnly => dateOnly.ToDateTime(TimeOnly.MinValue),
+            _ => Convert.ToDateTime(value)
+        };
     }
 
     private static List<string> SplitPipeDelimited(string value)

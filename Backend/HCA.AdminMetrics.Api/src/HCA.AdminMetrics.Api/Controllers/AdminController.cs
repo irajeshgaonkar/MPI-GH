@@ -11,6 +11,7 @@ namespace HCA.AdminMetrics.Api.Controllers;
 /// </summary>
 /// <param name="adminMetricsService">The MPI Health metrics service.</param>
 /// <param name="adminUsageMetricsService">The usage metrics service.</param>
+/// <param name="adminApiTrafficService">The API traffic analytics service.</param>
 /// <param name="adminReportsService">The reports service.</param>
 /// <param name="adminOnboardedSystemService">The onboarded system service.</param>
 [ApiController]
@@ -19,6 +20,7 @@ namespace HCA.AdminMetrics.Api.Controllers;
 public class AdminController(
     IAdminMetricsService adminMetricsService,
     IAdminUsageMetricsService adminUsageMetricsService,
+    IAdminApiTrafficService adminApiTrafficService,
     IAdminReportsService adminReportsService,
     IAdminOnboardedSystemService adminOnboardedSystemService ) : ControllerBase
 {
@@ -98,6 +100,68 @@ public class AdminController(
     public async Task<IActionResult> GetUsageMetrics([FromQuery] int? lookbackHours, CancellationToken cancellationToken)
     {
         return Ok(await adminUsageMetricsService.GetUsageMetricsAsync(lookbackHours, cancellationToken));
+    }
+
+    /// <summary>
+    /// Gets API call counts bucketed by day.
+    /// </summary>
+    [HttpGet("api-traffic/calls-per-day")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Calls per day", typeof(Models.AdminApiTrafficMetricResponse<Models.AdminApiTrafficDayCount>))]
+    public async Task<IActionResult> GetApiTrafficCallsPerDay(
+        [FromQuery] int? lookbackHours,
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await adminApiTrafficService.GetCallsPerDayAsync(lookbackHours, refresh, cancellationToken));
+    }
+
+    /// <summary>
+    /// Gets the top API endpoint paths by call volume.
+    /// </summary>
+    [HttpGet("api-traffic/top-endpoints")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Top endpoints", typeof(Models.AdminApiTrafficMetricResponse<Models.AdminApiTrafficEndpointCount>))]
+    public async Task<IActionResult> GetApiTrafficTopEndpoints(
+        [FromQuery] int? lookbackHours,
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await adminApiTrafficService.GetTopEndpointsAsync(lookbackHours, refresh, cancellationToken));
+    }
+
+    /// <summary>
+    /// Gets the busiest hours of the day by API call volume (fixed last-24-hours window).
+    /// </summary>
+    [HttpGet("api-traffic/busiest-hours")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Busiest hours", typeof(Models.AdminApiTrafficMetricResponse<Models.AdminApiTrafficHourCount>))]
+    public async Task<IActionResult> GetApiTrafficBusiestHours(
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await adminApiTrafficService.GetBusiestHoursAsync(refresh, cancellationToken));
+    }
+
+    /// <summary>
+    /// Gets the busiest days by API call volume (fixed last-30-days window).
+    /// </summary>
+    [HttpGet("api-traffic/busiest-days")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Busiest days", typeof(Models.AdminApiTrafficMetricResponse<Models.AdminApiTrafficDayCount>))]
+    public async Task<IActionResult> GetApiTrafficBusiestDays(
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await adminApiTrafficService.GetBusiestDaysAsync(refresh, cancellationToken));
+    }
+
+    /// <summary>
+    /// Gets monthly API call totals for the fixed last-six-months window.
+    /// </summary>
+    [HttpGet("api-traffic/busiest-months")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Busiest months", typeof(Models.AdminApiTrafficMetricResponse<Models.AdminApiTrafficMonthCount>))]
+    public async Task<IActionResult> GetApiTrafficBusiestMonths(
+        [FromQuery] bool refresh,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await adminApiTrafficService.GetBusiestMonthsAsync(refresh, cancellationToken));
     }
 
     /// <summary>

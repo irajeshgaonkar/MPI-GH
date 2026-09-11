@@ -48,6 +48,11 @@ public class AdminMetricsOptions
     /// Gets or sets the usage metrics query options.
     /// </summary>
     public AdminUsageMetricsOptions UsageMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the API traffic analytics query options.
+    /// </summary>
+    public AdminApiTrafficOptions ApiTraffic { get; set; } = new();
 }
 
 /// <summary>
@@ -166,6 +171,67 @@ public class AdminUsageMetricsOptions
     /// Gets or sets the CloudWatch Logs Insights query string.
     /// </summary>
     public string QueryString { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Represents configuration for API traffic analytics CloudWatch Logs Insights queries.
+/// </summary>
+public class AdminApiTrafficOptions
+{
+    /// <summary>
+    /// Gets or sets the default lookback window in hours.
+    /// </summary>
+    public int LookbackHours { get; set; } = 24;
+
+    /// <summary>
+    /// Gets or sets the polling interval in milliseconds while waiting for query completion.
+    /// </summary>
+    public int PollIntervalMilliseconds { get; set; } = 1000;
+
+    /// <summary>
+    /// Gets or sets the query timeout in seconds.
+    /// </summary>
+    public int QueryTimeoutSeconds { get; set; } = 45;
+
+    /// <summary>
+    /// Gets or sets the maximum number of rows to request per query.
+    /// </summary>
+    public int Limit { get; set; } = 200;
+
+    /// <summary>
+    /// Gets or sets how long successful metric responses are cached in memory (seconds).
+    /// </summary>
+    public int CacheSeconds { get; set; } = 600;
+
+    /// <summary>
+    /// Gets or sets the CloudWatch Logs log group name.
+    /// </summary>
+    public string LogGroupName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Insights query for API calls per day.
+    /// </summary>
+    public string CallsPerDayQuery { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Insights query for top API endpoints.
+    /// </summary>
+    public string TopEndpointsQuery { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Insights query for busiest hours.
+    /// </summary>
+    public string BusiestHoursQuery { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Insights query for busiest days.
+    /// </summary>
+    public string BusiestDaysQuery { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Insights query for busiest months over the fixed six-month window.
+    /// </summary>
+    public string BusiestMonthsQuery { get; set; } = string.Empty;
 }
 
 /// <summary>
