@@ -81,6 +81,7 @@ public class Startup( IConfiguration configuration )
 
         services.AddCors();
         services.AddHttpContextAccessor();
+        services.AddMemoryCache();
         services.AddConsoleLogging();
         services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
         services.AddAWSService<IAmazonCloudWatch>();
