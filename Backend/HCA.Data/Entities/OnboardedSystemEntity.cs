@@ -19,14 +19,14 @@ namespace HCA.Data.Entities
         /// </summary>
         [Column("source_system_name")]
         [Required]
-        public string SourceSystemName { get; set; }
+        public string SourceSystemName { get; set; } = string.Empty;
 
         /// <summary>
         /// The agency associated with the onboarded system
         /// </summary>
         [Column("agency_name")]
         [Required]
-        public string AgencyName { get; set; }
+        public string AgencyName { get; set; } = string.Empty;
 
         /// <summary>
         /// The tenant that owns or uses the onboarded system
@@ -52,7 +52,7 @@ namespace HCA.Data.Entities
         /// </summary>
         [Column("created_by")]
         [Required]
-        public string CreatedBy { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
 
         /// <summary>
         /// The timestamp of when the record was created
@@ -103,7 +103,8 @@ namespace HCA.Data.Entities
         [Column("enable_notification")]
         public bool? EnableNotification { get; set; }
 
-        public virtual ICollection<DataShareMappingEntity> SourceSystemMappings { get; set; } 
-        public virtual ICollection<DataShareMappingEntity> AllowedSystemMappings { get; set; }
+        public virtual ICollection<DataShareMappingEntity> SourceSystemMappings { get; set; } = new List<DataShareMappingEntity>();
+
+        public virtual ICollection<DataShareMappingEntity> AllowedSystemMappings { get; set; } = new List<DataShareMappingEntity>();
     }
 }
