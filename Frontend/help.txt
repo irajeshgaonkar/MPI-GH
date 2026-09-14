@@ -1,0 +1,22 @@
+
+Build at: 2026-09-14T21:18:04.650Z - Hash: a2926b3f269a27d3 - Time: 25966ms
+
+Error: src/app/app.component.html:3:1 - error NG8001: 'app-reports-export-modal' is not a known element:
+1. If 'app-reports-export-modal' is an Angular component, then verify that it is part of this module.
+2. If 'app-reports-export-modal' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the '@NgModule.schemas' of this component to suppress this message.
+
+3 <app-reports-export-modal></app-reports-export-modal>
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  src/app/app.component.ts:5:16
+    5   templateUrl: './app.component.html',
+                     ~~~~~~~~~~~~~~~~~~~~~~
+    Error occurs in the template of component AppComponent.
+
+
+
+
+** Angular Live Development Server is listening on localhost:4200, open your browser on http://localhost:4200/ **
+
+
+× Failed to compile.
