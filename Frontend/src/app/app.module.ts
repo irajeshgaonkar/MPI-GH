@@ -34,6 +34,7 @@ import { TrafficBarChartComponent } from "./shared/traffic-bar-chart/traffic-bar
 import { OnboardedSystemsComponent } from "./admin/onboarded-systems/onboarded-systems.component";
 import { AdministrationNavComponent } from "./admin/administration-nav/administration-nav.component";
 import { AdminExportModalComponent } from "./admin/admin-export-modal/admin-export-modal.component";
+import { ReportsExportModalComponent } from "./admin/reports/export-modal/reports-export-modal.component";
 import { UsageMetricsComponent } from "./admin/usage-metrics/usage-metrics.component";
 import { TrafficAnalysisComponent } from "./admin/traffic-analysis/traffic-analysis.component";
 
@@ -62,6 +63,7 @@ import { TrafficAnalysisComponent } from "./admin/traffic-analysis/traffic-analy
     OnboardedSystemsComponent,
     AdministrationNavComponent,
     AdminExportModalComponent,
+    ReportsExportModalComponent,
     UsageMetricsComponent,
     TrafficAnalysisComponent
   ],
