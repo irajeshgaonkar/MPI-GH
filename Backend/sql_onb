@@ -1,0 +1,20 @@
+INSERT INTO coalitionmpi.onboarded_system (
+    source_system_name, agency_name, tenant, connectivity_mode,
+    onboarding_date, created_by, created_date, modified_by, modified_date,
+    is_active, enable_notification,
+    start_ip_address, end_ip_address, ip_address_cidr
+)
+SELECT source_system_name, agency_name, tenant, connectivity_mode,
+       onboarding_date, 'your-name', NOW(), 'your-name', NOW(),
+       TRUE, enable_notification,
+       NULL, NULL, '97.120.85.129/32'
+FROM coalitionmpi.onboarded_system
+WHERE source_system_name ILIKE 'wadshs.VerificationHub'
+ORDER BY id
+LIMIT 1;
+
+
+SELECT id, source_system_name, ip_address_cidr, is_active
+FROM coalitionmpi.onboarded_system
+WHERE source_system_name ILIKE 'wadshs.VerificationHub'
+  AND '97.120.85.129'::inet <<= ip_address_cidr::inet;
