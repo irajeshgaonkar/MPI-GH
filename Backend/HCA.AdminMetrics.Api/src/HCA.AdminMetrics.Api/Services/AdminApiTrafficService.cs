@@ -184,7 +184,6 @@ public class AdminApiTrafficService : IAdminApiTrafficService
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(cacheSeconds)
                 });
-            _logger.LogDebug("API traffic cache store for '{CacheKey}' ({CacheSeconds}s).", cacheKey, cacheSeconds);
         }
 
         return response;
@@ -268,7 +267,7 @@ public class AdminApiTrafficService : IAdminApiTrafficService
         }
     }
 
-    private static IReadOnlyList<AdminApiTrafficDayCount> MapDayCounts(
+    private static List<AdminApiTrafficDayCount> MapDayCounts(
         List<List<ResultField>> results,
         bool byApiCalls)
     {
