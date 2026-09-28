@@ -1,0 +1,49 @@
+<div class="admin-export-modal" *ngIf="dialogOpen" role="dialog" aria-modal="true" aria-labelledby="admin-export-title">
+  <div class="admin-export-modal__backdrop" (click)="closeExportDialog()"></div>
+  <div class="admin-export-modal__dialog">
+    <div class="admin-export-modal__header">
+      <div>
+        <h2 id="admin-export-title">Export Administration Report</h2>
+        <p>Select pages to include in one PDF. Lookback applies to usage and traffic tables.</p>
+      </div>
+      <button type="button" class="admin-export-modal__close" (click)="closeExportDialog()" [disabled]="exporting" aria-label="Close export dialog">×</button>
+    </div>
+
+    <div class="admin-export-modal__body">
+      <label class="admin-export-modal__lookback">
+        Lookback
+        <select [(ngModel)]="selectedLookbackHours" [disabled]="exporting">
+          <option *ngFor="let option of lookbackOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label class="admin-export-modal__option admin-export-modal__option--all">
+        <input
+          type="checkbox"
+          [checked]="selectAll"
+          [disabled]="exporting"
+          (change)="toggleSelectAll($any($event.target).checked)" />
+        <span>All</span>
+      </label>
+
+      <div class="admin-export-modal__divider"></div>
+
+      <label class="admin-export-modal__option" *ngFor="let section of sections">
+        <input
+          type="checkbox"
+          [checked]="isSectionSelected(section.id)"
+          [disabled]="exporting"
+          (change)="toggleSection(section.id, $any($event.target).checked)" />
+        <span>{{ section.label }}</span>
+      </label>
+    </div>
+
+    <div class="admin-export-modal__footer">
+      <span class="admin-export-modal__status" *ngIf="exporting">Generating PDF...</span>
+      <button type="button" class="btn btn-outline-secondary" (click)="closeExportDialog()" [disabled]="exporting">Cancel</button>
+      <button type="button" class="btn btn-primary" (click)="runExport()" [disabled]="!canExport()">
+        {{ exporting ? 'Exporting...' : 'Export PDF' }}
+      </button>
+    </div>
+  </div>
+</div>

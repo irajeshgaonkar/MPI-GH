@@ -1,0 +1,80 @@
+info:
+  name: Link Two records - one of the id not available
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{Link}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {  
+        "trackingId": "{{trackingId}}",
+        "content": {
+          "linkToSource": {
+            "name": "{{SourceName1}}",
+            "id": "{{id1}}"
+          },
+          "source": {
+            "name": "{{SourceName2}}",
+            "id": "{{id2}}"
+          }
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("id2");
+
+        bru.setVar("id2", "asdf26-56yh7789-adftgyh780-6578ui99c678");
+    - type: after-response
+      code: |-
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Validate that the success field is false
+        test("Success field is false", function () {
+            expect(jsonData.success).to.eql(false);
+        });
+
+
+        // Validate that the message contains "missing.required.record"
+        test("Message contains 'missing.required.record'", function () {
+            expect(jsonData.message).to.include("missing.required.record");
+        });
+
+        // Validate that errors field is not empty and contains the expected error message
+        test("Errors field contains the expected error message", function () {
+            expect(jsonData.errors).to.not.be.empty;
+            expect(jsonData.errors[0]).to.eql("missing.required.record | Record not found : " + bru.getVar("SourceName2") + ":" + bru.getVar("id2"));
+        });
+
+        // Validate that the content field is an empty object
+        test("Content field is an empty object", function () {
+            expect(jsonData.content).to.be.an("object").that.is.empty;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

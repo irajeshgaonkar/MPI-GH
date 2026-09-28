@@ -1,0 +1,123 @@
+.traffic-bar-chart {
+  background: #fff;
+  border: 1px solid #dae5ef;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(28, 54, 84, 0.06);
+  padding: 20px 22px 16px;
+}
+
+.traffic-bar-chart__head {
+  margin-bottom: 12px;
+}
+
+.traffic-bar-chart__titles h3 {
+  margin: 0;
+  color: #17324d;
+  font-size: 18px;
+}
+
+.traffic-bar-chart__titles p {
+  margin: 6px 0 0;
+  color: #62778c;
+  font-size: 13px;
+}
+
+.traffic-bar-chart__body {
+  position: relative;
+  width: 100%;
+}
+
+.traffic-bar-chart__tooltip {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #c5daf0;
+  border-radius: 12px;
+  background: #fff;
+  color: #30485f;
+  font-size: 12px;
+  box-shadow: 0 10px 24px rgba(28, 54, 84, 0.16);
+  transform: translate(-50%, -100%);
+  margin-top: -10px;
+  pointer-events: none;
+}
+
+.traffic-bar-chart__tooltip strong {
+  color: #17324d;
+  font-size: 13px;
+}
+
+.traffic-bar-chart__svg {
+  width: 100%;
+  height: 320px;
+  display: block;
+}
+
+.traffic-bar-chart__grid {
+  stroke: #e8eef5;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+
+.traffic-bar-chart__axis {
+  stroke: #c9d6e4;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.traffic-bar-chart__y-label,
+.traffic-bar-chart__x-label {
+  fill: #6b7f93;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.traffic-bar-chart__x-label {
+  font-size: 10px;
+}
+
+.traffic-bar-chart__axis-title {
+  fill: #4a6278;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.traffic-bar-chart__bar {
+  transition: fill-opacity 0.15s ease;
+}
+
+.traffic-bar-chart__hitbox {
+  cursor: pointer;
+  outline: none;
+}
+
+.traffic-bar-chart__hitbox:hover,
+.traffic-bar-chart__hitbox--active {
+  fill: rgba(11, 132, 243, 0.08);
+}
+
+.traffic-bar-chart__hitbox:focus-visible {
+  fill: rgba(11, 132, 243, 0.12);
+  stroke: #0b84f3;
+  stroke-width: 2;
+}
+
+.traffic-bar-chart__empty {
+  padding: 48px 12px;
+  color: #6f8294;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .traffic-bar-chart__svg {
+    height: 280px;
+  }
+}

@@ -1,0 +1,79 @@
+info:
+  name: Unlink Two records - one of the id not available
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{Unlink}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      { 
+        "trackingId": "{{trackingId}}",
+        "content": {
+          "unlinkFromSource": {
+            "name": "{{SourceName1}}",
+            "id": "{{id1}}"
+          },
+          "source": {
+            "name": "{{SourceName2}}",
+            "id": "{{id2}}"
+          }
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("id2");
+
+        bru.setVar("id2", "asdf26-56yh7789-adftgyh780-6578ui99c678");
+    - type: after-response
+      code: |-
+        // Validate response status is 200 OK
+        test("Status code is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate response time is within 200ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Validate response body", function () {
+            var jsonData = res.getBody();
+
+            // Validate content is an empty object
+            expect(jsonData.content).to.be.an('object').that.is.empty;
+
+            // Validate trackingId
+            expect(jsonData.trackingId).to.eql(bru.getVar("trackingId"));
+
+            // Validate success is false
+            expect(jsonData.success).to.be.false;
+
+            // Validate retryableError is false
+            expect(jsonData.retryableError).to.be.false;
+
+            // Validate message field
+            expect(jsonData.message).to.eql("operation.failed | Requested operation failed with following error : no.action.taken | Explanation : One or more source:nativeId combinations not in Link DB");
+
+            // Validate errors array
+           
+            expect(jsonData.errors[0]).to.eql("operation.failed | Requested operation failed with following error : no.action.taken | Explanation : One or more source:nativeId combinations not in Link DB");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

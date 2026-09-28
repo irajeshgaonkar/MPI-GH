@@ -1,0 +1,142 @@
+info:
+  name: Leading/trailing whitespaces
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Unlink}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{ \r
+
+      \  \"trackingId\": \"{{trackingId}}\",\r
+
+      \  \"content\": {\r
+
+      \    \"unlinkFromSource\": {\r
+
+      \      \"name\": \"{{SourceName1}}\",\r
+
+      \      \"id\": \"{{id1}}\"\r
+
+      \    },\r
+
+      \    \"source\": {\r
+
+      \      \"name\": \"{{SourceName2}}\",\r
+
+      \      \"id\": \"{{id2}}\"\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setEnvVar("id1","eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setEnvVar("id2", "af82fa88-5bef-45ba-a562-3ffbebdb830e");
+        bru.setEnvVar("SourceName1", "dshs.bams");
+        bru.setEnvVar("SourceName2", "dshs.bams");
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade")
+        var Url = bru.getGlobalEnvVar("URL");
+        var link = bru.getGlobalEnvVar("Link");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + link;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+
+                "trackingId": bru.getEnvVar("trackingId"),
+                "content": {
+                    "linkToSource": {
+                       "name": bru.getEnvVar("SourceName1"),
+                        "id": bru.getEnvVar("id1")
+                    },
+                    "source": {
+                        "name": bru.getEnvVar("SourceName2"),
+                        "id": bru.getEnvVar("id2")
+                    }
+                }
+            })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+
+
+        bru.deleteEnvVar("SourceName1");
+        bru.deleteEnvVar("SourceName2");
+        bru.deleteEnvVar("id1");
+        bru.deleteEnvVar("id2");
+
+        bru.setVar("id1"," eeab43c9-b118-405c-b393-083fd2ed5755 ");
+        bru.setVar("id2", "af82fa88-5bef-45ba-a562-3ffbebdb830e");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+    - type: after-response
+      code: |-
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Parse the response body
+        var jsonData = res.getBody();
+        bru.setEnvVar("link_id", "67bf663a6d5f0d47b68c5902");
+        // Validate that the environment variable 'link_id' is present and not null or undefined
+        test("Check if 'link_id' is present in the environment", function () {
+            expect(jsonData.content.unlinkedFromId).to.eql(bru.getEnvVar("link_id"));
+            expect(jsonData.content.unlinkedId).to.exist;
+        });
+
+        var expectedUnlinkFromSource = bru.getVar("id1") ? bru.getVar("id1").trim() : null;
+
+
+        // Validate that linkToSource.id is equal to the environment variable
+        test("Validate unlinkedfromsource.id matches the variable", function () {
+            expect(jsonData.content.unlinkedFromSource.id).to.eql(expectedUnlinkFromSource);
+        });
+
+        // Validate that the errors field is null
+        test("Errors field is null", function () {
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

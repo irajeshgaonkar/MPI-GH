@@ -1,0 +1,125 @@
+info:
+  name: Same sourceID
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{URL}}{{Unlink}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{ \r
+
+      \  \"trackingId\": \"{{trackingId}}\",\r
+
+      \  \"content\": {\r
+
+      \    \"unlinkFromSource\": {\r
+
+      \      \"name\": \"{{SourceName1}}\",\r
+
+      \      \"id\": \"{{id1}}\"\r
+
+      \    },\r
+
+      \    \"source\": {\r
+
+      \      \"name\": \"{{SourceName2}}\",\r
+
+      \      \"id\": \"{{id2}}\"\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: "bru.setVar(\"SourceName1\", \"dshs.bams\");\r
+
+        bru.setVar(\"SourceName2\", \"dshs.bams\");\r
+
+        \r
+
+        // Function to generate a random string of a specified length\r
+
+        function generateRandomString(length) {\r
+
+        \    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\r
+
+        \    let result = '';\r
+
+        \    for (let i = 0; i < length; i++) {\r
+
+        \        result += characters.charAt(Math.floor(Math.random() * characters.length));\r
+
+        \    }\r
+
+        \    return result;\r
+
+        }\r
+
+        \r
+
+        // Generate a random string of exactly 100 characters\r
+
+        const id = generateRandomString(100);\r
+
+        \r
+
+        \r
+
+        // Assign the random string to SourceId\r
+
+        bru.setVar('id1', id);\r
+
+        bru.setVar('id2', id);"
+    - type: after-response
+      code: |-
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200); // Adjust the status code based on actual API response
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate that the `success` field is false
+        test("Validate 'success' is false", function () {
+            expect(jsonData.success).to.eql(false);
+        });
+
+
+        // Validate the `message` field contains the expected text
+        test("Validate 'message' field", function () {
+            expect(jsonData.message).to.include("invalid.request | The request was invalid: can't unlink a source from itself");
+        });
+
+        // Validate the `errors` array and its content
+        test("Validate 'errors' array", function () {
+            expect(jsonData.errors).to.be.an("array").that.is.not.empty;
+            expect(jsonData.errors[0]).to.include("invalid.request | The request was invalid: can't unlink a source from itself");
+        });
+
+        bru.setEnvVar("id1","eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setEnvVar("id2", "49d64ae7-5dd3-49fe-84ac-c1803058e075");
+        bru.setEnvVar("SourceName1", "dshs.bams");
+        bru.setEnvVar("SourceName2", "dshs.bams");;
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

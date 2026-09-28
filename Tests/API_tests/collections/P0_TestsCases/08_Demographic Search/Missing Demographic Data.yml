@@ -1,0 +1,153 @@
+info:
+  name: Missing Demographic Data
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{DemographicSearch}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+              "matchScoreThreshold": 0.0 ,
+              "maxSearchResults": 10,
+              "identity": {
+                 
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+
+        let email = ""
+        bru.setVar('Email', email);
+
+        let line1 = ""
+        bru.setVar('AddressLine1', line1);
+
+        let line2 = ""
+        bru.setVar('AddressLine2', line2);
+
+        let city = ""
+        bru.setVar('City', city);
+
+        let state = ""
+        bru.setVar('State', state);
+
+        let postalcode = ""
+        bru.setVar('ZipCode', postalcode);
+
+        let firstname = ""
+        bru.setVar('FirstName', firstname);
+
+        let lastname = ""
+        bru.setVar('LastName', lastname);
+
+        let middlename = ""
+        bru.setVar('MiddleName', middlename);
+
+        let suffix = ""
+        bru.setVar('Suffix', suffix);
+
+        let ssn = ""
+        bru.setVar('SSN', ssn);
+
+        let dob = ""
+        bru.setVar('DateOfBirth', dob);
+
+        let gender = ""
+        bru.setVar('Gender', gender);
+
+        let number = ""
+        bru.setVar('Number', number);
+
+        let areacode = ""
+        bru.setVar('AreaCode', areacode);
+
+        let extension = ""
+        bru.setVar('Extension', extension);
+
+        let countrycode = ""
+        bru.setVar('CountryCode', countrycode);
+    - type: after-response
+      code: |-
+        // Validate status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.eql(200); // Replace 200 with your expected status code
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate response body
+        test("Response body is valid", function () {
+            const jsonData = res.getBody();
+
+            // Validate success field
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.content.searchResults).to.be.an('array').that.is.empty;
+            expect(jsonData.retryableError).to.be.false;
+
+            // Validate the message
+            expect(jsonData.message).to.eql("No identity found.");
+
+            // Validate errors array
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

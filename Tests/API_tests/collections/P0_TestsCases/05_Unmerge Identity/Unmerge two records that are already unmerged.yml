@@ -1,0 +1,69 @@
+info:
+  name: Unmerge two records that are already unmerged
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Unmerge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "unmergeFromSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "unmergeSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Validate response body fields", function () {
+            var jsonData = res.getBody();
+
+            // Check for empty content
+            expect(jsonData.content).to.be.an("object").that.is.empty;
+
+            // Validate trackingId and auditId
+            expect(jsonData.trackingId).to.be.a("string").that.is.not.empty;
+          
+            // Validate trackingId
+            expect(jsonData.trackingId).to.eql(bru.getVar("trackingId"));
+
+            // Validate success and retryableError flags
+            expect(jsonData.success).to.eql(false);
+            expect(jsonData.retryableError).to.eql(false);
+
+            // Validate message and errors
+            expect(jsonData.message).to.eql("The unmerge source+nativeID is already in the active/unmerged state");
+            expect(jsonData.errors[0]).to.eql("The unmerge source+nativeID is already in the active/unmerged state");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

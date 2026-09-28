@@ -1,0 +1,108 @@
+info:
+  name: Invalid string Length
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{URL}}{{Unmerge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"unmergeFromSource\": {\r
+
+      \            \"name\": \"{{SourceName1}}\",\r
+
+      \            \"id\": \"{{id1}}\"\r
+
+      \        },\r
+
+      \        \"unmergeSource\": {\r
+
+      \            \"name\": \"{{SourceName2}}\",\r
+
+      \            \"id\": \"{{id2}}\"\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: "bru.setVar(\"SourceName1\", \"dshs.bams\");\r
+
+        bru.setVar(\"SourceName2\", \"dshs.bams\");\r
+
+        \r
+
+        // Function to generate a random string of a specified length\r
+
+        function generateRandomString(length) {\r
+
+        \    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';\r
+
+        \    let result = '';\r
+
+        \    for (let i = 0; i < length; i++) {\r
+
+        \        result += characters.charAt(Math.floor(Math.random() * characters.length));\r
+
+        \    }\r
+
+        \    return result;\r
+
+        }\r
+
+        \r
+
+        // Generate a random string of exactly 100 characters\r
+
+        const id1 = generateRandomString(101);\r
+
+        const id2 = generateRandomString(101);\r
+
+        \r
+
+        // Assign the random string to SourceId\r
+
+        bru.setVar('id1', id1);\r
+
+        bru.setVar('id2', id2);"
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Response body", function () {
+        //     // pm.expect(jsonData).to.have.property("errorCode");
+        //     // pm.expect(jsonData.errorCode).to.eql(null);
+            expect(jsonData.success).to.eql(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

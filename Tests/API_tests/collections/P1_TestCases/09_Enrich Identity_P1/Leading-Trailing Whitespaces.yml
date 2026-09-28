@@ -1,0 +1,222 @@
+info:
+  name: Leading/Trailing Whitespaces
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Enrich}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"responseIdentityFormatNames\": [\"{{RIFN}}\"],\r
+
+      \        \"identity\": {\r
+
+      \            \"addresses\": [\r
+
+      \                {\r
+
+      \                    \"line1\": \"{{AddressLine1}}\",\r
+
+      \                    \"line2\": \"{{AddressLine2}}\",\r
+
+      \                    \"city\": \"{{City}}\",\r
+
+      \                    \"state\": \"{{State}}\",\r
+
+      \                    \"postalCode\": \"{{ZipCode}}\"\r
+
+      \                }\r
+
+      \            ],\r
+
+      \            \"names\": [\r
+
+      \                {\r
+
+      \                    \"first\": \"{{FirstName}}\",\r
+
+      \                    \"last\": \"{{LastName}}\"\r
+
+      \                }\r
+
+      \            ],\r
+
+      \            \"ssns\": [\"{{SSN}}\"],\r
+
+      \            \"genders\": [\r
+
+      \                \"{{Gender}}\"\r
+
+      \            ],\r
+
+      \            \"datesOfBirth\": [\r
+
+      \                \"{{DateOfBirth}}\"\r
+
+      \            ],\r
+
+      \            \"phoneNumbers\": [\r
+
+      \                {\r
+
+      \                    \"number\": \"{{Number}}\",\r
+
+      \                    \"areaCode\": \"{{AreaCode}}\",\r
+
+      \                    \"extension\": \"{{Extension}}\",\r
+
+      \                    \"countryCode\": \"{{CountryCode}}\"\r
+
+      \                }\r
+
+      \            ]\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: "let responseIdentityFormatNames = \"DEFAULT\";\r
+
+        bru.setVar('RIFN',responseIdentityFormatNames);\r
+
+        \r
+
+        \r
+
+        let line1 = \" 422 Farrell Path\"\r
+
+        bru.setVar('AddressLine1', line1);\r
+
+        \r
+
+        let line2 = \"\"\r
+
+        bru.setVar('AddressLine2', line2);\r
+
+        \r
+
+        let city = \" Somerville \"\r
+
+        bru.setVar('City', city);\r
+
+        \r
+
+        let state = \"MA\"\r
+
+        bru.setVar('State', state);\r
+
+        \r
+
+        let postalcode = \"02143\"\r
+
+        bru.setVar('ZipCode', postalcode);\r
+
+        \r
+
+        let firstname = \" Greg \"\r
+
+        bru.setVar('FirstName', firstname);\r
+
+        \r
+
+        let lastname = \"Harris\"\r
+
+        bru.setVar('LastName', lastname);\r
+
+        \r
+
+        let ssn = \"\"\r
+
+        bru.setVar('SSN', ssn);\r
+
+        \r
+
+        let dob = \"1989-05-25\"\r
+
+        bru.setVar('DateOfBirth', dob);\r
+
+        \r
+
+        let gender = \"M\"\r
+
+        bru.setVar('Gender', gender);\r
+
+        \r
+
+        let number = \"\"\r
+
+        bru.setVar('Number', number);\r
+
+        \r
+
+        let areacode = \"\"\r
+
+        bru.setVar('AreaCode', areacode);\r
+
+        \r
+
+        let extension = \"\"\r
+
+        bru.setVar('Extension', extension);\r
+
+        \r
+
+        let countrycode = \"\"\r
+
+        bru.setVar('CountryCode', countrycode);"
+    - type: after-response
+      code: |-
+        var jsonData = res.getBody();
+
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Validate linkId is not empty and is equal to the local variable LinkId
+            test("linkId should not be empty and equal to local variable", function () {
+                expect(jsonData.content.linkId).to.not.be.empty;
+                
+            });
+
+            
+            // Validate success flag, retryableError, message, and errors
+            test("Validate success, retryableError, message, and errors", function () {
+                
+                expect(jsonData.success).to.be.true;
+                expect(jsonData.retryableError).to.be.false;
+                expect(jsonData.message).to.eql("Identity Found!");
+                expect(jsonData.errors).to.be.null;
+            });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,142 @@
+info:
+  name: Empty Response Identity Format Names
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{URL}}{{Enrich}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "responseIdentityFormatNames": ["{{RIFN}}"],
+              "identity": {
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "last": "{{LastName}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+
+        let line1 = "422 Farrell Path"
+        bru.setVar('AddressLine1', line1);
+
+        let line2 = ""
+        bru.setVar('AddressLine2', line2);
+
+        let city = "Somerville"
+        bru.setVar('City', city);
+
+        let state = "MA"
+        bru.setVar('State', state);
+
+        let postalcode = "02143"
+        bru.setVar('ZipCode', postalcode);
+
+        let firstname = "Greg"
+        bru.setVar('FirstName', firstname);
+
+        let lastname = "Harris"
+        bru.setVar('LastName', lastname);
+
+        let ssn = ""
+        bru.setVar('SSN', ssn);
+
+        let dob = "1989-05-25"
+        bru.setVar('DateOfBirth', dob);
+
+        let gender = "M"
+        bru.setVar('Gender', gender);
+
+        let number = ""
+        bru.setVar('Number', number);
+
+        let areacode = ""
+        bru.setVar('AreaCode', areacode);
+
+        let extension = ""
+        bru.setVar('Extension', extension);
+
+        let countrycode = ""
+        bru.setVar('CountryCode', countrycode);
+    - type: after-response
+      code: |-
+        var jsonData = res.getBody();
+
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+
+        // Validate linkId is not empty and is equal to the local variable LinkId
+            test("linkId should not be empty and equal to local variable", function () {
+                expect(jsonData.content.linkId).to.not.be.empty;
+                
+            });
+
+            
+            // Validate success flag, retryableError, message, and errors
+            test("Validate success, retryableError, message, and errors", function () {
+                
+                expect(jsonData.success).to.be.true;
+                expect(jsonData.retryableError).to.be.false;
+                expect(jsonData.message).to.eql("Identity Found!");
+                expect(jsonData.errors).to.be.null;
+            });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

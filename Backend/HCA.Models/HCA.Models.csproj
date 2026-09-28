@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="Verato\" />
+    <None Remove="Requests\" />
+    <None Remove="Enums\" />
+    <None Remove="Verato\Request\" />
+    <None Remove="Verato\Response\" />
+    <None Remove="Request\" />
+    <None Remove="Response\" />
+    <None Remove="SQS\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Enums\" />
+    <Folder Include="SQS\" />
+  </ItemGroup>
+</Project>

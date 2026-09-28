@@ -1,0 +1,73 @@
+info:
+  name: Merge records - one of record has Invalid Source+Native id
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "toSurviveSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "toRetireSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("SourceName2");
+
+        bru.setVar("id2", "asdf26-56yh7789-adftgyh780-6578ui99c678");
+        bru.setVar("SourceName2", "wrdghj.wrd");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+    - type: after-response
+      code: |-
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Validate response body structure", function () {
+            
+            // Validate errorCode is 400
+            expect(jsonData.errorCode).to.eql("400");
+
+            // Validate error message
+            expect(jsonData.message).to.eql("ToSurviveSource and ToRetireSource do not match.");
+
+            // Validate success is false
+            expect(jsonData.success).to.eql(false);
+
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

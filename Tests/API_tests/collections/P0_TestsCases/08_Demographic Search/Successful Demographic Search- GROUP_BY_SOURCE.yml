@@ -1,0 +1,354 @@
+info:
+  name: Successful Demographic Search- GROUP_BY_SOURCE
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{DemographicSearch}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+              "matchScoreThreshold": 0.0 ,
+              "maxSearchResults": 10,
+              "identity": {
+                 
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "GROUP_BY_SOURCE";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+        bru.setVar("SourceName","dshs.bams")
+        bru.setVar("trackingId","testing post for .NetUpgrade")
+        bru.setVar("ProtectedPopulationFlag","N")
+        var sourceId = bru.interpolate('{{$randomUUID}}');
+        bru.setVar('sourceId', sourceId);
+
+        // Function to generate a random SSN in the format XXX-XX-XXXX
+        function generateRandomSSN() {
+            const firstPart = '000';  // First part (3 digits)
+            const secondPart = Math.floor(10 + Math.random() * 90);   // Second part (2 digits)
+            const thirdPart = Math.floor(1000 + Math.random() * 9000); // Third part (4 digits)
+            
+            const ssn = `${firstPart}-${secondPart}-${thirdPart}`;
+            return ssn;
+        }
+
+        // Generate a unique 9-digit SSN in the correct format
+        const uniqueSSN = generateRandomSSN();
+
+        // Set the generated SSN as an environment variable
+        bru.setVar('SSN', uniqueSSN);
+
+        //using predefined varaibles for names
+        var firstName= bru.interpolate('{{$randomFirstName}}');
+        var lastName = bru.interpolate('{{$randomLastName}}');
+        var suffix = bru.interpolate("{{$randomNameSuffix}}");
+        var middleName = bru.interpolate("{{$randomFirstName}}");
+
+        bru.setVar('FirstName', firstName);
+        bru.setVar('MiddleName', middleName);
+        bru.setVar('LastName', lastName);
+        bru.setVar('Suffix', suffix);
+
+        //using predefined varables generating random email
+        var email = bru.interpolate('{{$randomEmail}}');
+        bru.setVar('Email',email);
+
+        // Function to generate a random gender with fewer than 10 characters
+        function generateRandomGender() {
+            const genders = ['Male', 'Female', 'Nonbinary', 'Other'];
+            // Select a random gender from the list
+            const randomGender = genders[Math.floor(Math.random() * genders.length)];
+            return randomGender;
+        }
+
+        // Generate a random gender
+        const gender = generateRandomGender();
+
+        // Set the generated gender as an environment variable
+        bru.setVar('Gender', gender);
+
+        // Function to generate a random date of birth within the past 130 years
+        function generateRandomDOB() {
+            const currentDate = new Date();
+            const minYear = currentDate.getFullYear() - 130; // 130 years ago
+            const randomYear = Math.floor(Math.random() * (currentDate.getFullYear() - minYear + 1)) + minYear; // Random year
+            const randomMonth = Math.floor(Math.random() * 12); // Random month
+            const randomDay = Math.floor(Math.random() * 28) + 1; // Random day (limited to 28 to account for all months)
+
+            const randomDate = new Date(randomYear, randomMonth, randomDay);
+
+            // Format the date in mm/dd/yyyy format
+            const formattedDate = ('0' + (randomDate.getMonth() + 1)).slice(-2) + '/' + 
+                                  ('0' + randomDate.getDate()).slice(-2) + '/' + 
+                                  randomDate.getFullYear();
+
+            return formattedDate;
+        }
+
+        // Generate a random Date of Birth
+        const randomDOB = generateRandomDOB();
+
+        // Set the generated Date of Birth as an environment variable
+        bru.setVar('DateOfBirth', randomDOB);
+
+        var line1 = bru.interpolate('{{$randomStreetAddress}}');
+        var line2 =  bru.interpolate('{{$randomStreetName}}');
+        var city = bru.interpolate('{{$randomCity}}');
+
+        // Set the generated address as variables
+        bru.setVar('AddressLine1', line1);
+        bru.setVar('AddressLine2', line2);
+        bru.setVar('City', city);
+
+        const stateArray = [
+            "NY", "CA", "IL", "TX", "AZ",
+            "PA", "TX", "OH", "IN", "FL",
+            "GA", "MI", "NC", "WA", "NJ"
+        ];
+
+        // Function to get a random element from an array
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        // Generate a random address
+        const address = {
+            state: getRandomElement(stateArray), // Random State
+            zipCode: Math.floor(10000 + Math.random() * 90000).toString() // Random 5-digit Zip Code
+        };
+
+        // Set the generated address as environment variables
+        bru.setVar('State', address.state);
+        bru.setVar('ZipCode', address.zipCode);
+
+        // Function to generate a random number with a given length
+        function generateRandomNumber(length) {
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += Math.floor(Math.random() * 10);
+            }
+            return result;
+        }
+
+        // Function to generate a random phone number
+        function generateRandomPhoneNumber() {
+            return {
+                number: `${generateRandomNumber(3)}-${generateRandomNumber(3)}`, // e.g., "786-987"
+                countryCode: 'USA'
+            };
+        }
+
+        // Generate a random phone number
+        const phoneNumber = generateRandomPhoneNumber();
+
+        // Set the generated phone number as environment variables
+        bru.setVar('Number', phoneNumber.number);
+        bru.setVar('CountryCode', phoneNumber.countryCode);
+
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+
+        //Post identity
+
+        var Url = bru.getGlobalEnvVar("URL");
+        var Post = bru.getGlobalEnvVar("Post");
+
+        //Define the URL for the next request
+        var postRequestUrl = Url + Post;
+
+        //Define the options for the next request 
+        var postRequestOptions= {
+            url: postRequestUrl,
+            method: 'POST',
+            headers: {
+                
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify( 
+        {
+
+        "trackingId":bru.getVar("trackingId"),
+        "protectedPopulation": [
+            {
+                "ProtectedPopulationFlag": bru.getVar("ProtectedPopulationFlag")
+            }
+        ],
+        "content": {
+            "responseIdentityFormatNames":[bru.getVar("RIFN")],
+
+            "identity": {
+                "custom.CreateDates": [
+                    {
+                        "createDate": bru.getEnvVar("createDate")
+                    }
+                ],
+                "sources": [
+                    {
+                        "name": bru.getVar("SourceName"),
+                        "id": bru.getVar("sourceId")
+                    }
+                ],
+                "emails": [bru.getVar("Email")],
+                "addresses": [
+                    {
+                        "line1": bru.getVar("AddressLine1"),
+                        "line2": bru.getVar("AddressLine2"),
+                        "city": bru.getVar("City"),
+                        "state": bru.getVar("State"),
+                        "postalCode": bru.getVar("ZipCode")
+                    }
+                ],
+                "names": [
+                    {
+                        "first": bru.getVar("FirstName"),
+                        "middle": bru.getVar("MiddleName"),
+                        "last": bru.getVar("LastName"),
+                        "suffix": bru.getVar("Suffix")
+                    }
+                ],
+                "ssns": [bru.getVar("SSN")],
+                "genders": [
+                    bru.getVar("Gender")
+                ],
+                "datesOfBirth": [
+                    bru.getVar("DateOfBirth")
+                ],
+                "phoneNumbers": [
+                    {
+                        "number": bru.getVar("Number"),
+                        "areaCode": bru.getVar("AreaCode"),
+                        "extension": bru.getVar("Extension"),
+                        "countryCode": bru.getVar("CountryCode")
+                    }
+                ]
+            }
+        }
+        })
+        };
+
+        // Make the POST request and capture the response
+        await bru.sendRequest(postRequestOptions, async function(err, res) {
+            if (err) {
+                console.error('Error during POST request:', err);
+            } else {
+                let response = res.data;
+                
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        var jsonData = res.getBody();
+
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Parse the response body
+        var response = res.getBody();
+
+        // Validate that searchResults is not empty
+        test("Search results are not empty", function () {
+            expect(response.content.searchResults.length).to.be.above(0);
+        });
+
+        // Validate that each result contains a matchScore
+        test("Each search result contains matchScore", function () {
+            response.content.searchResults.forEach(function(result) {
+                expect(result).to.have.property('matchScore');
+                expect(result.matchScore).to.be.a('number');
+            });
+        });
+
+        // Validate linkId is not empty and is equal to the local variable LinkId
+        test("All linkIds should not be empty in search results", function () {
+            // Ensure 'searchResults' exists and is an array
+            expect(jsonData.content).to.have.property('searchResults').that.is.an('array').that.is.not.empty;
+            
+            // Loop through each result and check that 'linkId' is not empty
+            jsonData.content.searchResults.forEach(function(result) {
+                expect(result).to.have.property('linkId').that.is.not.empty;
+            });
+        });
+            
+            // Validate success flag, retryableError, message, and errors
+            test("Validate success, retryableError, message, and errors", function () {
+                
+                expect(jsonData.success).to.be.true;
+                expect(jsonData.retryableError).to.be.false;
+                expect(jsonData.message).to.be.null;
+                expect(jsonData.errors).to.be.null;
+            });
+
+        test("Each search result contains identityGroupedBySource", function () {
+            jsonData.content.searchResults.forEach(function(result) {
+                expect(result).to.have.property('identityGroupedBySource').that.is.an('array').that.is.not.empty;
+            });
+
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

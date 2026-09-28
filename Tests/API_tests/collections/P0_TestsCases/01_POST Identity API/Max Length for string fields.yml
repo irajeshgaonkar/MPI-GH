@@ -1,0 +1,237 @@
+info:
+  name: Max Length for string fields
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: "{{URL}}{{Post}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "protectedPopulation": [
+              {
+                  "ProtectedPopulationFlag": "{{ProtectedPopulationFlag}}"
+              }
+          ],
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                  "custom.CreateDates": [
+                      {
+                          "createDate": "{{createDate}}"
+                      }
+                  ],
+                  "sources": [
+                      {
+                          "name": "{{SourceName}}",
+                          "id": "{{sourceId}}"
+                      }
+                  ],
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "USA"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN', responseIdentityFormatNames);
+
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of 243 characters (to fit 255 with @example.com)
+        const randomEmailString = generateRandomString(243);
+        const email = randomEmailString + '@example.com'; // 243 characters + 12 characters from @example.com
+
+        // Generate a random string of exactly 255 characters for Address Line 1 and Line 2
+        const randomAddressString = generateRandomString(255);
+
+        // Set the generated string to email, address line1, and address line2
+        bru.setVar('Email', email); // Random email with 255 characters
+        bru.setVar('AddressLine1', randomAddressString); // Random Address Line 1 with 255 characters
+        bru.setVar('AddressLine2', randomAddressString); // Random Address Line 2 with 255 characters
+
+        // Generate a random string of exactly 100 characters
+        const randomCitySourceIdString = generateRandomString(100);
+
+        // Assign the random string to City and SourceId
+        bru.setVar('City', randomCitySourceIdString);
+        bru.setVar('sourceId', randomCitySourceIdString);
+
+        // Generate a random string of exactly 40 characters for Name-related fields
+        const randomNameString = generateRandomString(40);
+
+        // Assign the random string to FirstName, MiddleName, LastName, Suffix, and State
+        bru.setVar('FirstName', randomNameString);
+        bru.setVar('MiddleName', randomNameString);
+        bru.setVar('LastName', randomNameString);
+        bru.setVar('Suffix', randomNameString);
+        bru.setVar('State', randomNameString);
+
+        // Generate a random string of 50 characters for DateOfBirth
+        const randomDOBString = generateRandomString(50);
+        bru.setVar('DateOfBirth', randomDOBString);
+
+        // Generate a random string of 20 characters for Phone Number
+        const randomPhoneString = generateRandomString(20);
+        bru.setVar('Number', randomPhoneString);
+
+        // Generate a random string of 10 characters for Gender and ZipCode
+        const randomGenderString = generateRandomString(10);
+        bru.setVar('Gender', randomGenderString);
+        bru.setVar('ZipCode', randomGenderString);
+
+        // Generate a random string of 12 characters for SSN
+        const randomSSNString = generateRandomString(12);
+        bru.setVar('SSN', randomSSNString);
+
+        // Set random AreaCode and Extension using predefined variables
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+    - type: after-response
+      code: |-
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test ("successfully posted",function()
+        {
+            expect(jsonData.message).to.equal("The identity has been successfully posted.");
+        });
+
+        //validate linkid is genearted, fewer than 1024 characters, and is a string
+        test("Response has LinkID", function () {
+            expect(jsonData.content.linkId).to.exist;
+            expect(jsonData.content.linkId).to.be.a('string');
+            expect(jsonData.content.linkId.length).to.be.below(1024);
+        });
+
+        test("Validate the type field is add_source", function(){
+            expect(jsonData.content.events[0].type).to.eql("ADD_SOURCE");
+        });
+
+        //validate source name and source id are same in request and response
+        test("Verify sourcename and sourceid", function(){
+            expect(jsonData.content.incomingIdentity.sources[0].name).to.eql(bru.getEnvVar('SourceName'));
+            expect(jsonData.content.incomingIdentity.sources[0].id).to.eql(bru.getVar('sourceId'));
+        });
+
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Response has the required fields", function () {
+            expect(jsonData).to.have.property("message");
+            expect(jsonData.trackingId).to.eql(bru.getEnvVar('trackingId'));
+            expect(jsonData).to.have.property("success");
+            expect(jsonData).to.have.nested.property("content.linkId");
+            expect(jsonData).to.have.nested.property("content.events");
+            expect(jsonData).to.have.nested.property("content.incomingIdentity");
+        });
+
+
+        // Function to check field length and add validation message
+        function checkFieldLength(field, actualLength, expectedLength) {
+            test(`${field} should be exactly ${expectedLength} characters`, function () {
+                expect(actualLength).to.eql(expectedLength);
+            });
+        }
+
+        // Validate the length of the source name and id
+
+        checkFieldLength("source id", jsonData.content.incomingIdentity.sources[0].id.length, 100);
+
+        // Validate the length of names (First, Middle, Last, Suffix - 40 characters)
+        checkFieldLength("first name", jsonData.content.incomingIdentity.names[0].first.length, 40);
+        checkFieldLength("middle name", jsonData.content.incomingIdentity.names[0].middle.length, 40);
+        checkFieldLength("last name", jsonData.content.incomingIdentity.names[0].last.length, 40);
+        checkFieldLength("suffix", jsonData.content.incomingIdentity.names[0].suffix.length, 40);
+
+        // Validate Date of Birth length (expect 50 characters)
+        checkFieldLength("Date of Birth", jsonData.content.incomingIdentity.datesOfBirth[0].length, 50);
+
+        // Validate SSN length (12 characters)
+        checkFieldLength("SSN", jsonData.content.incomingIdentity.ssns[0].length, 12);
+
+        // Validate Address Line 1, Line 2, City, State, and Postal Code lengths
+        checkFieldLength("Address Line 1", jsonData.content.incomingIdentity.addresses[0].line1.length, 255);
+        checkFieldLength("Address Line 2", jsonData.content.incomingIdentity.addresses[0].line2.length, 255);
+        checkFieldLength("City", jsonData.content.incomingIdentity.addresses[0].city.length, 100);
+        checkFieldLength("State", jsonData.content.incomingIdentity.addresses[0].state.length, 40);
+        checkFieldLength("Postal Code", jsonData.content.incomingIdentity.addresses[0].postalCode.length, 10);
+
+        // Validate Email length (243 characters + '@example.com' => 255)
+        checkFieldLength("Email", jsonData.content.incomingIdentity.emails[0].length, 255);
+
+        // Validate Phone Number fields (20 characters for number and extension)
+        checkFieldLength("Phone Number", jsonData.content.incomingIdentity.phoneNumbers[0].number.length, 20);
+
+
+        // Validate Gender length (10 characters)
+        checkFieldLength("Gender", jsonData.content.incomingIdentity.genders[0].length, 10);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

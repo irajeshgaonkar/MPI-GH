@@ -1,0 +1,149 @@
+info:
+  name: Leading/Trailing Whitespaces
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Unmerge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"unmergeFromSource\": {\r
+
+      \            \"name\": \"{{SourceName1}}\",\r
+
+      \            \"id\": \"{{id1}}\"\r
+
+      \        },\r
+
+      \        \"unmergeSource\": {\r
+
+      \            \"name\": \"{{SourceName2}}\",\r
+
+      \            \"id\": \"{{id2}}\"\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setEnvVar("id1","eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setEnvVar("id2", "af82fa88-5bef-45ba-a562-3ffbebdb830e");
+        bru.setEnvVar("SourceName1", "dshs.bams");
+        bru.setEnvVar("SourceName2", "dshs.bams");
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade")
+        var Url = bru.getGlobalEnvVar("URL");
+        var Merge = bru.getGlobalEnvVar("Merge");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Merge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+            "toSurviveSource": {
+                "name": bru.getEnvVar("SourceName1"),
+                "id": bru.getEnvVar("id1")
+            },
+            "toRetireSource": {
+                "name": bru.getEnvVar("SourceName2"),
+                "id": bru.getEnvVar("id2")
+            }
+        }
+            
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+
+
+        bru.deleteEnvVar("SourceName1");
+        bru.deleteEnvVar("SourceName2");
+        bru.deleteEnvVar("id1");
+        bru.deleteEnvVar("id2");
+
+        bru.setVar("id1"," eeab43c9-b118-405c-b393-083fd2ed5755 ");
+        bru.setVar("id2", "af82fa88-5bef-45ba-a562-3ffbebdb830e");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+    - type: after-response
+      code: |-
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Validate response Body", function () {
+            var jsonData = res.getBody();
+        bru.setEnvVar("link_id", "67bf663a6d5f0d47b68c5902");
+            // Validate content fields
+            expect(jsonData.content).to.have.property("unmergedId").that.is.a("string").and.is.not.empty;
+            expect(jsonData.content).to.have.property("unmergedFromId").that.equals(bru.getEnvVar("link_id"));
+         
+            var expectedUnmergedSourceId = bru.getVar("id2") ? bru.getVar("id2").trim() : null;
+
+            // Validate unmergedSource
+            expect(jsonData.content.unmergedSource.name).to.eql(bru.getVar("SourceName2"));
+            expect(jsonData.content.unmergedSource.id).to.eql(expectedUnmergedSourceId);
+
+            var expectedUnmergedFromSourceId = bru.getVar("id1") ? bru.getVar("id1").trim() : null;
+
+            // Validate unmergedFromSource
+            expect(jsonData.content.unmergedFromSource.name).to.eql(bru.getVar("SourceName1"));
+            expect(jsonData.content.unmergedFromSource.id).to.eql(expectedUnmergedFromSourceId);
+
+            // Validate trackingId and auditId
+            expect(jsonData.trackingId).to.eql(bru.getEnvVar("trackingId"));
+
+            // Validate success flag, retryableError, message, and errors
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.retryableError).to.be.false;
+            expect(jsonData.message).to.be.null;
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

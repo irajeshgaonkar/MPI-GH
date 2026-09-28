@@ -1,0 +1,163 @@
+info:
+  name: Leading/trailing Whitespaces
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"toSurviveSource\": {\r
+
+      \            \"name\": \"{{SourceName1}}\",\r
+
+      \            \"id\": \"{{id1}}\"\r
+
+      \        },\r
+
+      \        \"toRetireSource\": {\r
+
+      \            \"name\": \"{{SourceName2}}\",\r
+
+      \            \"id\": \"{{id2}}\"\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: "bru.deleteEnvVar(\"SourceName1\");\r
+
+        bru.deleteEnvVar(\"SourceName2\");\r
+
+        bru.deleteEnvVar(\"id1\");\r
+
+        bru.deleteEnvVar(\"id2\");\r
+
+        \r
+
+        bru.setVar(\"id1\",\" eeab43c9-b118-405c-b393-083fd2ed5755 \");\r
+
+        bru.setVar(\"id2\", \"af82fa88-5bef-45ba-a562-3ffbebdb830e\");\r
+
+        bru.setVar(\"SourceName1\", \"dshs.bams\");\r
+
+        bru.setVar(\"SourceName2\", \"dshs.bams\");"
+    - type: after-response
+      code: |-
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Set environment variable
+        bru.setVar("link_id", "67bf663a6d5f0d47b68c5902");
+        // Validate the linkId matches the environment variable
+        test("Validate linkId", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.linkId).to.eql(bru.getVar("link_id"));
+        });
+
+        // Validate source name matches environment variable
+        test("Validate source name", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.toSurviveSource.name).to.eql(bru.getVar("SourceName1"));
+        });
+
+        var expectedId = bru.getVar("id1") ? bru.getVar("id1").trim() : null;
+
+
+        // Validate id1 matches environment variable
+        test("Validate id1", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.toSurviveSource.id).to.eql(expectedId);
+        });
+
+        // Validate success is true
+        test("Validate success is true", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.success).to.be.true;
+        });
+
+        // Validate message is null
+        test("Validate message is null", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.message).to.be.null;
+        });
+
+        // Validate errors is null
+        test("Validate errors is null", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.errors).to.be.null;
+        });
+
+        //unmerge
+
+        var Url = bru.getGlobalEnvVar("URL");
+        var Unmerge = bru.getGlobalEnvVar("Unmerge");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Unmerge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+                "unmergeFromSource": {
+                    "name":  bru.getVar("SourceName1"),
+                    "id": bru.getVar("id1")
+                },
+                "unmergeSource": {
+                    "name":  bru.getVar("SourceName2"),
+                    "id": bru.getVar("id2")
+                }
+            }
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

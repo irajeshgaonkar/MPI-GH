@@ -1,0 +1,229 @@
+info:
+  name: Identity Not Found – All Systems
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{URL}}{{DemographicQuery}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                 
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+
+        // Function to generate a random SSN in the format XXX-XX-XXXX
+        function generateRandomSSN() {
+            const firstPart = '000';  // First part (3 digits)
+            const secondPart = Math.floor(10 + Math.random() * 90);   // Second part (2 digits)
+            const thirdPart = Math.floor(1000 + Math.random() * 9000); // Third part (4 digits)
+            
+            const ssn = `${firstPart}-${secondPart}-${thirdPart}`;
+            return ssn;
+        }
+
+        // Generate a unique 9-digit SSN in the correct format
+        const uniqueSSN = generateRandomSSN();
+
+        // Set the generated SSN as an environment variable
+        bru.setVar('SSN', uniqueSSN);
+
+        //using predefined varaibles for names
+        var firstName= bru.interpolate('{{$randomFirstName}}');
+        var lastName = bru.interpolate('{{$randomLastName}}');
+        var suffix = bru.interpolate("{{$randomNameSuffix}}");
+        var middleName = bru.interpolate("{{$randomFirstName}}");
+
+        bru.setVar('FirstName', firstName);
+        bru.setVar('MiddleName', middleName);
+        bru.setVar('LastName', lastName);
+        bru.setVar('Suffix', suffix);
+
+        //using predefined varables generating random email
+        var email = bru.interpolate('{{$randomEmail}}');
+        bru.setVar('Email',email);
+
+        // Function to generate a random gender with fewer than 10 characters
+        function generateRandomGender() {
+            const genders = ['Male', 'Female', 'Nonbinary', 'Other'];
+            // Select a random gender from the list
+            const randomGender = genders[Math.floor(Math.random() * genders.length)];
+            return randomGender;
+        }
+
+        // Generate a random gender
+        const gender = generateRandomGender();
+
+        // Set the generated gender as an environment variable
+        bru.setVar('Gender', gender);
+
+        // Function to generate a random date of birth within the past 130 years
+        function generateRandomDOB() {
+            const currentDate = new Date();
+            const minYear = currentDate.getFullYear() - 130; // 130 years ago
+            const randomYear = Math.floor(Math.random() * (currentDate.getFullYear() - minYear + 1)) + minYear; // Random year
+            const randomMonth = Math.floor(Math.random() * 12); // Random month
+            const randomDay = Math.floor(Math.random() * 28) + 1; // Random day (limited to 28 to account for all months)
+
+            const randomDate = new Date(randomYear, randomMonth, randomDay);
+
+            // Format the date in mm/dd/yyyy format
+            const formattedDate = ('0' + (randomDate.getMonth() + 1)).slice(-2) + '/' + 
+                                  ('0' + randomDate.getDate()).slice(-2) + '/' + 
+                                  randomDate.getFullYear();
+
+            return formattedDate;
+        }
+
+        // Generate a random Date of Birth
+        const randomDOB = generateRandomDOB();
+
+        // Set the generated Date of Birth as an environment variable
+        bru.setVar('DateOfBirth', randomDOB);
+
+        var line1 = bru.interpolate('{{$randomStreetAddress}}');
+        var line2 =  bru.interpolate('{{$randomStreetName}}');
+        var city = bru.interpolate('{{$randomCity}}');
+
+        // Set the generated address as variables
+        bru.setVar('AddressLine1', line1);
+        bru.setVar('AddressLine2', line2);
+        bru.setVar('City', city);
+
+        const stateArray = [
+            "NY", "CA", "IL", "TX", "AZ",
+            "PA", "TX", "OH", "IN", "FL",
+            "GA", "MI", "NC", "WA", "NJ"
+        ];
+
+        // Function to get a random element from an array
+        function getRandomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        // Generate a random address
+        const address = {
+            state: getRandomElement(stateArray), // Random State
+            zipCode: Math.floor(10000 + Math.random() * 90000).toString() // Random 5-digit Zip Code
+        };
+
+        // Set the generated address as environment variables
+        bru.setVar('State', address.state);
+        bru.setVar('ZipCode', address.zipCode);
+
+        // Function to generate a random number with a given length
+        function generateRandomNumber(length) {
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += Math.floor(Math.random() * 10);
+            }
+            return result;
+        }
+
+        // Function to generate a random phone number
+        function generateRandomPhoneNumber() {
+            return {
+                number: `${generateRandomNumber(3)}-${generateRandomNumber(3)}`, // e.g., "786-987"
+                countryCode: 'USA'
+            };
+        }
+
+        // Generate a random phone number
+        const phoneNumber = generateRandomPhoneNumber();
+
+        // Set the generated phone number as environment variables
+        bru.setVar('Number', phoneNumber.number);
+        bru.setVar('CountryCode', phoneNumber.countryCode);
+
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+    - type: after-response
+      code: |-
+        // Validate status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.eql(200); // Replace 200 with your expected status code
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate response body
+        test("Response body is valid", function () {
+            const jsonData = res.getBody();
+
+            // Validate success field
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.retryableError).to.be.false;
+            expect(jsonData.errors).to.be.null;
+
+
+            // Validate the message
+            expect(jsonData.message).to.eql("No identity found.");
+
+            
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

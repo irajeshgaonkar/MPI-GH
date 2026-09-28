@@ -1,0 +1,797 @@
+﻿using HCA.Core.Mapper;
+using HCA.Core.Processors;
+using HCA.Data.Repository;
+using HCA.Infrastructure.Exceptions;
+using HCA.Infrastructure.Extensions;
+using HCA.Infrastructure.Logger;
+using HCA.Models.Enums;
+using HCA.Models.Request;
+using HCA.Models.Response;
+using HCA.Models.Verato.Response;
+using Newtonsoft.Json;
+
+namespace HCA.Core.Services;
+
+public class ClientIdentityRequestExecutor : IClientIdentityRequestExecutor
+{
+    private readonly IClientIdentityRepository _clientIdentityRepository;
+    private readonly IVeratoRequestExecuter _veratoRequestExecuter;
+    private readonly ICustomDataMappingService _customDataMappingService;
+    private readonly IDictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>> requestExecuters;
+
+    public ClientIdentityRequestExecutor(IClientIdentityRepository clientIdentityRepository,
+        IVeratoRequestExecuter veratoRequestExecuter, ICustomDataMappingService customDataMappingService, IAppLogger logger)
+    {
+        _clientIdentityRepository = clientIdentityRepository;
+        _veratoRequestExecuter = veratoRequestExecuter;
+
+        requestExecuters = BuildRequestExecutors();
+        _customDataMappingService = customDataMappingService;
+        //_notificationBuilder = new NotificationBuilder();
+        //_dynamoDbClient = new HcaDynamoDbClient();
+        //_logger = logger;
+    }
+
+    public async Task<T?> Execute<T>(BaseRequest request, IRequestStatusUpdater requestStatusUpdater) where T : BaseResponse
+    {
+        //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Processing, "Started Processing Request");
+        var response = await requestExecuters[request.ApiCallType](request, requestStatusUpdater);
+        if (request.ApiCallType.ToString().Contains("DOH_"))
+
+        {
+            return response as T;
+        }
+        else
+        {
+            if (response.Success) return response as T;
+            //await requestStatusUpdater.UpdateStatus(request, RequestStatus.Failed, "Error processing the request");
+            throw new HcaVeratoException("Error processing the request");
+        }
+    }
+
+    private IDictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>> BuildRequestExecutors()
+    {
+        var requestExecuters = new Dictionary<ApiCallType, Func<BaseRequest, IRequestStatusUpdater, Task<BaseResponse>>>
+        {
+            [ApiCallType.VEPost] = PostIdentity,
+            [ApiCallType.DOH_VEPost] = DOH_PostIdentity,
+            [ApiCallType.VELink] = LinkIdentities,
+            [ApiCallType.VEUnLink] = UnLinkIdentities,
+            [ApiCallType.VEMerge] = MergeIdentities,
+            [ApiCallType.VEUnMerge] = UnMergeIdentities,
+            [ApiCallType.DOH_VELink] = DOH_LinkIdentities,
+            [ApiCallType.DOH_VEUnLink] = DOH_UnLinkIdentities,
+            [ApiCallType.DOH_VEMerge] = DOH_MergeIdentities,
+            [ApiCallType.DOH_VEUnMerge] = DOH_UnMergeIdentities,
+            [ApiCallType.VEDelete] = DeleteIdentity,
+            [ApiCallType.VECreateDataSource] = CreateDataSource,
+            [ApiCallType.VEDemographicSearch] = DemographicSearch,
+            [ApiCallType.DOH_VEDemographicSearch] = DOH_DemographicSearch,
+            [ApiCallType.VEDemographicQuery] = DemographicQuery,
+            [ApiCallType.DOH_VEDemographicQuery] = DOH_DemographicQuery,
+            [ApiCallType.DOH_VEEnrichDemographicQuery] = DOH_EnrichDemographicQuery,
+            [ApiCallType.DOH_VEDelete] = DOH_DeleteIdentity,
+            [ApiCallType.VENativeIdQuery] = NativeIdQuery,
+            [ApiCallType.VESearchNotifications] = SearchNotifications,
+        };
+
+        return requestExecuters;
+    }
+
+    private async Task<BaseResponse> CreateDataSource(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var response = await _veratoRequestExecuter.Execute<CreateDataSourceClientIdentityResponse>(request, requestStatusUpdater);
+
+        if (response != null)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Failed to process request");
+    }
+
+    private async Task<BaseResponse> PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var postIdentityRequest = Cast<PostClientIdentityRequest>(request);
+
+        try
+        {
+            var sourceSystemName = postIdentityRequest.Content.First().SourceSystemName;
+            var customDataMappings = await _customDataMappingService.GetCustomDataMappingBySourceSystem(sourceSystemName);
+
+            foreach (var item in postIdentityRequest.Content)
+            {
+                if (item?.CustomJson == null)
+                    continue;
+
+                var customData = JsonConvert.DeserializeObject<Dictionary<string, object>>(item.CustomJson) ?? new Dictionary<string, object>();
+                item.CustomJson = _customDataMappingService.MapCustomJson(customDataMappings, customData).ToString();
+            }
+
+            var response = await _veratoRequestExecuter.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
+            await UpdatePostIdentitiesNotification(postIdentityRequest, response);
+
+            if (null != response && response.Success && null != response.Content?.LinkId)
+            {
+                var entity = ClientIdentityMapper.MapFromRequestToEntity(response.Content.LinkId, DateTime.Now, postIdentityRequest.Content);
+                await _clientIdentityRepository.Upsert(entity);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdatePostIdentitiesNotification(postIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_PostIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var postIdentityRequest = Cast<DOH_PostClientIdentityRequest>(request);
+
+        try
+        {
+
+
+            var response = await _veratoRequestExecuter.Execute<DOH_PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
+            await UpdatePostIdentitiesNotification(null, null);
+
+            if (null != response && response.Success)
+            {
+                PostIdentityResponseContent content = JsonConvert.DeserializeObject<PostIdentityResponseContent>(response.Content.ToString());
+
+                //Can we skip this
+                var entity = NewClientIdentityMapper.MapFromRequestToEntity(content.LinkId, DateTime.Now, postIdentityRequest);
+                await _clientIdentityRepository.Upsert(entity);
+                return response;
+            }
+            return response;
+
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            //throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdatePostIdentitiesNotification(null, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> LinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var linkIdentitiesRequest = Cast<LinkClientIdentityRequest>(request);
+        var linkingSources = linkIdentitiesRequest.Content;
+        var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(linkingSources.Source.Name, linkingSources.Source.Id);
+
+        try
+        {
+            if (null == linkToIdentity)
+                throw new HcaBadRequestException("link source not found");
+
+            if (null == sourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
+                throw new HcaBadRequestException("sources are already linked");
+
+            var response = await _veratoRequestExecuter.Execute<LinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, response, sourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success && null != response.Content?.LinkId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, response!.Content!.LinkId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(linkIdentitiesRequest, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> UnLinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unLinkClientIdentityRequest = Cast<UnLinkClientIdentityRequest>(request);
+        var unLinkingSources = unLinkClientIdentityRequest.Content;
+        var unlinkFromIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.UnlinkFromSource.Name, unLinkingSources.UnlinkFromSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.Source.Name, unLinkingSources.Source.Id);
+
+        try
+        {
+            if (null == unlinkFromIdentity)
+                throw new HcaBadRequestException("Un link source not found");
+
+            if (null == sourceIdentity)
+                throw new HcaBadRequestException("source not found");
+
+            var response = await _veratoRequestExecuter.Execute<UnLinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, response, sourceIdentity.MpiLinkId);
+
+            if (null != response && response.Success && null != response.Content?.UnlinkedId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, response.Content.UnlinkedId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateUnLinkIdentitiesNotification(unLinkClientIdentityRequest, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> MergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var mergeClientIdentityRequest = Cast<MergeClientIdentityRequest>(request);
+        var mergingSources = mergeClientIdentityRequest.Content;
+        var toSurviveIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToSurviveSource.Name, mergingSources.ToSurviveSource.Id);
+        var toRetireIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToRetireSource.Name, mergingSources.ToRetireSource.Id);
+
+        try
+        {
+            if (null == toSurviveIdentity)
+                throw new HcaBadRequestException("To servive source not found");
+
+            if (null == toRetireIdentity)
+                throw new HcaBadRequestException("To retire source not found");
+            var response = await _veratoRequestExecuter.Execute<MergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, response, toRetireIdentity.MpiLinkId);
+
+            if (null != response && response.Success && null != response.Content?.LinkId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, response.Content.LinkId);
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaVeratoException e)
+        {
+            await UpdateMergeIdentitiesNotification(mergeClientIdentityRequest, null, toRetireIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var deleteClientIdentityRequest = Cast<DeleteClientIdentityRequest>(request);
+        var deleteSource = deleteClientIdentityRequest.Content;
+        var toDeleteIdentity = await _clientIdentityRepository.GetBySource(deleteSource.Name, deleteSource.Id);
+
+        try
+        {
+            if (null == toDeleteIdentity)
+                throw new HcaBadRequestException("Delete source not found");
+
+            var response = await _veratoRequestExecuter.Execute<DeleteClientIdentityResponse>(request, requestStatusUpdater);
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                var deletedLinkId = response.Content.LinkIdsDeleted?.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                if (deletedLinkId != null)
+                {
+                    _clientIdentityRepository.DeleteClientIdentity(toDeleteIdentity);
+                }
+                var modifiedLinkId = response.Content.LinkIdsModified?.FirstOrDefault(l => l == toDeleteIdentity.MpiLinkId);
+                if (modifiedLinkId != null)
+                {
+                    _clientIdentityRepository.DeleteClientIdentity(toDeleteIdentity);
+                }
+
+                return response;
+            }
+
+            var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaVeratoException e)
+        {
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_DeleteIdentity(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        //DOH_DeleteClientIdentityRequest deleteRequest = new DeleteIdentyRequest(request.TrackingId,);
+
+        var deleteIdentitiesRequest = Cast<DOH_DeleteClientIdentityRequest>(request);
+        var deletingSource = deleteIdentitiesRequest.Content;
+        var deleteSourceIdentity = await _clientIdentityRepository.GetBySource(deletingSource.Source.Name, deletingSource.Source.Id);
+
+        try
+        {
+            //This is to validate in our source system (postgresDB) when we get request
+
+            //if (null == deleteSourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
+
+            var response = await _veratoRequestExecuter.Execute<DOH_DeleteClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(null, null, null);
+
+            if (null != response && response.Success)
+            {
+                if (deleteSourceIdentity != null)
+                {
+                    _clientIdentityRepository.DeleteClientIdentity(deleteSourceIdentity);
+                }
+                return response;
+            }
+            return response;
+
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            //throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(null, null, deleteSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> UnMergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unMergeClientIdentityRequest = Cast<UnMergeClientIdentityRequest>(request);
+        var unMergingSources = unMergeClientIdentityRequest.Content;
+        var unmergeFromIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeFromSource.Name, unMergingSources.UnmergeFromSource.Id);
+        var unmergeSourceIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeSource.Name, unMergingSources.UnmergeSource.Id);
+        var notificationsUpdated = false;
+
+        try
+        {
+            if (null == unmergeFromIdentity)
+                throw new HcaBadRequestException("Un merge from source not found");
+
+            if (null == unmergeSourceIdentity)
+                throw new HcaBadRequestException("Un merge source not found");
+            var response = await _veratoRequestExecuter.Execute<UnMergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnMergeIdentitiesNotification(unMergeClientIdentityRequest, response, unmergeSourceIdentity.MpiLinkId);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content?.UnmergedId)
+            {
+                _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, response.Content.UnmergedId);
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(unMergeClientIdentityRequest, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(unMergeClientIdentityRequest, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_LinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var linkIdentitiesRequest = Cast<DOH_LinkClientIdentityRequest>(request);
+        var linkingSources = linkIdentitiesRequest.Content;
+        var linkToIdentity = await _clientIdentityRepository.GetBySource(linkingSources.LinkToSource.Name, linkingSources.LinkToSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(linkingSources.Source.Name, linkingSources.Source.Id);
+
+        try
+        {
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == linkToIdentity)
+            //    throw new HcaBadRequestException("link source not found");
+
+            //if (null == sourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
+
+            //if (linkToIdentity.MpiLinkId == sourceIdentity.MpiLinkId)
+            //   throw new HcaBadRequestException("sources are already linked");
+
+            var response = await _veratoRequestExecuter.Execute<DOH_LinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateLinkIdentitiesNotification(null, null, null);
+
+            if (null != response && response.Success)
+            {
+                LinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<LinkIdentitiesResponseContent>(response.Content.ToString());
+
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content!.LinkId);
+                return response;
+            }
+            return response;
+
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            //throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateLinkIdentitiesNotification(null, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_UnLinkIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unLinkClientIdentityRequest = Cast<DOH_UnLinkClientIdentityRequest>(request);
+        var unLinkingSources = unLinkClientIdentityRequest.Content;
+        var unlinkFromIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.UnlinkFromSource.Name, unLinkingSources.UnlinkFromSource.Id);
+        var sourceIdentity = await _clientIdentityRepository.GetBySource(unLinkingSources.Source.Name, unLinkingSources.Source.Id);
+
+        try
+        {
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == unlinkFromIdentity)
+            //    throw new HcaBadRequestException("Un link source not found");
+
+            //if (null == sourceIdentity)
+            //    throw new HcaBadRequestException("source not found");
+
+            var response = await _veratoRequestExecuter.Execute<DOH_UnLinkClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnLinkIdentitiesNotification(null, null, null);
+
+            if (null != response && response.Success)
+            {
+                UnLinkIdentitiesResponseContent content = JsonConvert.DeserializeObject<UnLinkIdentitiesResponseContent>(response.Content.ToString());
+
+                _clientIdentityRepository.UpdateMpiLinkId(sourceIdentity, content.UnlinkedId);
+                return response;
+            }
+            return response;
+
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            //throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaBadRequestException e)
+        {
+            await UpdateUnLinkIdentitiesNotification(null, null, sourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_MergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var mergeClientIdentityRequest = Cast<DOH_MergeClientIdentityRequest>(request);
+        var mergingSources = mergeClientIdentityRequest.Content;
+        var toSurviveIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToSurviveSource.Name, mergingSources.ToSurviveSource.Id);
+        var toRetireIdentity = await _clientIdentityRepository.GetBySource(mergingSources.ToRetireSource.Name, mergingSources.ToRetireSource.Id);
+
+        try
+        {
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == toSurviveIdentity)
+            //    throw new HcaBadRequestException("To servive source not found");
+
+            //if (null == toRetireIdentity)
+            //    throw new HcaBadRequestException("To retire source not found");
+            var response = await _veratoRequestExecuter.Execute<DOH_MergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateMergeIdentitiesNotification(null, null, null);
+
+            if (null != response && response.Success)
+            {
+                MergeIdentitiesResponseContent content = JsonConvert.DeserializeObject<MergeIdentitiesResponseContent>(response.Content.ToString());
+                _clientIdentityRepository.UpdateMpiLinkId(toRetireIdentity, content.LinkId);
+                return response;
+            }
+            return response;
+            //var errorMessage = response?.Errors?.JoinBy("|") ?? "Error occured while posting request to Verato";
+            //throw new HcaVeratoException(errorMessage);
+        }
+        catch (HcaVeratoException e)
+        {
+            await UpdateMergeIdentitiesNotification(null, null, toRetireIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_UnMergeIdentities(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var unMergeClientIdentityRequest = Cast<DOH_UnMergeClientIdentityRequest>(request);
+        var unMergingSources = unMergeClientIdentityRequest.Content;
+        var unmergeFromIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeFromSource.Name, unMergingSources.UnmergeFromSource.Id);
+        var unmergeSourceIdentity = await _clientIdentityRepository.GetBySource(unMergingSources.UnmergeSource.Name, unMergingSources.UnmergeSource.Id);
+        var notificationsUpdated = false;
+
+        try
+        {
+            //This is to validate in our source system (postgresDB) when we get request
+            //if (null == unmergeFromIdentity)
+            //    throw new HcaBadRequestException("Un merge from source not found");
+
+            //if (null == unmergeSourceIdentity)
+            //    throw new HcaBadRequestException("Un merge source not found");
+            var response = await _veratoRequestExecuter.Execute<DOH_UnMergeClientIdentityResponse>(request, requestStatusUpdater);
+            await UpdateUnMergeIdentitiesNotification(null, null, null);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success)
+            {
+                UnMergeIdentitiesResponseContent content = JsonConvert.DeserializeObject<UnMergeIdentitiesResponseContent>(response.Content.ToString());
+                _clientIdentityRepository.UpdateMpiLinkId(unmergeSourceIdentity, content.UnmergedId);
+                return response;
+            }
+            return response;
+
+            //throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateUnMergeIdentitiesNotification(null, null, unmergeSourceIdentity?.MpiLinkId ?? "");
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DemographicSearchClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _veratoRequestExecuter.Execute<DemographicSearchClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_DemographicSearch(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_DemographicSearchClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _veratoRequestExecuter.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            await UpdateDemographicSearchNotification(null, null);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success)
+            {
+                return response;
+            }
+            return response;
+
+            //throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(null, null);
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            if (!notificationsUpdated)
+                await UpdateDemographicSearchNotification(null, null);
+            throw;
+        }
+    }
+    private async Task<BaseResponse> DemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DemographicQueryClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _veratoRequestExecuter.Execute<DemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success && null != response.Content)
+            {
+                return response;
+            }
+
+            throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> DOH_DemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_DemographicQueryClientIdentityRequest>(request);
+        var notificationsUpdated = false;
+
+
+        try
+        {
+            var response = await _veratoRequestExecuter.Execute<DOH_DemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+            //await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, response);
+            notificationsUpdated = true;
+
+            if (null != response && response.Success)
+            {
+                return response;
+            }
+            return response;
+
+            //throw new HcaBadRequestException("Error processing the request");
+        }
+        catch (HcaBadRequestException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+        catch (HcaVeratoException e)
+        {
+            //if (!notificationsUpdated)
+            //    await UpdateDemographicSearchNotification(demographicSearchClientIdentityRequest, null);
+            throw;
+        }
+    }
+
+    private async Task<BaseResponse> NativeIdQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var nativeIdQueryClientIdentityRequest = Cast<NativeIdQueryClientIdentityRequest>(request);
+        var response = await _veratoRequestExecuter.Execute<NativeIdQueryClientIdentityResponse>(nativeIdQueryClientIdentityRequest, requestStatusUpdater);
+        if (response != null && response.Success)
+        {
+            return response;
+        }
+        throw new HcaBadRequestException("Error processing the request");
+    }
+
+    private async Task<BaseResponse> SearchNotifications(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var searchNotificationsRequest = Cast<SearchClientIdentityNotificationsRequest>(request);
+        var response = await _veratoRequestExecuter.Execute<SearchClientIdentityNotificationResponse>(searchNotificationsRequest, requestStatusUpdater);
+        if (response != null && response.Success)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Error processing the request");
+    }
+
+    private async Task<BaseResponse> DOH_EnrichDemographicQuery(BaseRequest request, IRequestStatusUpdater requestStatusUpdater)
+    {
+        var demographicSearchClientIdentityRequest = Cast<DOH_EnrichDemographicQueryClientIdentityRequest>(request);
+
+        var response = await _veratoRequestExecuter.Execute<DOH_EnrichDemographicQueryClientIdentityResponse>(demographicSearchClientIdentityRequest, requestStatusUpdater);
+        if (response != null && response.Success)
+        {
+            return response;
+        }
+
+        throw new HcaBadRequestException("Error processing the request");
+    }
+
+    private async Task UpdatePostIdentitiesNotification(PostClientIdentityRequest request, PostClientIdentityResponse? response)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildPostIdentityNotification(request, response);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private async Task UpdateLinkIdentitiesNotification(LinkClientIdentityRequest request, LinkClientIdentityResponse? response, string mpiLInkId)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildLinkIdentityNotification(request, response, mpiLInkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private async Task UpdateUnLinkIdentitiesNotification(UnLinkClientIdentityRequest request, UnLinkClientIdentityResponse? response, string previousLinkId)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildUnLinkIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private async Task UpdateMergeIdentitiesNotification(MergeClientIdentityRequest request, MergeClientIdentityResponse? response, string previousLinkId)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildMergeIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private async Task UpdateUnMergeIdentitiesNotification(UnMergeClientIdentityRequest request, UnMergeClientIdentityResponse? response, string previousLinkId)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildUnMergeIdentityNotification(request, response, previousLinkId);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private async Task UpdateDemographicSearchNotification(DemographicSearchClientIdentityRequest request, DemographicSearchClientIdentityResponse response)
+    {
+        //try
+        //{
+        //    var notification = _notificationBuilder.BuildDemographicSearchNotification(request, response);
+        //    await _dynamoDbClient.CreateItem(notification);
+        //}
+        //catch (Exception e)
+        //{
+        //    _logger.LogError(e);
+        //}
+    }
+
+    private T Cast<T>(BaseRequest request) where T : BaseRequest
+    {
+        T? veratoRequest = request as T;
+        if (null == veratoRequest)
+            throw new HcaVeratoException("Invalid input");
+        return veratoRequest;
+    }
+}
+

@@ -1,0 +1,112 @@
+<app-header></app-header>
+
+<nav class="navbar navbar-expand-lg bg-light filter-header">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <img src="../../../assets/images/3-bars.svg">
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0 left-margin">
+        <li class="nav-item self-align me-2">
+          Link Id
+        </li>
+       
+
+        <li class="nav-item d-flex me-2">
+          <div class="search">
+              <input class="form-control" type="search"
+                  placeholder="Search with Link Id"
+                  [(ngModel)]="linkId"
+                  (input)="handleUserNameFilterChange($event)">
+              <span class="search-icon">
+                  <img src="../../../assets/images/search-icon.svg">
+              </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="main-grid">
+    <div class="row pt-2 m-0">
+        <div class="col-md-2 p-0">
+            <app-left-nav></app-left-nav>
+        </div>
+        <div class="col-md-10 p-0">
+            <div class="grid-table">
+                <div class="d-flex">
+                    <h6 class="mb-0">Matching Link Ids</h6>
+                </div>
+                <div class="grid-bg p-4 mt-2">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+                        <!--- Note that these columns can be defined in any order.
+                              The actual rendered columns are set as a property on the row definition" -->
+                      
+                        <ng-container matColumnDef="linkId">
+                          <th mat-header-cell *matHeaderCellDef> Link Id </th>
+                          <td mat-cell *matCellDef="let element"> {{element.linkId}} </td>
+                        </ng-container>
+
+                        <ng-container matColumnDef="sourceSystemName">
+                            <th mat-header-cell *matHeaderCellDef> Source System Name</th>
+                            <td mat-cell *matCellDef="let element"> {{element.sourceSystemName}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="sourceSystemId">
+                            <th mat-header-cell *matHeaderCellDef> Source System Id</th>
+                            <td mat-cell *matCellDef="let element"> {{element.sourceSystemId}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="firstName">
+                            <th mat-header-cell *matHeaderCellDef> First Name</th>
+                            <td mat-cell *matCellDef="let element"> {{element.firstName}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="middleName">
+                            <th mat-header-cell *matHeaderCellDef> Middle Name </th>
+                            <td mat-cell *matCellDef="let element"> {{element.middleName}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="lastName">
+                            <th mat-header-cell *matHeaderCellDef> Last Name </th>
+                            <td mat-cell *matCellDef="let element"> {{element.lastName}} </td>
+                          </ng-container>
+
+                          <ng-container matColumnDef="gender">
+                            <th mat-header-cell *matHeaderCellDef> Gender </th>
+                            <td mat-cell *matCellDef="let element"> {{element.gender}} </td>
+                          </ng-container>
+                      
+                        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                      
+                        <!-- Group header -->
+                        <ng-container matColumnDef="groupHeader">
+                          <td colspan="999" mat-cell *matCellDef="let groupBy" class="header-row"><strong> {{groupBy.linkId}}</strong></td>
+                        </ng-container>
+                      
+                        <tr mat-row *matRowDef="let row; columns: ['groupHeader']; when: isGroup"> </tr>
+                      
+                      </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="paginate-bottom paginate">
+      <mat-paginator 
+          [pageSize]="pageData.pageSize" 
+          [pageIndex]="pageData.pageIndex" 
+          [pageSizeOptions]="[10,20,30,40,50]" 
+          (page)="pageEvent = $event; onPaginationChange($event)" 
+          [length]="totalRecords" 
+          showFirstLastButtons
+      >
+      </mat-paginator>
+    </div>
+</div>
+
+<div *ngIf="loading" class="loader"></div>

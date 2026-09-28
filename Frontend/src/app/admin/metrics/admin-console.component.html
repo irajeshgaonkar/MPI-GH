@@ -1,0 +1,356 @@
+<app-header></app-header>
+
+<div class="main-grid">
+    <div class="row pt-2 m-0">
+        <div class="col-md-2 p-0">
+            <app-left-nav></app-left-nav>
+        </div>
+        <div class="col-md-10 p-0">
+            <div class="grid-table admin-console" #exportContent>
+                <section class="admin-console__hero">
+                    <div>
+                        <p class="admin-console__eyebrow">Operations</p>
+                        <h1>MPI Health</h1>
+                        <p class="admin-console__subtitle">Operational visibility for MPI API health, latency, throughput, timeouts, and dependency behavior.</p>
+                    </div>
+                    <div class="admin-console__hero-actions">
+                        <label class="admin-console__lookback">
+                            <span>Lookback</span>
+                            <select [ngModel]="selectedLookbackMinutes" (ngModelChange)="onLookbackChange($event)">
+                                <option *ngFor="let item of lookbackOptions" [value]="item.value">{{item.label}}</option>
+                            </select>
+                        </label>
+                        <div class="admin-console__refresh">
+                            <span class="admin-console__refresh-label">Last refreshed</span>
+                            <strong>{{lastUpdatedLabel()}}</strong>
+                        </div>
+                        <div class="admin-console__hero-button-stack app-page-actions" data-pdf-hide="true">
+                            <button class="btn btn-primary app-export-btn admin-console__refresh-btn" (click)="exportHealthReport()" [disabled]="loading || exporting">
+                                {{exporting ? 'Exporting...' : 'Export PDF'}}
+                            </button>
+                            <button class="btn btn-primary admin-console__refresh-btn" (click)="refreshNow()" [disabled]="manualRefreshing">
+                                {{manualRefreshing ? 'Refreshing...' : 'Refresh Now'}}
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="admin-console__banner" *ngIf="usingFallbackData || loadError">
+                    {{loadError}}
+                </div>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            MPI Health Summary
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['systemHealth']" [attr.title]="sectionTooltips['systemHealth']" aria-label="About MPI Health Summary">i</span>
+                        </h2>
+                        <span class="status-pill" [ngClass]="statusClass(dashboard.summary.healthStatus)">{{dashboard.summary.healthStatus}}</span>
+                    </div>
+                    <div class="summary-card-grid">
+                        <article class="summary-card" *ngFor="let item of summaryCards()">
+                            <div class="summary-card__top">
+                                <span>
+                                    <span
+                                        class="info-tooltip info-tooltip--label"
+                                        tabindex="0"
+                                        [attr.data-tooltip]="item.tooltip + ' ' + item.statusReason"
+                                        [attr.title]="item.tooltip + ' ' + item.statusReason"
+                                        [attr.aria-label]="'About ' + item.label + '. ' + item.statusReason">
+                                        {{item.label}}
+                                    </span>
+                                </span>
+                                <span [ngClass]="statusClass(item.status)">{{item.status}}</span>
+                            </div>
+                            <strong>{{item.value}}</strong>
+                            <p>{{item.detail}}</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            API Performance
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['apiPerformance']" [attr.title]="sectionTooltips['apiPerformance']" aria-label="About API Performance">i</span>
+                        </h2>
+                        <p>Latency and request volume trends over the selected monitoring window.</p>
+                    </div>
+                    <div class="chart-grid chart-grid--two">
+                        <app-metric-chart
+                            title="Latency Trend"
+                            subtitle="Average and P95 latency"
+                            [data]="dashboard.trends.latency"
+                            [series]="latencySeries"
+                            variant="area">
+                        </app-metric-chart>
+
+                        <app-metric-chart
+                            title="Throughput Trend"
+                            subtitle="Requests per minute"
+                            [data]="dashboard.trends.throughput"
+                            [series]="throughputSeries"
+                            variant="area">
+                        </app-metric-chart>
+                    </div>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            Error and Timeout Trends
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['errorTimeouts']" [attr.title]="sectionTooltips['errorTimeouts']" aria-label="About Error and Timeout Trends">i</span>
+                        </h2>
+                        <p>Track client/server errors and timeout spikes together.</p>
+                    </div>
+                    <div class="chart-grid chart-grid--two">
+                        <app-metric-chart
+                            title="4xx / 5xx Errors"
+                            subtitle="HTTP error trend"
+                            [data]="dashboard.trends.errors"
+                            [series]="errorSeries"
+                            variant="line">
+                        </app-metric-chart>
+
+                        <app-metric-chart
+                            title="Timeout Trend"
+                            subtitle="Timeout count over time"
+                            [data]="dashboard.trends.timeouts"
+                            [series]="timeoutSeries"
+                            variant="line">
+                        </app-metric-chart>
+                    </div>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            Infrastructure Health
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['infrastructure']" [attr.title]="sectionTooltips['infrastructure']" aria-label="About Infrastructure Health">i</span>
+                        </h2>
+                        <p>Service condition, concurrency utilization, and downstream dependency posture.</p>
+                    </div>
+                    <div class="infra-grid">
+                        <article class="infra-card">
+                            <div class="infra-card__head">
+                                <h3>Health Mix <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="chartTooltips['healthMix']" [attr.title]="chartTooltips['healthMix']" aria-label="About Health Mix">i</span></h3>
+                                <p>Healthy vs warning vs critical services</p>
+                            </div>
+                            <div class="status-donut-wrap">
+                                <div class="status-donut" [style.background]="donutStyle()"></div>
+                                <div class="status-donut__legend">
+                                    <span><i class="status-swatch status-swatch--healthy"></i>Healthy {{statusBreakdown().healthy}}</span>
+                                    <span><i class="status-swatch status-swatch--warning"></i>Warning {{statusBreakdown().warning}}</span>
+                                    <span><i class="status-swatch status-swatch--critical"></i>Critical {{statusBreakdown().critical}}</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <app-metric-chart
+                            title="Concurrency Utilization"
+                            subtitle="Lambda concurrency usage"
+                            [data]="dashboard.trends.concurrency"
+                            [series]="concurrencySeries"
+                            variant="area">
+                        </app-metric-chart>
+                    </div>
+
+                    <div class="indicator-grid">
+                        <article class="indicator-card" *ngFor="let item of infrastructureIndicators()">
+                            <div class="indicator-card__top">
+                                <h3
+                                    class="info-tooltip info-tooltip--label"
+                                    tabindex="0"
+                                    [attr.data-tooltip]="item.tooltip + ' ' + item.statusReason"
+                                    [attr.title]="item.tooltip + ' ' + item.statusReason"
+                                    [attr.aria-label]="'About ' + item.label + '. ' + item.statusReason">
+                                    {{item.label}}
+                                </h3>
+                                <span [ngClass]="statusClass(item.status)">{{item.status}}</span>
+                            </div>
+                            <strong>{{item.value}}</strong>
+                            <p>{{item.detail}}</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            MPI Custom Error Logs
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['customErrors']" [attr.title]="sectionTooltips['customErrors']" aria-label="About MPI Custom Error Logs">i</span>
+                        </h2>
+                        <span class="status-pill" [ngClass]="statusClass(customErrorStatusLabel())">{{customErrorStatusLabel()}}</span>
+                    </div>
+
+                    <div class="custom-error-metric-grid">
+                        <article class="custom-error-metric-card" *ngFor="let item of customErrorMetricCards()">
+                            <span>{{item.label}}</span>
+                            <strong>{{item.value}}</strong>
+                            <p>{{item.detail}}</p>
+                        </article>
+                    </div>
+
+                    <div class="custom-error-cta">
+                        <p *ngIf="customErrorEntries().length; else emptyCustomErrors">Logs are available on demand only. Open deep dive to inspect timestamp, name, layer, code function, error code, message, and tracking ID.</p>
+                        <button *ngIf="customErrorEntries().length" type="button" class="btn btn-outline-primary" (click)="openCustomErrorDeepDive()">
+                            Deep Dive Logs ({{customErrorEntries().length}})
+                        </button>
+                    </div>
+                    <ng-template #emptyCustomErrors>
+                        <div class="alerts-empty">No MPI custom error logs matched the configured CloudWatch query for this time window.</div>
+                    </ng-template>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            Verato Errors
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['veratoErrors']" [attr.title]="sectionTooltips['veratoErrors']" aria-label="About Verato Errors">i</span>
+                        </h2>
+                        <span class="status-pill" [ngClass]="statusClass(veratoErrorStatusLabel())">{{veratoErrorStatusLabel()}}</span>
+                    </div>
+
+                    <div class="custom-error-metric-grid">
+                        <article class="custom-error-metric-card" *ngFor="let item of veratoErrorMetricCards()">
+                            <span>{{item.label}}</span>
+                            <strong>{{item.value}}</strong>
+                            <p>{{item.detail}}</p>
+                        </article>
+                    </div>
+
+                    <div class="chart-grid chart-grid--one">
+                        <app-metric-chart
+                            title="Failed Verato Requests"
+                            subtitle="Trend of failed Verato operations"
+                            [data]="dashboard.veratoErrors.trend"
+                            [series]="veratoErrorSeries"
+                            variant="area">
+                        </app-metric-chart>
+                    </div>
+
+                    <div class="custom-error-cta">
+                        <p *ngIf="veratoErrorEntries().length; else emptyVeratoErrors">Details come from failed Verato entries in `user_requests`. Open deep dive to inspect timestamp, operation, user, tracking ID, message, status, retry count, and raw response content.</p>
+                        <button *ngIf="veratoErrorEntries().length" type="button" class="btn btn-outline-primary" (click)="openVeratoErrorDeepDive()">
+                            Deep Dive Verato Errors ({{veratoErrorEntries().length}})
+                        </button>
+                    </div>
+                    <ng-template #emptyVeratoErrors>
+                        <div class="alerts-empty">No failed Verato requests were found in user request processing for this time window.</div>
+                    </ng-template>
+                </section>
+
+                <section class="admin-console__section">
+                    <div class="admin-console__section-head">
+                        <h2>
+                            Recent Alerts and Anomalies
+                            <span class="info-tooltip" tabindex="0" [attr.data-tooltip]="sectionTooltips['alerts']" [attr.title]="sectionTooltips['alerts']" aria-label="About Recent Alerts and Anomalies">i</span>
+                        </h2>
+                        <p>Backend-detected operational signals and placeholders for future alert integrations.</p>
+                    </div>
+                    <div class="alerts-panel" *ngIf="dashboard.alerts.length; else emptyAlerts">
+                        <article class="alert-card" *ngFor="let item of dashboard.alerts; trackBy: trackByAlert">
+                            <span [ngClass]="statusClass(item.severity)">{{item.severity}}</span>
+                            <p>{{item.message}}</p>
+                        </article>
+                    </div>
+                    <ng-template #emptyAlerts>
+                        <div class="alerts-empty">No recent alerts. This panel is ready for anomaly signals when backend alert feeds are connected.</div>
+                    </ng-template>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-console-modal" *ngIf="deepDiveOpen">
+    <div class="admin-console-modal__backdrop" (click)="closeCustomErrorDeepDive()"></div>
+    <div class="admin-console-modal__dialog">
+        <div class="admin-console-modal__header">
+            <div>
+                <h2>MPI Custom Error Log Deep Dive</h2>
+                <p>Detailed log inspection for the selected MPI Health window.</p>
+            </div>
+            <button type="button" class="admin-console-modal__close" (click)="closeCustomErrorDeepDive()" aria-label="Close deep dive">×</button>
+        </div>
+        <div class="admin-console-modal__body">
+            <div class="custom-error-table-wrap custom-error-table-wrap--modal">
+                <table class="custom-error-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Name</th>
+                            <th>Layer</th>
+                            <th>Code Function</th>
+                            <th>ErrorCode</th>
+                            <th>Message</th>
+                            <th>TrackingId</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of customErrorEntries(); trackBy: trackByCustomError">
+                            <td>{{formatCustomErrorTimestamp(item.timestamp)}}</td>
+                            <td>{{item.name || '--'}}</td>
+                            <td>{{item.layer || '--'}}</td>
+                            <td>{{item.functionName || '--'}}</td>
+                            <td><span class="custom-error-code">{{item.errorCode || '--'}}</span></td>
+                            <td class="custom-error-message">
+                                <div>{{item.message || '--'}}</div>
+                                <small *ngIf="item.logGroup || item.logStream">
+                                    {{item.logGroup || ''}}<span *ngIf="item.logGroup && item.logStream"> · </span>{{item.logStream || ''}}
+                                </small>
+                            </td>
+                            <td>{{item.trackingId || '--'}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-console-modal" *ngIf="veratoDeepDiveOpen">
+    <div class="admin-console-modal__backdrop" (click)="closeVeratoErrorDeepDive()"></div>
+    <div class="admin-console-modal__dialog">
+        <div class="admin-console-modal__header">
+            <div>
+                <h2>Verato Error Deep Dive</h2>
+                <p>Detailed failed Verato request inspection for the selected MPI Health window.</p>
+            </div>
+            <button type="button" class="admin-console-modal__close" (click)="closeVeratoErrorDeepDive()" aria-label="Close Verato deep dive">×</button>
+        </div>
+        <div class="admin-console-modal__body">
+            <div class="custom-error-table-wrap custom-error-table-wrap--modal">
+                <table class="custom-error-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Operation</th>
+                            <th>User</th>
+                            <th>Tracking ID</th>
+                            <th>Status</th>
+                            <th>Retries</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of veratoErrorEntries(); trackBy: trackByVeratoError">
+                            <td>{{formatCustomErrorTimestamp(item.timestamp)}}</td>
+                            <td><span class="custom-error-code">{{item.apiCallType}}</span></td>
+                            <td>{{item.userName || '--'}}</td>
+                            <td>{{item.trackingId || '--'}}</td>
+                            <td>{{item.status || '--'}}</td>
+                            <td>{{item.retryCount}}</td>
+                            <td class="custom-error-message">
+                                <div>{{item.message || '--'}}</div>
+                                <small *ngIf="item.responseJson">{{item.responseJson}}</small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="loading" class="loader"></div>

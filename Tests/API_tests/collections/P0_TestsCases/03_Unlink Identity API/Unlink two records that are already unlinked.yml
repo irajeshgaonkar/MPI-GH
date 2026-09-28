@@ -1,0 +1,74 @@
+info:
+  name: Unlink two records that are already unlinked
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Unlink}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      {
+        "trackingId": "{{trackingId}}",
+        "content": {
+          "unlinkFromSource": {
+            "name": "{{SourceName1}}",
+            "id": "{{id1}}"
+          },
+          "source": {
+            "name": "{{SourceName2}}",
+            "id": "{{id2}}"
+          }
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        // Validate response status is 200 OK
+        test("Status code is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate response time is within 200ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Parse the response JSON
+        var jsonData = res.getBody();
+
+        // Validate the response body structure and values
+        test("Check content is empty", function () {
+            expect(jsonData.content).to.be.an('object').that.is.empty;
+        });
+
+        test("success fields", function () {
+            
+            expect(jsonData.success).to.eql(false);
+            expect(jsonData.retryableError).to.eql(false);
+        });
+
+        // Validate the message field
+        test("Check message field", function () {
+            expect(jsonData.message).to.eql("operation.failed | Requested operation failed with following error : no.action.taken | Explanation : The source+nativeID combinations are already in separate entities");
+        });
+
+        // Validate the errors field
+        test("Check errors field", function () {
+            expect(jsonData.errors[0]).to.eql("operation.failed | Requested operation failed with following error : no.action.taken | Explanation : The source+nativeID combinations are already in separate entities");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

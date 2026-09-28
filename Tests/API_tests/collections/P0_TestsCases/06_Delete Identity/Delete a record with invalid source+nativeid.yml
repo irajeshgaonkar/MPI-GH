@@ -1,0 +1,68 @@
+info:
+  name: Delete a record with invalid source+nativeid
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{URL}}{{Delete}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      { 
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "source": {
+                  "name": "{{SourceName}}",
+                  "id": "{{sourceId}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("SourceName");
+
+        bru.setVar("sourceId", "asdf26-56yh7789-adftgyh780-6578ui99c678");
+        bru.setVar("SourceName", "wrdghj.wrd");
+    - type: after-response
+      code: |-
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Validate response body structure", function () {
+            
+            // Validate errorCode is 400
+            expect(jsonData.errorCode).to.eql("400");
+
+            // Validate error message
+            expect(jsonData.message).to.eql("SourceSystem and Source do not match.");
+
+            // Validate success is false
+            expect(jsonData.success).to.eql(false);
+
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,237 @@
+info:
+  name: Min Length for String Fields
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{URL}}{{Post}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "protectedPopulation": [
+              {
+                  "ProtectedPopulationFlag": "{{ProtectedPopulationFlag}}"
+              }
+          ],
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                  "custom.CreateDates": [
+                      {
+                          "createDate": "{{createDate}}"
+                      }
+                  ],
+                  "sources": [
+                      {
+                          "name": "{{SourceName}}",
+                          "id": "{{sourceId}}"
+                      }
+                  ],
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "USA"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN', responseIdentityFormatNames);
+
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of min characters 
+        const randomEmailString = generateRandomString(3);
+        const email = randomEmailString; // 243 characters + 12 characters from @example.com
+
+        // Generate a random string of min characters for Address Line 1 and Line 2
+        const randomAddressString = generateRandomString(3);
+
+        // Set the generated string to email, address line1, and address line2
+        bru.setVar('Email', email); // Random email with min characters
+        bru.setVar('AddressLine1', randomAddressString); // Random Address Line 1 with min characters
+        bru.setVar('AddressLine2', randomAddressString); // Random Address Line 2 with min characters
+
+        // Generate a random string of exactly min characters
+        const randomCitySourceIdString = generateRandomString(3);
+
+        // Assign the random string to City and SourceId
+        bru.setVar('City', randomCitySourceIdString);
+        bru.setVar('sourceId', randomCitySourceIdString);
+
+        // Generate a random string of min characters for Name-related fields
+        const randomNameString = generateRandomString(3);
+
+        // Assign the random string to FirstName, MiddleName, LastName, Suffix, and State
+        bru.setVar('FirstName', randomNameString);
+        bru.setVar('MiddleName', randomNameString);
+        bru.setVar('LastName', randomNameString);
+        bru.setVar('Suffix', randomNameString);
+        bru.setVar('State', randomNameString);
+
+        // Generate a random string of min characters for DateOfBirth
+        const randomDOBString = generateRandomString(2);
+        bru.setVar('DateOfBirth', randomDOBString);
+
+        // Generate a random string of min characters for Phone Number
+        const randomPhoneString = generateRandomString(3);
+        bru.setVar('Number', randomPhoneString);
+
+        // Generate a random string of min characters for Gender and ZipCode
+        const randomGenderString = generateRandomString(2);
+        bru.setVar('Gender', randomGenderString);
+        bru.setVar('ZipCode', randomGenderString);
+
+        // Generate a random string of min characters for SSN
+        const randomSSNString = generateRandomString(2);
+        bru.setVar('SSN', randomSSNString);
+
+        // Set random AreaCode and Extension using predefined variables
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+    - type: after-response
+      code: |-
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test ("successfully posted",function()
+        {
+            expect(jsonData.message).to.equal("The identity has been successfully posted.");
+        });
+
+        //validate linkid is genearted, fewer than 1024 characters, and is a string
+        test("Response has LinkID", function () {
+            expect(jsonData.content.linkId).to.exist;
+            expect(jsonData.content.linkId).to.be.a('string');
+            expect(jsonData.content.linkId.length).to.be.below(1024);
+        });
+
+        test("Validate the type field is add_source", function(){
+            expect(jsonData.content.events[0].type).to.eql("ADD_SOURCE");
+        });
+
+        //validate source name and source id are same in request and response
+        test("Verify sourcename and sourceid", function(){
+            expect(jsonData.content.incomingIdentity.sources[0].name).to.eql(bru.getEnvVar('SourceName'));
+            expect(jsonData.content.incomingIdentity.sources[0].id).to.eql(bru.getVar('sourceId'));
+        });
+
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Response has the required fields", function () {
+            expect(jsonData).to.have.property("message");
+            expect(jsonData.trackingId).to.eql(bru.getEnvVar('trackingId'));
+            expect(jsonData).to.have.property("success");
+            expect(jsonData).to.have.nested.property("content.linkId");
+            expect(jsonData).to.have.nested.property("content.events");
+            expect(jsonData).to.have.nested.property("content.incomingIdentity");
+        });
+
+
+        // Function to check field length and add validation message
+        function checkFieldLength(field, actualLength, expectedLength) {
+            test(`${field} should be exactly ${expectedLength} character`, function () {
+                expect(actualLength).to.eql(expectedLength);
+            });
+        }
+
+        // Validate the length of the source name and id
+
+        checkFieldLength("source id", jsonData.content.incomingIdentity.sources[0].id.length, 3);
+
+        // Validate the length of names (First, Middle, Last, Suffix - min characters)
+        checkFieldLength("first name", jsonData.content.incomingIdentity.names[0].first.length, 3);
+        checkFieldLength("middle name", jsonData.content.incomingIdentity.names[0].middle.length, 3);
+        checkFieldLength("last name", jsonData.content.incomingIdentity.names[0].last.length, 3);
+        checkFieldLength("suffix", jsonData.content.incomingIdentity.names[0].suffix.length, 3);
+
+        // Validate Date of Birth length (min characters)
+        checkFieldLength("Date of Birth", jsonData.content.incomingIdentity.datesOfBirth[0].length, 2);
+
+        // Validate SSN length (min characters)
+        checkFieldLength("SSN", jsonData.content.incomingIdentity.ssns[0].length, 2);
+
+        // Validate Address Line 1, Line 2, City, State, and Postal Code lengths
+        checkFieldLength("Address Line 1", jsonData.content.incomingIdentity.addresses[0].line1.length, 3);
+        checkFieldLength("Address Line 2", jsonData.content.incomingIdentity.addresses[0].line2.length, 3);
+        checkFieldLength("City", jsonData.content.incomingIdentity.addresses[0].city.length, 3);
+        checkFieldLength("State", jsonData.content.incomingIdentity.addresses[0].state.length, 3);
+        checkFieldLength("Postal Code", jsonData.content.incomingIdentity.addresses[0].postalCode.length, 2);
+
+        // Validate Email length (min charcters)
+        checkFieldLength("Email", jsonData.content.incomingIdentity.emails[0].length, 3);
+
+        // Validate Phone Number fields (min characters for number and extension)
+        checkFieldLength("Phone Number", jsonData.content.incomingIdentity.phoneNumbers[0].number.length, 3);
+
+
+        // Validate Gender length (min characters)
+        checkFieldLength("Gender", jsonData.content.incomingIdentity.genders[0].length, 2);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

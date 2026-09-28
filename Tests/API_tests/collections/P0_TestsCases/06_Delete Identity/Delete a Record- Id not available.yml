@@ -1,0 +1,62 @@
+info:
+  name: Delete a Record- Id not available
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{Delete}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      { 
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "source": {
+                  "name": "{{SourceName}}",
+                  "id": "{{sourceId}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: bru.setVar("sourceId", "asdf26-56yh7789-adftgyh780-6578ui99c678");
+    - type: after-response
+      code: |-
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Validate response Body", function () {
+            var jsonData = res.getBody();
+
+            // Validate content fields
+            expect(jsonData.content).to.have.property("linkIdsModified").to.be.an('array').that.is.empty;
+            expect(jsonData.content).to.have.property("linkIdsDeleted").to.be.an('array').that.is.empty;
+
+            // Validate success flag, retryableError, message, and errors
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.retryableError).to.be.false;
+            expect(jsonData.message).to.be.null;
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

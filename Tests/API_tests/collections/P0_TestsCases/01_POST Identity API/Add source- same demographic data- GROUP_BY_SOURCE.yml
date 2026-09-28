@@ -1,0 +1,182 @@
+info:
+  name: Add source- same demographic data- GROUP_BY_SOURCE
+  type: http
+  seq: 18
+
+http:
+  method: POST
+  url: "{{URL}}{{Post}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "protectedPopulation": [
+              {
+                  "ProtectedPopulationFlag": "{{ProtectedPopulationFlag}}"
+              }
+          ],
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                  "custom.CreateDates": [
+                      {
+                          "createDate": "{{createDate}}"
+                      }
+                  ],
+                  "sources": [
+                      {
+                          "name": "{{SourceName}}",
+                          "id": "{{sourceId}}"
+                      }
+                  ],
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "GROUP_BY_SOURCE";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+
+        var sourceId = bru.interpolate('{{$randomUUID}}');
+        bru.setVar('sourceId', sourceId);
+
+
+
+        // Function to generate a random SSN in the format XXX-XX-XXXX
+        function generateRandomSSN() {
+            const firstPart = '000';  // First part (3 digits)
+            const secondPart = Math.floor(10 + Math.random() * 90);   // Second part (2 digits)
+            const thirdPart = Math.floor(1000 + Math.random() * 9000); // Third part (4 digits)
+            
+            const ssn = `${firstPart}-${secondPart}-${thirdPart}`;
+            return ssn;
+        }
+
+        // Generate a unique 9-digit SSN in the correct format
+        const uniqueSSN = generateRandomSSN();
+
+        // Set the generated SSN as an environment variable
+        bru.setVar('SSN', uniqueSSN);
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        var jsonData = res.getBody();
+
+        test ("successfully posted",function()
+        {
+            expect(jsonData.message).to.equal("The identity has been successfully posted.");
+        });
+
+        //validate linkid is genearted, fewer than 1024 characters, and is a string
+        test("Response has LinkID", function () {
+            expect(jsonData.content.linkId).to.exist;
+            expect(jsonData.content.linkId).to.be.a('string');
+            expect(jsonData.content.linkId.length).to.be.below(1024);
+        });
+
+        test("Validate the type field is add_source", function(){
+            expect(jsonData.content.events[0].type).to.eql("ADD_SOURCE");
+        });
+
+        //validate source name and source id are same in request and response
+        test("Verify sourcename and sourceid", function(){
+            expect(jsonData.content.incomingIdentity.sources[0].name).to.eql(bru.getEnvVar('SourceName'));
+            expect(jsonData.content.incomingIdentity.sources[0].id).to.eql(bru.getVar('sourceId'));
+        });
+
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        //validate groupBySource
+        test("validate Groupedbysource", function(){
+            expect(jsonData.content).to.have.property('identityGroupedBySource');
+        })
+
+        test("Response has the required fields", function () {
+            expect(jsonData).to.have.property("message");
+            expect(jsonData.trackingId).to.eql(bru.getEnvVar('trackingId'));
+            expect(jsonData).to.have.property("success");
+            expect(jsonData).to.have.nested.property("content.linkId");
+            expect(jsonData).to.have.nested.property("content.events");
+            expect(jsonData).to.have.nested.property("content.incomingIdentity");
+            expect(jsonData).to.have.nested.property("content.identityGroupedBySource");
+
+        });
+
+
+
+
+        // Unset environment variables
+        // /*pm.environment.unset("linkId");
+        // pm.environment.unset("FirstName");
+        // pm.environment.unset("MiddleName");
+        // pm.environment.unset("LastName");
+        // pm.environment.unset("Suffix");
+        // pm.environment.unset("Email");
+        // pm.environment.unset("DateOfBirth");
+        // pm.environment.unset("AddressLine1");
+        // pm.environment.unset("AddressLine2");
+        // pm.environment.unset("City");
+        // pm.environment.unset("State");
+        // pm.environment.unset("ZipCode");
+        // pm.environment.unset("Gender");
+        // pm.environment.unset("Number");
+        // pm.environment.unset("AreaCode");
+        // pm.environment.unset("Extension");
+        // pm.environment.unset("CountryCode");*/
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
