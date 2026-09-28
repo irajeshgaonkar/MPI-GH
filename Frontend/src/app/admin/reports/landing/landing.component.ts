@@ -115,6 +115,19 @@ export class ReportsLandingComponent implements OnInit {
     { id: "stewardship", label: "Manual Stewardship" },
     { id: "data-sharing", label: "Data Sharing Coverage" },
   ];
+  readonly reportNavItems = [
+    { id: "incoming-match-trend", title: "Incoming Match Trend", meta: "New Link IDs versus matches already in MPI" },
+    { id: "data-quality", title: "Source System Data Quality", meta: "Completeness, stale data, and delete rate by source" },
+    { id: "mpi-linkage", title: "MPI Linkage Effectiveness", meta: "Cluster depth, fragmentation, and merge activity" },
+    { id: "batch-intake", title: "Batch Intake Reliability", meta: "File volume, failures, and rejected records" },
+    { id: "stewardship", title: "Manual Stewardship", meta: "Queue activity, touched identities, and outcomes" },
+    { id: "data-sharing", title: "Data Sharing Coverage", meta: "Sharing relationships and missing mappings" },
+  ];
+  selectedReportId = this.reportNavItems[0].id;
+
+  selectReport(reportId: string): void {
+    this.selectedReportId = reportId;
+  }
 
   loading = false;
   refreshing = false;

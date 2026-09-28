@@ -56,7 +56,24 @@
             </article>
           </section>
 
-          <section class="report-section">
+          <section class="reports-dashboard__layout">
+            <aside class="subnav-card">
+              <p class="subnav-card__eyebrow">Reports</p>
+              <nav class="subnav-card__nav" aria-label="Reports">
+                <button
+                  type="button"
+                  class="subnav-card__link"
+                  *ngFor="let item of reportNavItems"
+                  [class.subnav-card__link--active]="selectedReportId === item.id"
+                  (click)="selectReport(item.id)">
+                  <span class="subnav-card__title">{{ item.title }}</span>
+                  <span class="subnav-card__meta">{{ item.meta }}</span>
+                </button>
+              </nav>
+            </aside>
+
+            <div class="reports-dashboard__content">
+          <section class="report-section" *ngIf="selectedReportId === 'incoming-match-trend'">
             <div class="report-section__title">
               <div>
                 <h2>Incoming Match Trend <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['linkIdIngest']" [attr.title]="reportTooltips['linkIdIngest']" aria-label="About Incoming Match Trend">i</span></h2>
@@ -254,7 +271,7 @@
             </div>
           </section>
 
-          <section class="report-section">
+          <section class="report-section" *ngIf="selectedReportId === 'data-quality'">
             <div class="report-section__title">
               <div>
                 <h2>Source System Data Quality Scorecard <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['dataQuality']" [attr.title]="reportTooltips['dataQuality']" aria-label="About Source System Data Quality Scorecard">i</span></h2>
@@ -303,7 +320,7 @@
             </div>
           </section>
 
-          <section class="report-section">
+          <section class="report-section" *ngIf="selectedReportId === 'mpi-linkage'">
             <div class="report-section__title">
               <div>
                 <h2>MPI Linkage Effectiveness <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['linkage']" [attr.title]="reportTooltips['linkage']" aria-label="About MPI Linkage Effectiveness">i</span></h2>
@@ -379,7 +396,7 @@
             </div>
           </section>
 
-          <section class="report-section">
+          <section class="report-section" *ngIf="selectedReportId === 'batch-intake'">
             <div class="report-section__title">
               <div>
                 <h2>Batch Intake Reliability <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['batchIntake']" [attr.title]="reportTooltips['batchIntake']" aria-label="About Batch Intake Reliability">i</span></h2>
@@ -476,7 +493,7 @@
             </div>
           </section>
 
-          <section class="report-section">
+          <section class="report-section" *ngIf="selectedReportId === 'stewardship'">
             <div class="report-section__title">
               <div>
                 <h2>Manual Stewardship Workbench Analytics <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['stewardship']" [attr.title]="reportTooltips['stewardship']" aria-label="About Manual Stewardship Workbench Analytics">i</span></h2>
@@ -586,7 +603,7 @@
             </div>
           </section>
 
-          <section class="report-section">
+          <section class="report-section" *ngIf="selectedReportId === 'data-sharing'">
             <div class="report-section__title">
               <div>
                 <h2>Data Sharing Coverage Map <span class="info-tooltip info-tooltip--inline" tabindex="0" [attr.data-tooltip]="reportTooltips['dataSharing']" [attr.title]="reportTooltips['dataSharing']" aria-label="About Data Sharing Coverage Map">i</span></h2>
@@ -708,6 +725,8 @@
                   </table>
                 </div>
               </div>
+            </div>
+          </section>
             </div>
           </section>
         </ng-container>
