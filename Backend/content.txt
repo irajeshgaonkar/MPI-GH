@@ -1,11 +1,1 @@
-filter @type = "REPORT"
-| filter @duration >= 5000
-| fields @timestamp, @requestId, @duration, @billedDuration, @maxMemoryUsed
-| sort @duration desc
-| limit 50
-
-fields @timestamp, @requestId, @message
-| filter @message like /postIdentity/
-| filter @message like /Request finished|Elapsed Time|Executed action/
-| sort @timestamp asc
-| limit 200
+I reviewed the postIdentity requests in CloudWatch for the reported timeframe, around 11:36 AM to 11:45 AM. Most requests were completing in under 300 ms, a few were around 500 ms, and only 17 requests took more than 1 second. I also checked for timeout-related errors during this timeframe and found none. For the slower requests I reviewed, most of the additional time appears to be from the downstream Verato HTTP call, and the requests were still completing successfully with a 200 response.
