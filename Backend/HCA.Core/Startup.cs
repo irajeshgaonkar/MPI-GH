@@ -1,4 +1,5 @@
-﻿using HCA.Core.Mapper;
+﻿using AutoMapper.Internal;
+using HCA.Core.Mapper;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
 using HCA.Core.Processors.MPIDBSync;
@@ -15,6 +16,8 @@ namespace HCA.Core;
 
 public static class Startup
 {
+    private const int AutoMapperMaxDepth = 64;
+
     public static IServiceCollection AddHca(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAppSettings(configuration);
@@ -69,7 +72,10 @@ public static class Startup
             .AddScoped<IUserRequestMapper, UserRequestMapper>()
             .AddScoped<ICustomDataMappingMapper, CustomDataMappingMapper>()
             .AddScoped<IServiceAccountMapper, ServiceAccountMapper>()
-            .AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            .AddAutoMapper(cfg =>
+            {
+                cfg.Internal().ForAllMaps((_, mapping) => mapping.MaxDepth(AutoMapperMaxDepth));
+            }, AppDomain.CurrentDomain.GetAssemblies());
     }
 
     public static IServiceCollection AddSqs(this IServiceCollection services, IConfiguration configuration)
