@@ -1,4 +1,12 @@
-fields @timestamp, @requestId, @message
-| filter @message like /Task timed out|HttpClient.Timeout|The request timed out|DOH_PostIdentities-Failed|PostIdentities-Failed|status code 504| - 408 | - 504 /
-| sort @timestamp asc
-| limit 100
+filter @type = "REPORT"
+| filter @duration >= 5000
+| fields @timestamp, @requestId, @duration, @billedDuration, @maxMemoryUsed
+| sort @duration desc
+| limit 50
+
+
+filter @type = "REPORT"
+| filter @duration >= 5000
+| fields @timestamp, @requestId, @duration, @billedDuration, @maxMemoryUsed
+| sort @duration desc
+| limit 50
