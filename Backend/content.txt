@@ -4,9 +4,8 @@ filter @type = "REPORT"
 | sort @duration desc
 | limit 50
 
-
-filter @type = "REPORT"
-| filter @duration >= 5000
-| fields @timestamp, @requestId, @duration, @billedDuration, @maxMemoryUsed
-| sort @duration desc
-| limit 50
+fields @timestamp, @requestId, @message
+| filter @message like /postIdentity/
+| filter @message like /Request finished|Elapsed Time|Executed action/
+| sort @timestamp asc
+| limit 200
