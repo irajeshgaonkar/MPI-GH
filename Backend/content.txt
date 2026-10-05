@@ -1,0 +1,18 @@
+Summary
+AutoMapper 12.0.1 can recurse without a depth limit. A self-referential object graph that is deep enough can cause stack exhaustion, and that takes down the process. This is GHSA-rvv3-g6hj-g44x.
+
+We looked through UserProfile. The maps we have are flat fields, so none of them can build that kind of graph today. The registration still needed a cap, because AddAutoMapper scans loaded assemblies and a later profile would be included automatically.
+
+Startup.AddAutoMapper now sets MaxDepth(64) on every map with ForAllMaps. On 12.0.1 that API is only available through AutoMapper.Internal. 64 is the limit from the AutoMapper patch and from the maintainer's workaround. We did not add it to each CreateMap in UserProfile.
+
+Existing maps are one level deep, so their results stay the same. If a mapping reaches the configured depth limit, AutoMapper stops mapping deeper levels, preventing excessive recursion.
+
+This does not upgrade AutoMapper. We stayed on 12.0.1 because the patched releases need a commercial license, and this repo has no license key. Scanners that key off the package version can still report 12.0.1. No vulnerability suppression was added.
+
+Testing
+AutoMapperMaxDepthTests calls the real registration:
+
+Every registered map has MaxDepth 64.
+A ClientIdentityRequest still maps FirstName and LastName.
+A 200-level chain of a test-only type stops at 64. That type is not part of the production host.
+The three tests passed. The build succeeded, and these files did not add compiler or analyzer warnings. The existing AutoMapper 12.0.1 NuGet warning is still there.
