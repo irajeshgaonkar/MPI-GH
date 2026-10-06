@@ -3,12 +3,17 @@
     public class AppSettings
     {
         public string DbConnectionStr { get; set; }
+        public string? NonCoalitionDbConnectionStr { get; set; }
 
         public LoggingOptions Logging { get; set; }
 
         public string InputBucketName { get; set; }
 
+        public string? NonCoalitionInputBucketName { get; set; }
+
         public string OutputBucketName { get; set; }
+
+        public string? NonCoalitionOutputBucketName { get; set; }
 
         public SqsOptions SqsOptions { get; set; }
 

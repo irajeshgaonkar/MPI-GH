@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Net;
 using System.Text.RegularExpressions;
 using HCA.AdminMetrics.Api.Models;
 using HCA.AdminMetrics.Api.Options;
@@ -59,18 +58,12 @@ public partial class AdminOnboardedSystemService(
         }
 
         var rows = await LoadGroupAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            return null;
-        }
-
         return MapGroup(rows);
     }
 
     /// <inheritdoc />
     public async Task<AdminOnboardedSystemDto> CreateAsync(AdminOnboardedSystemRequest request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
         ValidateSystemRequest(request, _allowedTenants);
 
         var normalizedSourceSystemName = CleanRequired(request.SourceSystemName, nameof(request.SourceSystemName));
@@ -118,33 +111,15 @@ public partial class AdminOnboardedSystemService(
     /// <inheritdoc />
     public async Task<AdminOnboardedSystemDto> UpdateAsync(int id, AdminOnboardedSystemRequest request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
         ValidateSystemRequest(request, _allowedTenants);
 
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var actor = GetActor();
         var now = DateTime.UtcNow;
         var normalizedWhitelists = NormalizeWhitelistRequests(request.IpWhitelists);
-        var normalizedSourceSystemName = CleanRequired(request.SourceSystemName, nameof(request.SourceSystemName));
         var normalizedTenant = CleanRequired(request.Tenant, nameof(request.Tenant));
-        var currentGroupKey = BuildSystemGroupKey(anchor.SourceSystemName, anchor.Tenant);
-        var requestedGroupKey = BuildSystemGroupKey(normalizedSourceSystemName, normalizedTenant);
-
-        if (!string.Equals(currentGroupKey, requestedGroupKey, StringComparison.OrdinalIgnoreCase))
-        {
-            var conflictingRows = await LoadGroupForUpdateAsync(normalizedSourceSystemName, normalizedTenant, cancellationToken);
-            if (conflictingRows.Any(row => row.Id != anchor.Id))
-            {
-                throw new InvalidOperationException($"Source system '{normalizedSourceSystemName}' for tenant '{normalizedTenant}' already exists.");
-            }
-        }
 
         if (normalizedWhitelists.Count == 0 )
         {
@@ -153,11 +128,6 @@ public partial class AdminOnboardedSystemService(
 
         var existingById = rows.ToDictionary(row => row.Id);
         var requestedIds = normalizedWhitelists.Where(item => item.Id.HasValue && item.Id.Value > 0).Select(item => item.Id!.Value).ToHashSet();
-        var invalidRequestedIds = requestedIds.Where(requestedId => !existingById.ContainsKey(requestedId)).ToList();
-        if (invalidRequestedIds.Count != 0)
-        {
-            throw new InvalidOperationException("One or more whitelist rows do not belong to this onboarded system.");
-        }
 
         foreach (var row in rows.Where(row => !requestedIds.Contains(row.Id)).ToList())
         {
@@ -199,7 +169,7 @@ public partial class AdminOnboardedSystemService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var refreshedRows = await LoadGroupAsync(normalizedSourceSystemName, normalizedTenant, cancellationToken);
+        var refreshedRows = await LoadGroupAsync(request.SourceSystemName, request.Tenant, cancellationToken);
         return MapGroup(refreshedRows);
     }
 
@@ -209,11 +179,6 @@ public partial class AdminOnboardedSystemService(
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         dbContext.OnboardedSystem.RemoveRange(rows);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -224,11 +189,6 @@ public partial class AdminOnboardedSystemService(
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var actor = GetActor();
         var now = DateTime.UtcNow;
 
@@ -246,16 +206,10 @@ public partial class AdminOnboardedSystemService(
     /// <inheritdoc />
     public async Task<AdminOnboardedSystemDto> AddIpWhitelistAsync(int id, AdminOnboardedSystemIpWhitelistRequest request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
         ValidateWhitelistRequest(request);
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var actor = GetActor();
         var now = DateTime.UtcNow;
         var template = rows.OrderBy(row => row.Id).First();
@@ -288,16 +242,10 @@ public partial class AdminOnboardedSystemService(
     /// <inheritdoc />
     public async Task<AdminOnboardedSystemDto> UpdateIpWhitelistAsync(int id, int whitelistId, AdminOnboardedSystemIpWhitelistRequest request, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
         ValidateWhitelistRequest(request);
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var row = rows.FirstOrDefault(item => item.Id == whitelistId)
             ?? throw new InvalidOperationException("Whitelist row was not found.");
 
@@ -317,11 +265,6 @@ public partial class AdminOnboardedSystemService(
         var anchor = await dbContext.OnboardedSystem.FirstOrDefaultAsync(system => system.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("Onboarded system was not found.");
         var rows = await LoadGroupForUpdateAsync(anchor.SourceSystemName, anchor.Tenant, cancellationToken);
-        if (rows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var row = rows.FirstOrDefault(item => item.Id == whitelistId)
             ?? throw new InvalidOperationException("Whitelist row was not found.");
 
@@ -353,7 +296,7 @@ public partial class AdminOnboardedSystemService(
             .ToListAsync(cancellationToken);
 
         return rows
-            .Where(system => string.Equals(BuildSystemGroupKey(system.SourceSystemName, system.Tenant), key, StringComparison.OrdinalIgnoreCase))
+            .Where(system => NormalizeKey(system.SourceSystemName) == key)
             .ToList();
     }
 
@@ -365,18 +308,13 @@ public partial class AdminOnboardedSystemService(
             .ToListAsync(cancellationToken);
 
         return rows
-            .Where(system => string.Equals(BuildSystemGroupKey(system.SourceSystemName, system.Tenant), key, StringComparison.OrdinalIgnoreCase))
+            .Where(system => NormalizeKey(system.SourceSystemName) == key)
             .ToList();
     }
 
     private static AdminOnboardedSystemDto MapGroup(IEnumerable<OnboardedSystemEntity> rows)
     {
         var orderedRows = rows.OrderBy(item => item.Id).ToList();
-        if (orderedRows.Count == 0)
-        {
-            throw new InvalidOperationException("Onboarded system rows were not found.");
-        }
-
         var primary = orderedRows.First();
         var sourceSystemName = PickPreferredValue(orderedRows.Select(item => item.SourceSystemName));
         var agencyName = PickPreferredValue(orderedRows.Select(item => item.AgencyName));
@@ -419,8 +357,6 @@ public partial class AdminOnboardedSystemService(
 
     private static void ValidateSystemRequest(AdminOnboardedSystemRequest request, HashSet<string> allowedTenants)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         if (string.IsNullOrWhiteSpace(request.SourceSystemName))
         {
             throw new InvalidOperationException("Source system name is required.");
@@ -442,19 +378,14 @@ public partial class AdminOnboardedSystemService(
             throw new InvalidOperationException($"Tenant must be one of: {string.Join(", ", allowedTenants.OrderBy(tenant => tenant))}.");
         }
 
-        foreach (var whitelist in request.IpWhitelists ?? [])
+        foreach (var whitelist in request.IpWhitelists)
         {
             ValidateWhitelistRequest(whitelist);
         }
     }
 
-    private static void ValidateWhitelistRequest(AdminOnboardedSystemIpWhitelistRequest? request)
+    private static void ValidateWhitelistRequest(AdminOnboardedSystemIpWhitelistRequest request)
     {
-        if (request == null)
-        {
-            throw new InvalidOperationException("IP whitelist entry is required.");
-        }
-
         var start = CleanOptional(request.StartIpAddress);
         var end = CleanOptional(request.EndIpAddress);
         var cidr = CleanOptional(request.IpAddressCidr);
@@ -474,30 +405,11 @@ public partial class AdminOnboardedSystemService(
         {
             throw new InvalidOperationException("An IP whitelist entry must use either a CIDR block or a start/end range, not both.");
         }
-
-        if (hasRange)
-        {
-            if (!TryParseIpv4(start, out var startAddress) || !TryParseIpv4(end, out var endAddress))
-            {
-                throw new InvalidOperationException("IP whitelist range entries must use valid IPv4 addresses.");
-            }
-
-            if (Ipv4ToUInt32(startAddress) > Ipv4ToUInt32(endAddress))
-            {
-                throw new InvalidOperationException("IP whitelist range end address must be greater than or equal to the start address.");
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(cidr) && !IsValidCidr(cidr))
-        {
-            throw new InvalidOperationException("IP whitelist CIDR entries must use valid IPv4 CIDR notation.");
-        }
     }
 
-    private static List<AdminOnboardedSystemIpWhitelistRequest> NormalizeWhitelistRequests(List<AdminOnboardedSystemIpWhitelistRequest>? requests)
+    private static List<AdminOnboardedSystemIpWhitelistRequest> NormalizeWhitelistRequests(List<AdminOnboardedSystemIpWhitelistRequest> requests)
     {
-        return (requests ?? [])
-            .Where(request => request != null)
+        return requests
             .Select(request => new AdminOnboardedSystemIpWhitelistRequest
             {
                 Id = request.Id,
@@ -511,29 +423,6 @@ public partial class AdminOnboardedSystemService(
             .GroupBy(request => $"{request.StartIpAddress}|{request.EndIpAddress}|{request.IpAddressCidr}", StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToList();
-    }
-
-    private static bool IsValidCidr(string cidr)
-    {
-        var parts = cidr.Split('/');
-        if (parts.Length != 2 || !TryParseIpv4(parts[0], out _) || !int.TryParse(parts[1], out var prefix))
-        {
-            return false;
-        }
-
-        return prefix is >= 0 and <= 32;
-    }
-
-    private static bool TryParseIpv4(string? value, out IPAddress address)
-    {
-        return IPAddress.TryParse(value, out address!)
-            && address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
-    }
-
-    private static uint Ipv4ToUInt32(IPAddress address)
-    {
-        var bytes = address.GetAddressBytes();
-        return ((uint)bytes[0] << 24) | ((uint)bytes[1] << 16) | ((uint)bytes[2] << 8) | bytes[3];
     }
 
     private string GetActor()

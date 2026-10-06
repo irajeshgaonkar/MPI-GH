@@ -17,6 +17,8 @@ public class FileRequestDto
     /// </summary>
     public string FileName { get; set; }
 
+    public string TenantDatabase { get; set; } = "HHS Coalition";
+
     /// <summary>
     /// Output File Name
     /// </summary>

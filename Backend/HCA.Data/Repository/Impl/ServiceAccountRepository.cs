@@ -1,13 +1,14 @@
-﻿using HCA.Data.Entities;
+using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
 
 namespace HCA.Data.Repository.Impl
 {
-    public class ServiceAccountRepository :  RepositoryBase<ServiceAccountEntity>, IServiceAccountRepository
+    public class ServiceAccountRepository : RepositoryBase<ServiceAccountEntity>, IServiceAccountRepository
     {
-        public ServiceAccountRepository(HcaDbContext dbContext) : base(dbContext)
+        public ServiceAccountRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
         {
         }
+
         public async Task<ServiceAccountEntity?> GetServiceAccount(string appId)
         {
             var request = await GetSingleAsync(f => f.AppId == appId);

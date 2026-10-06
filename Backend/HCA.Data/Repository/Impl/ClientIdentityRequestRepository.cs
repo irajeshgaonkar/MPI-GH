@@ -5,7 +5,7 @@ namespace HCA.Data.Repository;
 
 public class ClientIdentityRequestRepository : RepositoryBase<ClientIdentityRequestEntity>, IClientIdentityRequestRepository
 {
-    public ClientIdentityRequestRepository(HcaDbContext dbContext) : base(dbContext)
+    public ClientIdentityRequestRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
     {
     }
 

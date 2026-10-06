@@ -4,6 +4,8 @@ using Amazon.S3;
 using HCA.Core;
 using HCA.Core.Processors;
 using HCA.Core.Processors.File;
+using HCA.Data;
+using HCA.Data.Repository;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.SQS;
@@ -87,6 +89,8 @@ public class Function
         var logger = serviceProvider.GetRequiredService<IAppLogger>();
         logger.LogInformation($"started processing request {request.MessageType}");
         var outputFileWriter = serviceProvider.GetRequiredService<IOutputFileWriter>();
+        var tenantContext = serviceProvider.GetRequiredService<ITenantContext>();
+        var fileRequestRepository = serviceProvider.GetRequiredService<IFileRequestRepository>();
         var requestData = request.Payload.DeSerializeWithoutCasing<OuputFileGenerationMessage>();
 
         if (requestData == null)
@@ -94,6 +98,9 @@ public class Function
             logger.LogInformation($"request data is null for {request.MessageType}");
             return;
         }
+
+        var tenantDatabase = await ResolveTenantDatabase(fileRequestRepository, requestData.TenantDatabase, requestData.RequestId);
+        tenantContext.SetTenantDatabase(tenantDatabase);
 
         await outputFileWriter.WriteFile(requestData.RequestId);
     }
@@ -127,6 +134,28 @@ public class Function
             .Build();
 
         return configuration;
+    }
+
+    private static async Task<TenantDatabaseKind> ResolveTenantDatabase(
+        IFileRequestRepository fileRequestRepository,
+        string? tenantDatabase,
+        string? requestId)
+    {
+        if (TenantDatabaseKindExtensions.TryParseTenantValue(tenantDatabase, out var parsedTenantDatabase))
+        {
+            return parsedTenantDatabase;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestId))
+        {
+            var tenantDatabaseByRequestId = await fileRequestRepository.GetTenantDatabaseByRequestId(requestId);
+            if (tenantDatabaseByRequestId.HasValue)
+            {
+                return tenantDatabaseByRequestId.Value;
+            }
+        }
+
+        return TenantDatabaseKind.Coalition;
     }
 }
 

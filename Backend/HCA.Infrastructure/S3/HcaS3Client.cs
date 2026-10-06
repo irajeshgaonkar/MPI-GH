@@ -32,11 +32,28 @@ namespace HCA.Infrastructure.S3
             }
         }
 
-        public async Task UploadFileAsync(MemoryStream stream, string bucketName, string fileName)
+        public async Task UploadFileAsync(MemoryStream stream, string bucketName, string fileName, Dictionary<string, object>? metadata = null)
         {
             try
             {
-                await _s3Client.UploadObjectFromStreamAsync(bucketName, fileName, stream, new Dictionary<string, object>());
+                if (stream.CanSeek)
+                {
+                    stream.Seek(0, SeekOrigin.Begin);
+                }
+
+                var request = new Amazon.S3.Model.PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = fileName,
+                    InputStream = stream
+                };
+
+                foreach (var item in metadata ?? new Dictionary<string, object>())
+                {
+                    request.Metadata.Add(item.Key, item.Value?.ToString() ?? string.Empty);
+                }
+
+                await _s3Client.PutObjectAsync(request);
                 _appLogger.LogInformation($"Successfully uploaded file to s3 bucket:{bucketName} fileName:{fileName}");
             }
             catch (Exception e)

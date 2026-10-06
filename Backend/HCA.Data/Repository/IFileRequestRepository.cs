@@ -6,4 +6,6 @@ namespace HCA.Data.Repository;
 public interface IFileRequestRepository : IRepositoryBase<FileRequestEntity>
 {
     Task<FileRequestEntity?> GetRequest(string requestId);
+
+    Task<TenantDatabaseKind?> GetTenantDatabaseByRequestId(string requestId);
 }

@@ -1,4 +1,4 @@
-﻿using HCA.Data.Entities;
+using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,10 +6,11 @@ namespace HCA.Data.Repository.Impl
 {
     public class AppRoleMappingRepository : RepositoryBase<AppRoleMappingEntity>, IAppRoleMappingRepository
     {
-        private readonly HcaDbContext _hcaDbContext;
-        public AppRoleMappingRepository(HcaDbContext dbContext) : base(dbContext)
+        private readonly IHcaDbContextAccessor _dbContextAccessor;
+
+        public AppRoleMappingRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
         {
-            _hcaDbContext = dbContext;
+            _dbContextAccessor = dbContextAccessor;
         }
 
         /// <summary>
@@ -19,8 +20,10 @@ namespace HCA.Data.Repository.Impl
         /// <returns></returns>
         public async Task<List<AppRoleMappingEntity>> GetAppRoleMappingsAsync(List<string> groups)
         {
-            var results = await _hcaDbContext.AppRoleMappings.Where(arm => groups.Any(group => arm.RoleGroupName == group))
-            .Include(mapping => mapping.AppRole).Include(s => s.System).ToListAsync();
+            var results = await _dbContextAccessor.Current.AppRoleMappings.Where(arm => groups.Any(group => arm.RoleGroupName == group))
+                .Include(mapping => mapping.AppRole)
+                .Include(s => s.System)
+                .ToListAsync();
             return results;
         }
     }

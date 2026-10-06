@@ -4,6 +4,6 @@
     {
         Task<MemoryStream> DownloadFileAsync(string bucketName, string fileName);
 
-        Task UploadFileAsync(MemoryStream stream, string bucketName, string fileName);
+        Task UploadFileAsync(MemoryStream stream, string bucketName, string fileName, Dictionary<string, object>? metadata = null);
     }
 }

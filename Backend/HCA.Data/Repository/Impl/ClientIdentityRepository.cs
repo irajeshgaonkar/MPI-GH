@@ -11,10 +11,11 @@ namespace HCA.Data.Repository;
 
 public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IClientIdentityRepository
 {
-    private readonly HcaDbContext _hcaDbContext;
-    public ClientIdentityRepository(HcaDbContext dbContext) : base(dbContext)
+    private readonly IHcaDbContextAccessor _dbContextAccessor;
+
+    public ClientIdentityRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
     {
-        _hcaDbContext = dbContext;
+        _dbContextAccessor = dbContextAccessor;
     }
 
 
@@ -34,7 +35,7 @@ public class ClientIdentityRepository : RepositoryBase<ClientIdentityEntity>, IC
             NpgsqlParameter parameterS = new NpgsqlParameter(":mpi_link_id", linkId);
             NpgsqlParameter parameterD = new NpgsqlParameter(":limit", recordsPerPage);
             NpgsqlParameter parameterP = new NpgsqlParameter(":offset", skip);
-            clientIdentities = _hcaDbContext.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
+            clientIdentities = _dbContextAccessor.Current.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
 WHERE mpi_link_id IN
 (
     SELECT mpi_link_id
@@ -49,7 +50,7 @@ WHERE mpi_link_id IN
 ORDER BY mpi_link_id; ", parameterS, parameterD, parameterP)
                 .ToList();
 
-            count = _hcaDbContext.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value FROM client_identity
+            count = _dbContextAccessor.Current.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value FROM client_identity
 WHERE mpi_link_id IN
 (
 	SELECT mpi_link_id
@@ -67,7 +68,7 @@ WHERE mpi_link_id IN
 
             NpgsqlParameter parameterD1 = new NpgsqlParameter(":limit", recordsPerPage);
             NpgsqlParameter parameterP1 = new NpgsqlParameter(":offset", skip);
-            clientIdentities = _hcaDbContext.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
+            clientIdentities = _dbContextAccessor.Current.ClientIdentities.FromSqlRaw(@"SELECT * FROM client_identity
 WHERE mpi_link_id IN
 (
     SELECT mpi_link_id
@@ -81,7 +82,7 @@ WHERE mpi_link_id IN
 ORDER BY mpi_link_id; ", parameterD1, parameterP1)
                 .ToList();
 
-            count = _hcaDbContext.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value  FROM client_identity
+            count = _dbContextAccessor.Current.Set<IntReturn>().FromSqlRaw(@"SELECT COUNT(distinct mpi_link_id) As Value  FROM client_identity
 WHERE mpi_link_id IN
 (
 	SELECT mpi_link_id

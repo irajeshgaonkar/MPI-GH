@@ -6,7 +6,7 @@ namespace HCA.Data.Repository;
 
 public class UserRequestRepository : RepositoryBase<UserRequestEntity>, IUserRequestRepository
 {
-    public UserRequestRepository(HcaDbContext dbContext) : base(dbContext)
+    public UserRequestRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
     {
     }
 

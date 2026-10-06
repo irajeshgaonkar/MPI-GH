@@ -31,6 +31,11 @@ public class SftpFileTransferEntity : BaseEntity
     [Required]
     public string FileName { get; set; }
 
+    [Column("tenant")]
+    [Required]
+    [MaxLength(40)]
+    public string TenantDatabase { get; set; } = global::HCA.Data.TenantDatabaseKindExtensions.CoalitionTenant;
+
     /// <summary>
     /// Last modified date time
     /// </summary>
