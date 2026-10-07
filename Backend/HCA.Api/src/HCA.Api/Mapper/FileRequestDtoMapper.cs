@@ -13,6 +13,7 @@ public static class FileRequestDtoMapper
             RequestId = fileRequest.RequestId,
             TrackingId = fileRequest.TrackingId,
             FileName = fileRequest.FileName,
+            TenantDatabase = fileRequest.TenantDatabase,
             OutputFileName = fileRequest.OutputFileName,
             SourceSystemAgency = fileRequest.SourceSystemAgency,
             SourceSystemName = fileRequest.SourceSystemName,

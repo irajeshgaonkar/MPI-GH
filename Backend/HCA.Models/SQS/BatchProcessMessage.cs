@@ -5,12 +5,16 @@ public class BatchProcessMessage
 {
     public string ApiCallType { get; set; }
 
+    public string TenantDatabase { get; set; } = "HHS Coalition";
+
     public IEnumerable<ClientIdentityRequest> ClientIdentityRequests { get; set; }
 }
 
 public class OuputFileGenerationMessage
 {
     public string RequestId { get; set; }
+
+    public string TenantDatabase { get; set; } = "HHS Coalition";
 }
 
 public class SqsMessage

@@ -14,11 +14,14 @@ namespace HCA.Infrastructure.sftp
             _hcaSftpClient = hcaSftpClient;
         }   
 
-        public async Task TransferFile(string sftpPath, string bucket, string fileName)
+        public async Task TransferFile(string sftpPath, string bucket, string fileName, string tenantDatabase)
         {
             var file = await _hcaSftpClient.DownloadFileAsync(sftpPath);
             if (file == null) throw new HcaFileTransferException($"Error downloading the file from sftp, path {sftpPath}");
-            await _hcaS3Client.UploadFileAsync(file, bucket, fileName);
+            await _hcaS3Client.UploadFileAsync(file, bucket, fileName, new Dictionary<string, object>
+            {
+                ["tenant"] = tenantDatabase
+            });
         }
     }
 }

@@ -10,7 +10,7 @@ using HCA.Infrastructure;
 using HCA.Infrastructure.Configurations;
 using HCA.Infrastructure.Logger;
 using Microsoft.Extensions.PlatformAbstractions;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
 
 namespace HCA.AdminMetrics.Api;
@@ -63,18 +63,24 @@ public class Startup( IConfiguration configuration )
                 In = ParameterLocation.Header,
                 Description = "JWT Authorization header using the Bearer scheme."
             });
-            c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
-                    new OpenApiSecuritySchemeReference(Constants.RequestHeaders.Bearer, document, null),
-                    new List<string>()
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = Constants.RequestHeaders.Bearer
+                        }
+                    },
+                    Array.Empty<string>()
                 }
             });
         });
 
         services.AddCors();
         services.AddHttpContextAccessor();
-        services.AddMemoryCache();
         services.AddConsoleLogging();
         services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
         services.AddAWSService<IAmazonCloudWatch>();
@@ -84,7 +90,6 @@ public class Startup( IConfiguration configuration )
         services.AddDbContext(Configuration);
         services.AddScoped<IAdminMetricsService, AdminMetricsService>();
         services.AddScoped<IAdminUsageMetricsService, AdminUsageMetricsService>();
-        services.AddScoped<IAdminApiTrafficService, AdminApiTrafficService>();
         services.AddScoped<IAdminReportsService, AdminReportsService>();
         services.AddScoped<IAdminOnboardedSystemService, AdminOnboardedSystemService>();
     }

@@ -2,6 +2,6 @@
 {
     public interface ISftpToS3FileTransferClient
     {
-        Task TransferFile(string sftpPath, string bucket, string fileName);
+        Task TransferFile(string sftpPath, string bucket, string fileName, string tenantDatabase);
     }
 }

@@ -6,6 +6,7 @@
         public string UserName { get; set; }
         public string Password { get; set; }
         public List<string> Paths { get; set; }
+        public List<string> NonCoalitionPathPrefixes { get; set; } = [];
         public string SourceFolder { get; set; }
         public string DestinationFolder { get; set; }
         public List<string> AllowedFileTypes { get; set; }

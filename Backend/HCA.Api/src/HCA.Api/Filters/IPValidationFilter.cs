@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using HCA.Api.Extensions;
-using HCA.Data.Repository;
+using HCA.Data;
 using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Logging;
@@ -12,15 +12,15 @@ namespace HCA.Api.Filters
     /// <summary>
     /// IP Validation Filter
     /// </summary>
-    /// <param name="onboardedSystemRepository"></param>
+    /// <param name="onboardedSystemTenantResolver"></param>
     /// <param name="logger"></param>
-    public class IPValidationFilter(IOnboardedSystemRepository onboardedSystemRepository, IAppLogger logger) : IAsyncActionFilter
+    public class IPValidationFilter(IOnboardedSystemTenantResolver onboardedSystemTenantResolver, IAppLogger logger) : IAsyncActionFilter
     {
-        private readonly IOnboardedSystemRepository _onboardedSystemRepository = onboardedSystemRepository;
+        private readonly IOnboardedSystemTenantResolver _onboardedSystemTenantResolver = onboardedSystemTenantResolver;
 
         private readonly IAppLogger _logger = logger;
 
-        public async Task OnActionExecutionAsync( ActionExecutingContext context, ActionExecutionDelegate next )
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             try
             {
@@ -36,7 +36,7 @@ namespace HCA.Api.Filters
                 //Add trackingId to context to consume and format the exception if any in down the line.
                 if (!string.IsNullOrEmpty(trackingId))
                 {
-                    context.HttpContext.Items["TrackingId"] = trackingId;
+                    context.HttpContext.Items[TenantContextItemKeys.TrackingId] = trackingId;
                 }
 
                 if (string.IsNullOrEmpty(ipAddress))
@@ -44,26 +44,30 @@ namespace HCA.Api.Filters
                     throw new IPValidationException($"ipAddress validation failed. Incoming request does not have an IP Address.");
                 }
 
-                var sourceSystems = await _onboardedSystemRepository.GetActiveSourceSystemsByIPAsync(ipAddress);
+                var lookupResult = await _onboardedSystemTenantResolver.ResolveByIpAsync(ipAddress);
+                var sourceSystems = lookupResult.SourceSystems;
 
                 // If there are no Source Systems for incoming IP - Block it.
-                if(sourceSystems.Count == 0)
+                if (sourceSystems.Count == 0)
                 {
                     throw new IPValidationException("sourceSystem validation failed. ipAddress/sourceSystem mismatch. Please contact MPI to resolve.");
                 }
 
+                context.HttpContext.Items[TenantContextItemKeys.TenantDatabase] = lookupResult.TenantDatabase.ToString();
+                context.HttpContext.Items[TenantContextItemKeys.Tenant] = lookupResult.TenantDatabase.ToString();
+
                 //If there is one matching source system for incoming IP - Allow
-                if(sourceSystems.Count == 1)
+                if (sourceSystems.Count == 1)
                 {
-                    context.HttpContext.Items["SourceSystem"] = sourceSystems.First();
+                    context.HttpContext.Items[TenantContextItemKeys.SourceSystem] = sourceSystems.First();
                     await next();
                     return;
                 }
 
                 //If there are duplicate whitelisting for same source and IP combination- Consider it as one source system
-                if(sourceSystems.Distinct(StringComparer.OrdinalIgnoreCase).Count() == 1)
+                if (sourceSystems.Distinct(StringComparer.OrdinalIgnoreCase).Count() == 1)
                 {
-                    context.HttpContext.Items["SourceSystem"] = sourceSystems.First();
+                    context.HttpContext.Items[TenantContextItemKeys.SourceSystem] = sourceSystems.First();
                     await next();
                     return;
                 }
@@ -73,10 +77,10 @@ namespace HCA.Api.Filters
                     //Check if incoming source system header exists and matches one of the whitelisted systems for the incoming Ip Address
                     var sourceSystemFromRequest = jsonObjectRequestBody["SourceSystem"]?.ToString();
 
-                    if(!string.IsNullOrEmpty(sourceSystemFromRequest)
+                    if (!string.IsNullOrEmpty(sourceSystemFromRequest)
                         && sourceSystems.Any(source => string.Equals(source, sourceSystemFromRequest, StringComparison.OrdinalIgnoreCase)))
                     {
-                        context.HttpContext.Items["SourceSystem"] = sourceSystemFromRequest;
+                        context.HttpContext.Items[TenantContextItemKeys.SourceSystem] = sourceSystemFromRequest;
                         await next();
                         return;
                     }
@@ -89,7 +93,7 @@ namespace HCA.Api.Filters
                         if (parentSourceSystem.Distinct(StringComparer.OrdinalIgnoreCase).Count() == 1)
                         {
                             //Check if request header has optional source system name
-                            context.HttpContext.Items["SourceSystem"] = parentSourceSystem.First();
+                            context.HttpContext.Items[TenantContextItemKeys.SourceSystem] = parentSourceSystem.First();
                             await next();
                             return;
                         }
@@ -100,10 +104,11 @@ namespace HCA.Api.Filters
                             throw new IPValidationException("Your Whitelisted IP Address is conflicting with another system. Please contact MPI to resolve");
                         }
                     }
-                }               
+                }
             }
-            
-            catch (Exception e ){
+
+            catch (Exception e)
+            {
                 var exceptionCustomProperties = new ExceptionCustomProperties
                 {
                     User = context.HttpContext.GetCurrentUser(),

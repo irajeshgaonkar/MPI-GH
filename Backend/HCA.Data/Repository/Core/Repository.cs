@@ -6,11 +6,13 @@ namespace HCA.Data.Repository.Core;
 
 public class RepositoryBase<T> : IRepositoryBase<T> where T : class
 {
-    protected readonly DbContext DataBaseContext;
+    private readonly IHcaDbContextAccessor _dbContextAccessor;
 
-    public RepositoryBase(DbContext context)
+    protected DbContext DataBaseContext => _dbContextAccessor.Current;
+
+    public RepositoryBase(IHcaDbContextAccessor dbContextAccessor)
     {
-        DataBaseContext = context;
+        _dbContextAccessor = dbContextAccessor;
     }
 
     public IQueryable<T> GetAll()

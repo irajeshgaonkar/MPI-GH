@@ -39,6 +39,11 @@ public class FileRequestEntity : BaseEntity
     [MaxLength(1024)]
     public string FileName { get; set; }
 
+    [Column("tenant")]
+    [Required]
+    [MaxLength(40)]
+    public string TenantDatabase { get; set; } = global::HCA.Data.TenantDatabaseKindExtensions.CoalitionTenant;
+
     /// <summary>
     /// Output File Name
     /// </summary>

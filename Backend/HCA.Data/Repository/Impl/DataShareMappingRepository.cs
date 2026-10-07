@@ -1,4 +1,4 @@
-﻿using HCA.Data.Entities;
+using HCA.Data.Entities;
 using HCA.Data.Repository.Core;
 using HCA.Models;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +8,10 @@ namespace HCA.Data.Repository.Impl
     /// <summary>
     /// DataShareMapping repository
     /// </summary>
-    /// <param name="dbContext"></param>
-    public class DataShareMappingRepository(HcaDbContext dbContext) : RepositoryBase<DataShareMappingEntity>(dbContext), IDataShareMappingRepository
+    /// <param name="dbContextAccessor"></param>
+    public class DataShareMappingRepository(IHcaDbContextAccessor dbContextAccessor) : RepositoryBase<DataShareMappingEntity>(dbContextAccessor), IDataShareMappingRepository
     {
-        private readonly HcaDbContext _hcaDbContext = dbContext;
+        private readonly IHcaDbContextAccessor _dbContextAccessor = dbContextAccessor;
 
         /// <summary>
         /// Get allowed data share mapping for source system
@@ -20,7 +20,7 @@ namespace HCA.Data.Repository.Impl
         /// <returns></returns>
         public async Task<List<DataShareMapping>> GetAllowedDataShareMappingForSourceSystemAsync(string sourceSystem)
         {
-            var result  = await _hcaDbContext.DataShareMappings.Where(mapping => mapping.SourceSystem.SourceSystemName == sourceSystem)
+            var result = await _dbContextAccessor.Current.DataShareMappings.Where(mapping => mapping.SourceSystem.SourceSystemName == sourceSystem)
                 .Select(system => new DataShareMapping()
                 {
                     DataSharingLevel = system.DataSharingLevel,

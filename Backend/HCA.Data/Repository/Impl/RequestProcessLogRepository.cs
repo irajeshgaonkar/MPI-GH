@@ -5,7 +5,7 @@ namespace HCA.Data.Repository;
 
 public class RequestProcessLogRepository : RepositoryBase<RequestProcessLogEntity>, IRequestProcessLogRepository
 {
-    public RequestProcessLogRepository(HcaDbContext dbContex) : base(dbContex)
+    public RequestProcessLogRepository(IHcaDbContextAccessor dbContextAccessor) : base(dbContextAccessor)
     {
     }
 }

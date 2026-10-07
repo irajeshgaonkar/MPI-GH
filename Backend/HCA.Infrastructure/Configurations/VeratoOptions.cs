@@ -1,4 +1,4 @@
-﻿namespace HCA.Infrastructure.Configurations
+namespace HCA.Infrastructure.Configurations
 {
     public class VeratoOptions
     {
@@ -21,5 +21,26 @@
         public RetryOptions RetryOptions { get; set; }
 
         public int RequestTimeoutInSec { get; set; }
+
+        public VeratoTenantOptions? NonCoalition { get; set; }
+    }
+
+    public class VeratoTenantOptions
+    {
+        public string? BaseUrl { get; set; }
+
+        public string? Username { get; set; }
+
+        public string? Password { get; set; }
+
+        public string? EnrichBaseUrl { get; set; }
+
+        public string? EnrichUsername { get; set; }
+
+        public string? EnrichPassword { get; set; }
+
+        public string? ClientCert { get; set; }
+
+        public string? ClientCertPassword { get; set; }
     }
 }

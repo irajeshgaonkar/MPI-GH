@@ -1,6 +1,6 @@
-﻿using HCA.Core.Processors.File;
-using HCA.Core.Services;
+﻿using HCA.Core.Services;
 using HCA.Data.Repository;
+using HCA.Data;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Extensions.ModelExtensions;
 using HCA.Infrastructure.Logger;
@@ -10,40 +10,19 @@ using HCA.Models.Response;
 using HCA.Models.SQS;
 using HCA.Infrastructure.Sqs;
 using HCA.Models.Logging;
-using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
 namespace HCA.Core.Processors;
 
-public class BatchRequestProcessor : IBatchRequestProcessor
+public class BatchRequestProcessor( IAppLogger logger,
+    IClientIdentityRequestRepository clientIdentityRequestRepository,
+    IClientIdentityRequestExecutor clientIdentityRequestExecutor,
+    IRequestProcessLogRepository requestProcessLogRepository,
+    IFileRequestRepository fileRequestRepository,
+    ISqsPublisher sqsPublisher,
+    ITenantContext tenantContext
+        ) : IBatchRequestProcessor
 {
-    private readonly IAppLogger _logger;
-    private readonly IClientIdentityRequestRepository _clientIdentityRequestRepository;
-    private readonly IClientIdentityRequestExecutor _clientIdentityRequestExecutor;
-    private readonly IRequestProcessLogRepository _requestProcessLogRepository;
-    private readonly IFileRequestRepository _fileRequestRepository;
-    private readonly ISqsPublisher _sqsPublisher;
-    private readonly IOutputFileWriter _outputFileWriter;
-
-
-    public BatchRequestProcessor(IAppLogger logger,
-        IClientIdentityRequestRepository clientIdentityRequestRepository,
-        IClientIdentityRequestExecutor clientIdentityRequestExecutor,
-        IRequestProcessLogRepository requestProcessLogRepository,
-        IFileRequestRepository fileRequestRepository,
-        IOutputFileWriter outputFileWriter,
-        ISqsPublisher sqsPublisher
-        )
-    {
-        _logger = logger;
-        _clientIdentityRequestRepository = clientIdentityRequestRepository;
-        _clientIdentityRequestExecutor = clientIdentityRequestExecutor;
-        _requestProcessLogRepository = requestProcessLogRepository;
-        _fileRequestRepository = fileRequestRepository;
-        _sqsPublisher = sqsPublisher;
-        _outputFileWriter = outputFileWriter;
-    }
-
     public async Task ProcessRequest(BatchProcessMessage batchRequest)
     {
         try
@@ -51,39 +30,40 @@ public class BatchRequestProcessor : IBatchRequestProcessor
             var clientIdentityRequest = batchRequest.ClientIdentityRequests.FirstOrDefault();
             var requestId = clientIdentityRequest?.RequestId;
             var batchNumber = clientIdentityRequest?.BatchNumber;
-            _logger.LogInformation($"Started Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+            var tenantDatabase = await ResolveTenantDatabase(batchRequest.TenantDatabase, requestId);
+            tenantContext.SetTenantDatabase(tenantDatabase);
+            logger.LogInformation($"Started Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
 
-            var fileRequest = await _fileRequestRepository.GetSingleAsync(f => f.RequestId == requestId);
+            var fileRequest = await fileRequestRepository.GetSingleAsync(f => f.RequestId == requestId);
 
             if (fileRequest?.ApiCallType == "VE Delete")
             {
                 await ProcessDeleteIdentityRequest (batchRequest);
-                _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+                logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
             }
             else
             {
                 await ProcessPostIdentityRequest(batchRequest);
-                _logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
+                logger.LogInformation($"Completed Processing the request requestId: {requestId}, BatchNumber: {batchNumber}");
             }
-
 
             if (requestId != null && IsFileRequestComplete(requestId))
             {
-                _logger.LogInformation($"Completed Processing all the requests requestId: {requestId}");
-                await PublishOuputFileGenerationMessage(requestId);
+                logger.LogInformation($"Completed Processing all the requests requestId: {requestId}");
+                await PublishOutputFileGenerationMessage(requestId, tenantDatabase);
             }
         }
         catch(Exception e)
         {
-            _logger.LogError(e, "Error Processing the request");
+            logger.LogError(e, "Error Processing the request");
             throw;
         }
     }
 
     private bool IsFileRequestComplete(string requestId)
     {
-        var res = _clientIdentityRequestRepository.All(c => c.RequestId == requestId, c => c.Status == RequestStatus.Failed.GetStringValue() || c.Status == RequestStatus.Success.GetStringValue());
-        _logger.LogInformation($"All requests completed for request : {requestId}, {res}");
+        var res = clientIdentityRequestRepository.All(c => c.RequestId == requestId, c => c.Status == RequestStatus.Failed.GetStringValue() || c.Status == RequestStatus.Success.GetStringValue());
+        logger.LogInformation($"All requests completed for request : {requestId}, {res}");
         return res;
     }
 
@@ -91,7 +71,10 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     {
         //int maxDegreeOfParallelism = 1;
         var groupedRequests = GetGroupedRequests(batchRequest);
-        if (groupedRequests == null) return;
+        if( groupedRequests == null )
+        {
+            return;
+        }
         //await groupedRequests.ParallelForEachAsync((requests) => ProcessPostIdentityRequests(requests), maxDegreeOfParallelism);
         foreach (var groupedRequest in groupedRequests)
         {
@@ -103,7 +86,10 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     {
         //int maxDegreeOfParallelism = 1;
         var groupedRequests = GetGroupedRequests(batchRequest);
-        if (groupedRequests == null) return;
+        if (groupedRequests == null)
+        {
+            return;
+        }
         //await groupedRequests.ParallelForEachAsync((requests) => ProcessPostIdentityRequests(requests), maxDegreeOfParallelism);
         foreach(var groupedRequest in groupedRequests)
         {
@@ -118,11 +104,13 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
         try
         {
-            _logger.LogInformation($"Processing request TrackingId: {trackingId}");
-            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
+            logger.LogInformation($"Processing request TrackingId: {trackingId}");
+            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(clientIdentityRequestRepository, requestProcessLogRepository);
 
-            if (!requests.Any())
+            if( !requests.Any() )
+            {
                 return;
+            }
 
             await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
 
@@ -132,7 +120,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
                 Content = new Models.Verato.Source(request.SourceSystemName, request.SourceSystemId)
             };
 
-            var response = await _clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(deleteIdentityRequest, requestStatusUpdater);
+            var response = await clientIdentityRequestExecutor.Execute<DeleteClientIdentityResponse>(deleteIdentityRequest, requestStatusUpdater);
 
             if (null == response || response.Success == false)
             {
@@ -163,7 +151,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
                 ExceptionCustomProperties = exceptionCustomProperties
             };
 
-            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             //Log error and move on
             //Do not throw as we need to process the remaining items in the request
         }
@@ -176,13 +164,15 @@ public class BatchRequestProcessor : IBatchRequestProcessor
 
         try
         {
-            _logger.LogInformation($"Processing request TrackingId: {trackingId}");
-            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(_clientIdentityRequestRepository, _requestProcessLogRepository);
+            logger.LogInformation($"Processing request TrackingId: {trackingId}");
+            var requestStatusUpdater = new ClientIdentityRequestStatusUpdater(clientIdentityRequestRepository, requestProcessLogRepository);
             requests = await RemoveDuplicates(requests);
-            _logger.LogInformation($"Completed removing duplicates: {trackingId}");
+            logger.LogInformation($"Completed removing duplicates: {trackingId}");
 
-            if (!requests.Any())
+            if( !requests.Any() )
+            {
                 return;
+            }
 
             await Update(requests, trackingId, RequestStatus.Processing, "Processing", null);
 
@@ -191,7 +181,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
                 Content = requests.ToList()
             };
 
-            var response = await _clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
+            var response = await clientIdentityRequestExecutor.Execute<PostClientIdentityResponse>(postIdentityRequest, requestStatusUpdater);
 
             if (null == response || response.Success == false)
             {
@@ -222,7 +212,7 @@ public class BatchRequestProcessor : IBatchRequestProcessor
                 ExceptionCustomProperties = exceptionCustomProperties
             };
 
-            _logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
+            logger.LogError(e, JsonConvert.SerializeObject(errorLogItem));
             //Log error and move on
             //Do not throw as we need to process the remaining items in the request
         }
@@ -231,11 +221,11 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private async Task Update(IEnumerable<ClientIdentityRequest> requests, string? trackingId, RequestStatus? status, string? message, string? mpiLinkId)
     {
         var ids = requests.Select(r => r.Id).ToList();
-        await _clientIdentityRequestRepository.UpdateStatus(ids, status?.GetStringValue(), message, mpiLinkId, trackingId);
-        _logger.LogInformation($"Completed updating the status TrackingId: {trackingId}, Status: {status?.GetStringValue()}");
+        await clientIdentityRequestRepository.UpdateStatus(ids, status?.GetStringValue(), message, mpiLinkId, trackingId);
+        logger.LogInformation($"Completed updating the status TrackingId: {trackingId}, Status: {status?.GetStringValue()}");
     }
 
-    private IEnumerable<IEnumerable<ClientIdentityRequest>>? GetGroupedRequests(BatchProcessMessage batchRequest)
+    private static IEnumerable<IEnumerable<ClientIdentityRequest>>? GetGroupedRequests(BatchProcessMessage batchRequest)
     {
         var groupedRequests = batchRequest.ClientIdentityRequests.GroupBySourceNameAndId();
         return groupedRequests;
@@ -244,32 +234,56 @@ public class BatchRequestProcessor : IBatchRequestProcessor
     private async Task<IList<ClientIdentityRequest>> RemoveDuplicates(IEnumerable<ClientIdentityRequest> requests)
     {
         var (records, duplicateRecords) = requests.GetDuplicateRecords();
-        if (null == duplicateRecords || duplicateRecords.Count() == 0)
+        if( null == duplicateRecords || !duplicateRecords.Any() )
+        {
             return records.ToList();
+        }
 
         await Update(duplicateRecords, string.Empty, RequestStatus.Failed, "Duplicate Record", null);
         return records.ToList();
     }
 
-    private async Task PublishOuputFileGenerationMessage(string requestId)
+    private async Task PublishOutputFileGenerationMessage(string requestId, TenantDatabaseKind tenantDatabase)
     {
         try
         {
-            _logger.LogInformation($"Strated Posting output file generation message to queue");
-            var ouputFileGenerationRequest = new OuputFileGenerationMessage() { RequestId = requestId };
+            logger.LogInformation($"Started Posting output file generation message to queue");
+            var outputFileGenerationRequest = new OuputFileGenerationMessage()
+            {
+                RequestId = requestId,
+                TenantDatabase = tenantDatabase.ToTenantValue()
+            };
             var sqsMessage = new SqsMessage()
             {
                 MessageType = MessageType.GenerateOutput,
-                Payload = SerializationExtensions.SerializeWithoutCasing(ouputFileGenerationRequest)
+                Payload = SerializationExtensions.SerializeWithoutCasing(outputFileGenerationRequest)
             };
 
-            await _sqsPublisher.PublishMessage(sqsMessage);
-            _logger.LogInformation($"Completed Posting output file generation message to queue");
+            await sqsPublisher.PublishMessage(sqsMessage);
+            logger.LogInformation($"Completed Posting output file generation message to queue");
         }
         catch(Exception e)
         {
-            _logger.LogError(e, "Unable to post message to queue");
-            //await _outputFileWriter.WriteFile(requestId);
+            logger.LogError(e, "Unable to post message to queue");
         }
+    }
+
+    private async Task<TenantDatabaseKind> ResolveTenantDatabase(string? tenantDatabase, string? requestId)
+    {
+        if (TenantDatabaseKindExtensions.TryParseTenantValue(tenantDatabase, out var parsedTenantDatabase))
+        {
+            return parsedTenantDatabase;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestId))
+        {
+            var tenantDatabaseByRequestId = await fileRequestRepository.GetTenantDatabaseByRequestId(requestId);
+            if (tenantDatabaseByRequestId.HasValue)
+            {
+                return tenantDatabaseByRequestId.Value;
+            }
+        }
+
+        throw new InvalidOperationException($"Unable to determine tenant database for requestId: {requestId ?? "<missing>"}. Batch messages must include a valid tenant database or reference an existing file request.");
     }
 }

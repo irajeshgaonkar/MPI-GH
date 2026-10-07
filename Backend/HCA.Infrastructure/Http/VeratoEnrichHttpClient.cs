@@ -1,11 +1,12 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using HCA.Infrastructure.Logger;
 
 namespace HCA.Infrastructure.Http
 {
-    public class VeratoEnrichHttpClient(HttpClient httpClient, IAppLogger appLogger)
+    public class VeratoEnrichHttpClient(IVeratoHttpClientFactory httpClientFactory, IVeratoTenantContext tenantContext, IAppLogger appLogger)
     {
-        private readonly HttpClient _httpClient = httpClient;
+        private readonly IVeratoHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly IVeratoTenantContext _tenantContext = tenantContext;
         private readonly IAppLogger _logger = appLogger;
 
         /// <summary>
@@ -25,7 +26,8 @@ namespace HCA.Infrastructure.Http
 
             try
             {
-                response = await _httpClient.SendAsync(request);
+                var client = CreateClient();
+                response = await client.SendAsync(request);
             }
             catch (Exception ex)
             {
@@ -50,6 +52,11 @@ namespace HCA.Infrastructure.Http
             }
 
             return response;
+        }
+
+        private HttpClient CreateClient()
+        {
+            return _httpClientFactory.Create(_tenantContext.UseNonCoalitionTenant, isEnrich: true);
         }
     }
 }

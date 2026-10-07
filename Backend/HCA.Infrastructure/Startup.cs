@@ -45,59 +45,11 @@ namespace HCA.Infrastructure
 
         public static IServiceCollection AddHttpClients(this IServiceCollection services, IConfiguration configuration)
         {
-            //Register client for Verato with Basic Auth and Client Cert
-            services.AddHttpClient<VeratoHttpClient>((sp, client) =>
-            {
-                var appSettings = sp.GetRequiredService<AppSettings>();
-
-                client.BaseAddress = new Uri(appSettings.VeratoOptions.BaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(appSettings.VeratoOptions.RequestTimeoutInSec);
-
-                var byteArray = Encoding.ASCII.GetBytes($"{appSettings.VeratoOptions.Username}:{appSettings.VeratoOptions.Password}");
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-            }).ConfigurePrimaryHttpMessageHandler(sp =>
-            {
-                var appSettings = sp.GetRequiredService<AppSettings>();
-
-                var handler = new HttpClientHandler();
-
-                var certBytes = Convert.FromBase64String(appSettings.VeratoOptions.ClientCert);
-                var certificate = new X509Certificate2(certBytes, appSettings.VeratoOptions.ClientCertPassword, X509KeyStorageFlags.MachineKeySet);
-
-                handler.ClientCertificates.Add(certificate);
-                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-
-                return handler;
-
-            }).AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
-
-            //Register client for Verato Enrich with Basic Auth and Client Cert
-            services.AddHttpClient<VeratoEnrichHttpClient>((sp, client) =>
-            {
-                var appSettings = sp.GetRequiredService<AppSettings>();
-
-                client.BaseAddress = new Uri(appSettings.VeratoOptions.EnrichBaseUrl);
-                client.Timeout = TimeSpan.FromSeconds(appSettings.VeratoOptions.RequestTimeoutInSec);
-
-                var byteArray = Encoding.ASCII.GetBytes($"{appSettings.VeratoOptions.EnrichUsername}:{appSettings.VeratoOptions.EnrichPassword}");
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-            }).ConfigurePrimaryHttpMessageHandler(sp =>
-            {
-                var appSettings = sp.GetRequiredService<AppSettings>();
-
-                var handler = new HttpClientHandler();
-
-                var certBytes = Convert.FromBase64String(appSettings.VeratoOptions.ClientCert);
-                var certificate = new X509Certificate2(certBytes, appSettings.VeratoOptions.ClientCertPassword, X509KeyStorageFlags.MachineKeySet);
-
-                handler.ClientCertificates.Add(certificate);
-                handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-
-                return handler;
-
-            }).AddPolicyHandler((sp, _) => GetRetryPolicy(sp));
+            services.AddScoped<IVeratoTenantContext, VeratoTenantContext>();
+            services.AddScoped<VeratoTenantConfigurationResolver>();
+            services.AddSingleton<IVeratoHttpClientFactory, VeratoHttpClientFactory>();
+            services.AddScoped<VeratoHttpClient>();
+            services.AddScoped<VeratoEnrichHttpClient>();
 
             return services;
         }
