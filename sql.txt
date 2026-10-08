@@ -1,0 +1,23 @@
+SELECT id, source_system_name, agency_name, tenant, is_active
+FROM coalitionmpi.onboarded_system
+WHERE source_system_name ILIKE '%verif%'
+   OR source_system_name ILIKE '%hub%'
+   OR agency_name ILIKE '%verif%'
+   OR agency_name ILIKE '%hub%'
+ORDER BY source_system_name;
+
+
+SELECT s.source_system_name AS caller,
+       a.source_system_name AS can_see,
+       m.data_sharing_level,
+       m.is_active
+FROM coalitionmpi.data_share_mapping m
+JOIN coalitionmpi.onboarded_system s ON s.id = m.source_system_id
+JOIN coalitionmpi.onboarded_system a ON a.id = m.allowed_system_id
+WHERE s.source_system_name ILIKE '%verif%'
+   OR s.source_system_name ILIKE '%hub%';
+
+
+SELECT id, source_system_name, agency_name, is_active
+FROM coalitionmpi.onboarded_system
+ORDER BY agency_name, source_system_name;
