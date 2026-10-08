@@ -47,7 +47,7 @@ When no link id is returned, `content.linkId` is null and `message` is "No ident
 
 ## Database
 
-No schema change. Add these rows to `coalitionmpi.data_share_mapping`. `Full` allows the link id to be returned. `existence` does not. 
+Add these rows to `coalitionmpi.data_share_mapping`. Look up the `onboarded_system` id for `wadshs.verificationhub` and the id for each target by `source_system_name`, then insert. `Full` allows the link id to be returned. 
 
 
 | Caller                   | Can see          | Level  | Active |
