@@ -36,3 +36,15 @@ WHERE s.source_system_name ILIKE '%verif%'
    OR s.source_system_name ILIKE '%hub%'
    OR s.agency_name ILIKE '%hub%'
 ORDER BY s.source_system_name, a.source_system_name;
+
+SELECT s.source_system_name AS caller,
+       a.source_system_name AS verification_hub,
+       m.data_sharing_level,
+       m.is_active
+FROM coalitionmpi.data_share_mapping m
+JOIN coalitionmpi.onboarded_system s ON s.id = m.source_system_id
+JOIN coalitionmpi.onboarded_system a ON a.id = m.allowed_system_id
+WHERE a.source_system_name ILIKE '%verif%'
+   OR a.agency_name ILIKE '%verif%'
+   OR a.source_system_name ILIKE '%hub%'
+   OR a.agency_name ILIKE '%hub%';
