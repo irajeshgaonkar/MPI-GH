@@ -1,0 +1,127 @@
+# deploy.ps1
+<#
+
+Foolproof steps!
+1. Verify branch, code, access tokens in appsettings.json
+2. Check aws CLI access (necessary for upload step)
+3. run .\deploy.ps1 [dev|Integration|Int|test|prod]
+4. The script Builds, zips, deploys
+5. If your aws CLI isn't set up correctly, can manually go to [codeDirectory]mpi_api\Release - .zips will be there and can be manually uploaded
+
+Note: Your User\.aws\credentials file must have a functioning profile for the target environment:
+[MPI-Dev]
+[MPI-Integration]
+[MPI-Test]
+[MPI-Prod]
+
+Ensure that the profiles target the correct environments. Even without profiles, this script will still publish and zip for you to \Release, which is useful.
+The script DOES NOT update appsettings.json (yet).
+#>
+
+[CmdletBinding()]
+Param(
+    # Environment that the lambda will be updated to: Dev, Test or Prod
+    [Parameter(Mandatory, Position = 0, HelpMessage = "Enter environment: Dev|Integration|Test|Prod")]
+    [ValidateSet("Dev", "Integration","Int", "Test", "Prod")]
+    [String]$Environment
+)
+
+$releaseDir = ".\Release"
+if (-not (Test-Path $releaseDir)) {
+    New-Item -ItemType Directory -Path $releaseDir | Out-Null
+}
+
+# list of VS projects and corresponding lambda names
+$projectsToLambdas = @{
+    "HCA.Api"                        = "mpi-frontend-api-lambda" ;
+    "HCA.Batch.SQS.Publisher.Lambda" = "mpi-batch-processing-sqs";
+    "HCA.Verato.Lambda"            = "mpi-mulesoft-api-lambda";
+    "HCA.Sftp.Lambda"                = "mpi-sftp";
+    "HCA.MPI.DBSync.Lambda"          = "mpi-dbsync-lambda";
+    "HCA.AdminMetrics.Api"          = "mpi-admindashboard-api-lambda";
+    "HCA.MPI.ReportRefresher.Lambda"          = "mpi-report-refresher-lambda"
+}
+
+# TODO: more thorough testing before using in prod
+$environmentToProfile = @{
+    "Dev"  = "MPI-Dev"
+    "Integration" = "MPI-Integration"
+    "Int" = "MPI-Integration"
+    "Test" = "MPI-Test"
+    "Prod" = "TODO:MPI-Prod"
+}
+
+$ErrorActionPreference = "Stop"
+
+# TODO: Pull in appsettings.json dynamically
+dotnet publish -f net10.0 -c Release
+$result = $? -and -not $LASTEXITCODE
+if (-not ($result)) {
+    Write-Error "Code build/publish error."
+    exit 1
+}
+
+try { Get-Command aws > $null }
+catch {
+    Write-Warning "You need aws-cli to deploy this lambda. Google 'aws-cli install'"
+    exit 1
+}
+
+Write-Verbose "Generating lambda zip files"
+
+foreach ($project in $projectsToLambdas.Keys) {
+    $lambda = $projectsToLambdas[$project]
+    $zipName = "$releaseDir\$lambda.zip"
+    if (Test-Path $zipName) {
+        Write-Verbose "removing old $lambda zip"
+        Remove-Item $zipName -verbose
+    }
+
+    $publishFolder = "$project\src\$project\bin\Release\net10.0\publish"
+    # todo make parallel (see experimental branch)
+    Compress-Archive -Path "$publishFolder\*" -DestinationPath $zipName
+    Write-Verbose "Zipped $project to $zipName"
+}
+
+$region = aws configure get region
+
+Write-Output "Deploying MPI AWS Lambdas to ${region}:$Environment"
+$awsProfile = $environmentToProfile[$Environment]
+aws sts get-caller-identity --profile $awsProfile > $null
+$result = $? -and -not $LASTEXITCODE
+if (-not ($result)) {
+    #TODO: check that it's a cert issue before running aws_accesss.exe
+    try {
+        Write-Information "Attempting to call hca_aws_access"
+        hca_aws_access.exe
+        $result = $? -and -not $LASTEXITCODE
+        if (-not ($result)) {
+            Write-Error "AWS error."
+            exit 1
+        }
+    }
+    catch {
+        Write-Error "AWS error."
+        exit 1
+    }
+}
+
+$releaseDir = ".\Release"
+if (-not (Test-Path $releaseDir)) {
+    New-Item -ItemType Directory -Path $releaseDir | Out-Null
+}
+
+foreach ($project in $projectsToLambdas.Keys) {
+    $lambda = $projectsToLambdas[$project]
+    Write-Verbose "Uploading $lambda to ${region}:$Environment"
+    $awsProfile = $environmentToProfile[$Environment]
+    $zipName = "$releaseDir\$lambda.zip"
+    aws lambda update-function-code --function-name "$lambda" --zip-file fileb://$zipName --publish --profile $awsProfile >".\$releaseDir\upload_$lambda.log"
+    if ( $?) {
+        Write-Output "!! $lambda Upload successful to $Environment !!"    
+    }
+    else {
+        Write-Output "Upload failed"
+        exit 1
+    }
+}

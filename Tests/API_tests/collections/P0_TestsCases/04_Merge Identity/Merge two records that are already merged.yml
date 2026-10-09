@@ -1,0 +1,154 @@
+info:
+  name: Merge two records that are already merged
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "toSurviveSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "toRetireSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        //merge
+
+        var Url = bru.getEnvVar("URL");
+        var Merge = bru.getEnvVar("Merge");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Merge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+            "toSurviveSource": {
+                "name": bru.getEnvVar("SourceName1"),
+                "id": bru.getEnvVar("id1")
+            },
+            "toRetireSource": {
+                "name": bru.getEnvVar("SourceName2"),
+                "id": bru.getEnvVar("id2")
+            }
+        }
+            
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Validate response body fields", function () {
+            var jsonData = res.getBody();
+
+            // Check for empty content
+            expect(jsonData.content).to.be.an("object").that.is.empty;
+
+            // Validate trackingId and auditId
+            expect(jsonData.trackingId).to.be.a("string").that.is.not.empty;
+          
+            // Validate trackingId
+            expect(jsonData.trackingId).to.eql(bru.getVar("trackingId"));
+
+            // Validate success and retryableError flags
+            expect(jsonData.success).to.eql(false);
+            expect(jsonData.retryableError).to.eql(false);
+
+            // Validate message and errors
+            expect(jsonData.message).to.eql("The toRetire source+nativeID is already in the retired/merged away state");
+            expect(jsonData.errors[0]).to.eql("The toRetire source+nativeID is already in the retired/merged away state");
+        });
+
+        //unmerge
+
+        var Url = bru.getEnvVar("URL");
+        var Unmerge = bru.getEnvVar("Unmerge");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Unmerge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+                "unmergeFromSource": {
+                    "name":  bru.getEnvVar("SourceName1"),
+                    "id": bru.getEnvVar("id1")
+                },
+                "unmergeSource": {
+                    "name":  bru.getEnvVar("SourceName2"),
+                    "id": bru.getEnvVar("id2")
+                }
+            }
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

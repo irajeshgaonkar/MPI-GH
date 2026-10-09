@@ -1,0 +1,81 @@
+{
+  "Comment": "MPI batch processing workflow",
+  "StartAt": "split-input-file",
+  "States": {
+    "split-input-file": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "mpi_file_splitter",
+        "Arguments": {
+          "--source_bucket.$": "$.detail.bucket.name",
+          "--source_file.$": "$.detail.object.key",
+          "--intermediate_bucket": "${MPI_BATCH_PROCESSING_OUTPUT_BUCKET}",
+          "--request_id.$": "$.id"
+        }
+      },
+      "Next": "load-file-request",
+      "ResultSelector": {
+        "bucket": "${MPI_BATCH_PROCESSING_OUTPUT_BUCKET}"
+      },
+      "ResultPath": "$.payload"
+    },
+    "load-file-request": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "load_file_requests",
+        "Arguments": {
+          "--bucket.$": "$.payload.bucket",
+          "--request_id.$": "$.id"
+        }
+      },
+      "Next": "load-client-identity-request",
+      "ResultSelector": {
+        "bucket": "${MPI_BATCH_PROCESSING_OUTPUT_BUCKET}"
+      },
+      "ResultPath": "$.payload"
+    },
+    "load-client-identity-request": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "load-client-identity-requests",
+        "Arguments": {
+          "--bucket.$": "$.payload.bucket",
+          "--request_id.$": "$.id"
+        }
+      },
+      "Next": "publish-sqs-message",
+      "ResultSelector": {
+        "bucket": "${MPI_BATCH_PROCESSING_OUTPUT_BUCKET}"
+      },
+      "ResultPath": "$.payload"
+    },
+    "publish-sqs-message": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "${MPI_BATCH_PROCESSING_LAMBDA_ARN}",
+        "Payload": {
+          "RequestId.$": "$.id"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+  }
+}

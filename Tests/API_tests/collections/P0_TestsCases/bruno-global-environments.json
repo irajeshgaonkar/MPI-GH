@@ -1,0 +1,656 @@
+{
+  "info": {
+    "type": "bruno-environment",
+    "exportedAt": "2026-03-27T21:07:32.799Z",
+    "exportedUsing": "Bruno/v3.1.4"
+  },
+  "environments": [
+    {
+      "name": "DEV",
+      "variables": [
+        {
+          "name": "trackingId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "ProtectedPopulationFlag",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "createDate",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "link_id",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Post",
+          "value": "/api/v1/postIdentity",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "URL",
+          "value": "https://hhscoalitionmpi-api-dev.hca.wa.gov",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Link",
+          "value": "/api/v1/linkIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Unlink",
+          "value": "/api/v1/unlinkIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Runtime",
+          "value": "5000",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Merge",
+          "value": "/api/v1/mergeIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Unmerge",
+          "value": "/api/v1/unMergeIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Delete",
+          "value": "/api/v1/deleteSourceIdentity",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DemographicQuery",
+          "value": "/api/v1/demographicsQuery",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "LinkId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DemographicSearch",
+          "value": "/api/v1/demographicsSearch",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "U_id",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "linkId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "FirstName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "MiddleName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "LastName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Suffix",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AddressLine1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AddressLine2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "City",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "State",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "ZipCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Gender",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Email",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DateOfBirth",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Number",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AreaCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Extension",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "CountryCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Record_Existence",
+          "value": "/api/v1/identityExists",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Source_name",
+          "value": "WAHCA.Providerone",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Token",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "id1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "id2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Enrich",
+          "value": "/api/v1/enrichDemographicsQuery",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        }
+      ]
+    },
+    {
+      "name": "INT",
+      "variables": [
+        {
+          "name": "trackingId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "ProtectedPopulationFlag",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "createDate",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "link_id",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Post",
+          "value": "/api/v1/postIdentity",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "URL",
+          "value": "https://hhscoalitionmpi-api-int.hca.wa.gov",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Link",
+          "value": "/api/v1/linkIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Unlink",
+          "value": "/api/v1/unlinkIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Runtime",
+          "value": "5000",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Merge",
+          "value": "/api/v1/mergeIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Unmerge",
+          "value": "/api/v1/unMergeIdentities",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Delete",
+          "value": "/api/v1/deleteSourceIdentity",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DemographicQuery",
+          "value": "/api/v1/demographicsQuery",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "LinkId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DemographicSearch",
+          "value": "/api/v1/demographicsSearch",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "U_id",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Sourcesystem",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Id1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Id2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "linkId",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "maxResponseTime",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "minResponseTime",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "totalResponseTime",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "iterationsCount",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "FirstName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "MiddleName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "LastName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Suffix",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AddressLine1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AddressLine2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "City",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "State",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "ZipCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Gender",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Email",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "DateOfBirth",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Number",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "AreaCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Extension",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "CountryCode",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Record_Existence",
+          "value": "/api/v1/identityExists",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Token",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "id1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "id2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName1",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "SourceName2",
+          "value": "",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Enrich",
+          "value": "/api/v1/enrichDemographicsQuery",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        },
+        {
+          "name": "Source_name",
+          "value": "WAHCA.Providerone",
+          "type": "text",
+          "enabled": true,
+          "secret": false
+        }
+      ]
+    }
+  ]
+}

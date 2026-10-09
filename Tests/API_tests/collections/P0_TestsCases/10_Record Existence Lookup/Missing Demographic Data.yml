@@ -1,0 +1,242 @@
+info:
+  name: Missing Demographic Data
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{Record_Existence}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId":"{{trackingId}}",
+          "content": {
+              "identity": {
+                  "sources": [
+                      {
+                          "name": "{{Source_name}}",
+                          "id": "{{sourceId}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "last": "{{LastName}}"
+                      }
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "ssns": [
+                      "{{SSN}}"
+                  ],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "emails": [
+                      "{{Email}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        var sourceId = bru.interpolate('{{$randomUUID}}');
+        bru.setVar('sourceId', sourceId);
+
+        let email = ""
+        bru.setVar('Email', email);
+
+        let line1 = ""
+        bru.setVar('AddressLine1', line1);
+
+        let line2 = ""
+        bru.setVar('AddressLine2', line2);
+
+        let city = ""
+        bru.setVar('City', city);
+
+        let state = ""
+        bru.setVar('State', state);
+
+        let postalcode = ""
+        bru.setVar('ZipCode', postalcode);
+
+        let firstname = ""
+        bru.setVar('FirstName', firstname);
+
+        let lastname = ""
+        bru.setVar('LastName', lastname);
+
+        let middlename = ""
+        bru.setVar('MiddleName', middlename);
+
+        let suffix = ""
+        bru.setVar('Suffix', suffix);
+
+        let ssn = ""
+        bru.setVar('SSN', ssn);
+
+        let dob = ""
+        bru.setVar('DateOfBirth', dob);
+
+        let gender = ""
+        bru.setVar('Gender', gender);
+
+        let number = ""
+        bru.setVar('Number', number);
+
+        let areacode = ""
+        bru.setVar('AreaCode', areacode);
+
+        let extension = ""
+        bru.setVar('Extension', extension);
+
+        let countrycode = ""
+        bru.setVar('CountryCode', countrycode);
+
+        //Post identity
+
+        var Url = bru.getEnvVar("URL");
+        var Post = bru.getEnvVar("Post");
+
+        //Define the URL for the next request
+        var postRequestUrl = Url + Post;
+
+        //Define the options for the next request 
+        var postRequestOptions= {
+            url: postRequestUrl,
+            method: 'POST',
+            headers: {
+                
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify( 
+        {
+
+        "trackingId":bru.getEnvVar("trackingId"),
+        "protectedPopulation": [
+            {
+                "ProtectedPopulationFlag": bru.getEnvVar("ProtectedPopulationFlag")
+            }
+        ],
+        "content": {
+            "responseIdentityFormatNames":[bru.getVar("RIFN")],
+
+            "identity": {
+                "custom.CreateDates": [
+                    {
+                        "createDate": bru.getEnvVar("createDate")
+                    }
+                ],
+                "sources": [
+                    {
+                        "name": bru.getEnvVar("Source_name"),
+                        "id": bru.getVar("sourceId")
+                    }
+                ],
+                "emails": [bru.getVar("Email")],
+                "addresses": [
+                    {
+                        "line1": bru.getVar("AddressLine1"),
+                        "line2": bru.getVar("AddressLine2"),
+                        "city": bru.getVar("City"),
+                        "state": bru.getVar("State"),
+                        "postalCode": bru.getVar("ZipCode")
+                    }
+                ],
+                "names": [
+                    {
+                        "first": bru.getVar("FirstName"),
+                        "middle": bru.getVar("MiddleName"),
+                        "last": bru.getVar("LastName"),
+                        "suffix": bru.getVar("Suffix")
+                    }
+                ],
+                "ssns": [bru.getVar("SSN")],
+                "genders": [
+                    bru.getVar("Gender")
+                ],
+                "datesOfBirth": [
+                    bru.getVar("DateOfBirth")
+                ],
+                "phoneNumbers": [
+                    {
+                        "number": bru.getVar("Number"),
+                        "areaCode": bru.getVar("AreaCode"),
+                        "extension": bru.getVar("Extension"),
+                        "countryCode": bru.getVar("CountryCode")
+                    }
+                ]
+            }
+        }
+        })
+        };
+
+        // Make the POST request and capture the response
+        await bru.sendRequest(postRequestOptions, async function(err, res) {
+            if (err) {
+                console.error('Error during POST request:', err);
+            } else {
+                let response = res.data;
+                
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        // Validate status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.eql(200); // Replace 200 with your expected status code
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate response body
+        test("Response body is valid", function () {
+            const jsonData = res.getBody();
+
+            // Validate success field
+            expect(jsonData.success).to.be.false;
+            expect(jsonData.content).to.be.null;
+            expect(jsonData.retryableError).to.be.false;
+
+            // Validate the message
+            expect(jsonData.message).to.include("missing.request.field ");
+
+            
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

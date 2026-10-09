@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Entities\" />
+    <None Remove="Microsoft.EntityFrameworkCore" />
+    <None Remove="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <None Remove="Microsoft.EntityFrameworkCore.Design" />
+    <None Remove="Repository\" />
+    <None Remove="Microsoft.Extensions.DependencyInjection" />
+    <None Remove="AutoFilterer" />
+    <None Remove="Repository\Core\" />
+    <None Remove="Repository\Impl\" />
+    <None Remove="Options\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Repository\Core\" />
+    <Folder Include="Options\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HCA.Models\HCA.Models.csproj" />
+    <ProjectReference Include="..\HCA.Infrastructure\HCA.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

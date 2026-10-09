@@ -1,0 +1,137 @@
+info:
+  name: Leading/trailing Whitespaces
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Link}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{ \r
+
+      \  \"trackingId\": \"{{trackingId}}\",\r
+
+      \  \"content\": {\r
+
+      \    \"linkToSource\": {\r
+
+      \      \"name\": \"{{SourceName1}}\",\r
+
+      \      \"id\": \"{{id1}}\"\r
+
+      \    },\r
+
+      \    \"source\": {\r
+
+      \      \"name\": \"{{SourceName2}}\",\r
+
+      \      \"id\": \"{{id2}}\"\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("SourceName1");
+        bru.deleteEnvVar("SourceName2");
+        bru.deleteEnvVar("id1");
+        bru.deleteEnvVar("id2");
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade");
+        bru.setVar("id1"," eeab43c9-b118-405c-b393-083fd2ed5755 ");
+        bru.setVar("id2", "af82fa88-5bef-45ba-a562-3ffbebdb830e");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+    - type: after-response
+      code: |-
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Parse the response body
+        var jsonData = res.getBody();
+        // Set environment variable
+        bru.setVar("link_id", "67bf663a6d5f0d47b68c5902");
+        // Validate that the environment variable 'link_id' is present and not null or undefined
+        test("Check if 'link_id' is present in the environment", function () {
+            var linkId = bru.getVar("link_id"); // Get the environment variable
+            expect(linkId).to.not.be.null; // Check if it's not null
+            expect(linkId).to.not.be.undefined; // Check if it's not undefined
+        });
+
+        // Get the environment variable
+        // //var expectedLinkToSourceId = pm.variables.get("id1");
+        var expectedLinkToSourceId = bru.getVar("id1") ? bru.getVar("id1").trim() : null;
+
+
+        // Validate that linkToSource.id is equal to the environment variable
+        test("Validate linkToSource.id matches the variable", function () {
+            expect(jsonData.content.linkToSource.id).to.eql(expectedLinkToSourceId);
+        });
+
+        // Validate that the errors field is null
+        test("Errors field is null", function () {
+            expect(jsonData.errors).to.be.null;
+        });
+
+        var Url = bru.getGlobalEnvVar("URL");
+        var unlink = bru.getGlobalEnvVar("Unlink");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + unlink;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+                "unlinkFromSource": {
+                    "name": bru.getVar("SourceName1"),
+                    "id": bru.getVar("id1")
+                },
+                "source": {
+                    "name": bru.getVar("SourceName2"),
+                    "id": bru.getVar("id2")
+                }
+            }
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

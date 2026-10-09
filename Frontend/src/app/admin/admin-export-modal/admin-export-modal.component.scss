@@ -1,0 +1,122 @@
+.admin-export-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.admin-export-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 32, 48, 0.45);
+}
+
+.admin-export-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(460px, 100%);
+  background: #fff;
+  border: 1px solid #dae5ef;
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(22, 40, 60, 0.22);
+  overflow: hidden;
+}
+
+.admin-export-modal__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.admin-export-modal__header h2 {
+  margin: 0;
+  color: #19324d;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.admin-export-modal__header p {
+  margin: 6px 0 0;
+  color: #6b7f93;
+  font-size: 13px;
+}
+
+.admin-export-modal__close {
+  border: 0;
+  background: transparent;
+  color: #5b7289;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.admin-export-modal__close:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.admin-export-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+.admin-export-modal__lookback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #3d5166;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-export-modal__lookback select {
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid #d5e0ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.admin-export-modal__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #24384c;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.admin-export-modal__option--all {
+  font-weight: 700;
+}
+
+.admin-export-modal__divider {
+  height: 1px;
+  background: #edf2f7;
+  margin: 2px 0 4px;
+}
+
+.admin-export-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid #edf2f7;
+}
+
+.admin-export-modal__status {
+  margin-right: auto;
+  color: #5b7289;
+  font-size: 13px;
+}

@@ -1,0 +1,78 @@
+info:
+  name: Empty or Missing Required Fields
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "toSurviveSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "toRetireSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("SourceName1");
+        bru.deleteEnvVar("id1");
+
+        bru.setVar("SourceName1", "");
+        bru.setVar("id1", "");
+        bru.setVar("id2", "");
+        bru.setVar("SourceName2", "");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+    - type: after-response
+      code: |-
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate that the response time is within 200ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate the errorCode field
+        test("Error code is 400", function () {
+            expect(jsonData.errorCode).to.eql("400");
+        });
+
+        // Validate the message field
+        test("Message contains 'Source id is required' and 'Source name is required'", function () {
+            expect(jsonData.message).to.eql("Source id is required,Source name is required,Source id is required,Source name is required");
+        });
+
+        // Validate the success field is false
+        test("Success is false", function () {
+            expect(jsonData.success).to.be.false;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

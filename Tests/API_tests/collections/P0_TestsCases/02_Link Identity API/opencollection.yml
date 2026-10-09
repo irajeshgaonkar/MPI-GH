@@ -1,0 +1,15 @@
+opencollection: 1.0.0
+
+info:
+  name: Link Identity API
+
+request:
+  variables:
+    - name: Link_URL
+      value: https://2nga0295jj.execute-api.us-west-2.amazonaws.com/dev/api/Identities/DOH-link
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

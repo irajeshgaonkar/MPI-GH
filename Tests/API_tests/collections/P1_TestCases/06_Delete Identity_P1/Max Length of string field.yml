@@ -1,0 +1,79 @@
+info:
+  name: Max Length of string field
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{URL}}{{Delete}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{ \r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"source\": {\r
+
+      \            \"name\": \"{{SourceName}}\",\r
+
+      \            \"id\": \"{{sourceId}}\"\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setEnvVar("SourceName", "dshs.bams");
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of exactly 100 characters
+        const id = generateRandomString(100);
+
+
+        // Assign the random string to SourceId
+        bru.setVar('sourceId', id);
+    - type: after-response
+      code: |-
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200); // Adjust the status code based on actual API response
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate that the `success` field is false
+        test("Validate 'success'", function () {
+            expect(jsonData.success).to.eql(true);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,184 @@
+info:
+  name: Add source - Same demographic data - default
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{URL}}{{Post}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "protectedPopulation": [
+              {
+                  "ProtectedPopulationFlag": "{{ProtectedPopulationFlag}}"
+              }
+          ],
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                  "custom.CreateDates": [
+                      {
+                          "createDate": "{{createDate}}"
+                      }
+                  ],
+                  "sources": [
+                      {
+                          "name": "{{SourceName}}",
+                          "id": "{{U_id}}"
+                      }
+                  ],
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "{{CountryCode}}"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN',responseIdentityFormatNames);
+
+        var sourceId = bru.interpolate('{{$randomUUID}}');
+        bru.setEnvVar('U_id', sourceId);
+
+
+
+        // Function to generate a random SSN in the format XXX-XX-XXXX
+        function generateRandomSSN() {
+            const firstPart = '000';  // First part (3 digits)
+            const secondPart = Math.floor(10 + Math.random() * 90);   // Second part (2 digits)
+            const thirdPart = Math.floor(1000 + Math.random() * 9000); // Third part (4 digits)
+            
+            const ssn = `${firstPart}-${secondPart}-${thirdPart}`;
+            return ssn;
+        }
+
+        // Generate a unique 9-digit SSN in the correct format
+        const uniqueSSN = generateRandomSSN();
+
+        // Set the generated SSN as an environment variable
+        bru.setVar('SSN', uniqueSSN);
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        var jsonData = res.getBody();
+
+        test ("successfully posted",function()
+        {
+            expect(jsonData.message).to.equal("The identity has been successfully posted.");
+        });
+
+        //validate linkid is genearted, fewer than 1024 characters, and is a string
+        test("Response has LinkID", function () {
+            expect(jsonData.content.linkId).to.exist;
+            expect(jsonData.content.linkId).to.be.a('string');
+            expect(jsonData.content.linkId.length).to.be.below(1024);
+        });
+
+        test("Validate the type field is add_source", function(){
+            expect(jsonData.content.events[0].type).to.eql("ADD_SOURCE");
+        });
+
+        //validate source name and source id are same in request and response
+        test("Verify sourcename and sourceid", function(){
+            expect(jsonData.content.incomingIdentity.sources[0].name).to.eql(bru.getEnvVar('SourceName'));
+            expect(jsonData.content.incomingIdentity.sources[0].id).to.eql(bru.getEnvVar('U_id'));
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        test("Response has the required fields", function () {
+            expect(jsonData).to.have.property("message");
+            expect(jsonData.trackingId).to.eql(bru.getEnvVar('trackingId'));
+            expect(jsonData).to.have.property("success");
+            expect(jsonData).to.have.nested.property("content.linkId");
+            expect(jsonData).to.have.nested.property("content.events");
+            expect(jsonData).to.have.nested.property("content.incomingIdentity");
+        });
+
+
+
+        //validate link id
+
+        test("Link id matches", function(){
+            expect(jsonData.content.linkId).to.eql(bru.getEnvVar("linkId"));
+        });
+
+        // set source id as environment varaible
+        bru.setEnvVar("Id", jsonData.content.linkIdentity.sources[0].id);
+
+
+        // Unset environment variables
+
+        bru.deleteEnvVar("FirstName");
+        bru.deleteEnvVar("MiddleName");
+        bru.deleteEnvVar("LastName");
+        bru.deleteEnvVar("Suffix");
+        bru.deleteEnvVar("Email");
+        bru.deleteEnvVar("DateOfBirth");
+        bru.deleteEnvVar("AddressLine1");
+        bru.deleteEnvVar("AddressLine2");
+        bru.deleteEnvVar("City");
+        bru.deleteEnvVar("State");
+        bru.deleteEnvVar("ZipCode");
+        bru.deleteEnvVar("Gender");
+        bru.deleteEnvVar("Number");
+        bru.deleteEnvVar("AreaCode");
+        bru.deleteEnvVar("Extension");
+        bru.deleteEnvVar("CountryCode");
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

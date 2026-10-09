@@ -1,0 +1,137 @@
+info:
+  name: Successful Merge of two records -different link id's
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "toSurviveSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "toRetireSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("id1","eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setVar("id2", "346a2b95-cb1c-46c6-abdf-114133b8beec");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+        bru.setVar("link_id", "67bf663a6d5f0d47b68c5902");
+    - type: after-response
+      code: |-
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Validate the linkId matches the environment variable
+        test("Validate linkId", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.linkId).to.eql(bru.getVar("link_id"));
+        });
+
+        // Validate source name matches environment variable
+        test("Validate source name", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.toSurviveSource.name).to.eql(bru.getVar("SourceName1"));
+        });
+
+        // Validate id1 matches environment variable
+        test("Validate id1", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.content.toSurviveSource.id).to.eql(bru.getVar("id1"));
+        });
+
+        // Validate success is true
+        test("Validate success is true", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.success).to.be.true;
+        });
+
+        // Validate message is null
+        test("Validate message is null", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.message).to.be.null;
+        });
+
+        // Validate errors is null
+        test("Validate errors is null", function () {
+            var jsonData = res.getBody();
+            expect(jsonData.errors).to.be.null;
+        });
+
+        //unmerge
+
+        var Url = bru.getEnvVar("URL");
+        var Unmerge = bru.getEnvVar("Unmerge");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Unmerge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+                "unmergeFromSource": {
+                    "name":  bru.getEnvVar("SourceName1"),
+                    "id": bru.getEnvVar("id1")
+                },
+                "unmergeSource": {
+                    "name":  bru.getEnvVar("SourceName2"),
+                    "id": bru.getEnvVar("id2")
+                }
+            }
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

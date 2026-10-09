@@ -1,0 +1,113 @@
+<section class="dashboard-filters">
+    <div class="dashboard-filters__header">
+        <div>
+            <p class="dashboard-filters__eyebrow">Search Workspace</p>
+            <h2>Find MPI identities faster</h2>
+            <p>Use targeted identity, contact, and address filters without scanning a wide form row by row.</p>
+        </div>
+
+        <div class="dashboard-filters__summary">
+            <div class="dashboard-filters__count">
+                <strong>{{ activeFilterCount() }}</strong>
+                <span>Active filters</span>
+            </div>
+
+            <div class="dashboard-filters__chips">
+                <span class="dashboard-filter-chip" *ngFor="let group of quickFilterGroups()">
+                    {{ group.label }} <strong>{{ group.count }}</strong>
+                </span>
+            </div>
+
+            <button type="button" class="dashboard-filters__clear" (click)="clearAll()" [disabled]="activeFilterCount() === 0">
+                Clear all
+            </button>
+        </div>
+    </div>
+
+    <div class="dashboard-filters__grid">
+        <article class="dashboard-filter-card">
+            <h3>Identity</h3>
+            <div class="dashboard-filter-card__fields">
+                <label class="dashboard-filter-field">
+                    <span>First name</span>
+                    <input class="form-control" type="search" placeholder="First name" [(ngModel)]="firstNameValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Last name</span>
+                    <input class="form-control" type="search" placeholder="Last name" [(ngModel)]="lastNameValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>MPI Link ID</span>
+                    <input class="form-control" type="search" placeholder="MPI Link ID" [(ngModel)]="linkIdValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Source system ID</span>
+                    <input class="form-control" type="search" placeholder="Source system ID" [(ngModel)]="sourceIdValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Source system name</span>
+                    <input class="form-control" type="search" placeholder="Source system name" [(ngModel)]="sourceNameValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field" *ngIf="authService.getRole() == 'Admin'">
+                    <span>SSN</span>
+                    <input class="form-control" type="search" placeholder="SSN" [(ngModel)]="ssnValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Date of birth</span>
+                    <input class="form-control" type="search" placeholder="YYYY-MM-DD" [(ngModel)]="dobValue" (input)="handleChange($event)">
+                </label>
+            </div>
+        </article>
+
+        <article class="dashboard-filter-card">
+            <h3>Contact</h3>
+            <div class="dashboard-filter-card__fields">
+                <label class="dashboard-filter-field">
+                    <span>Email</span>
+                    <input class="form-control" type="search" placeholder="Email address" [(ngModel)]="emailValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Phone</span>
+                    <input class="form-control" type="search" placeholder="Phone number" [(ngModel)]="phoneValue" (input)="handleChange($event)">
+                </label>
+            </div>
+        </article>
+
+        <article class="dashboard-filter-card">
+            <h3>Address</h3>
+            <div class="dashboard-filter-card__fields">
+                <label class="dashboard-filter-field">
+                    <span>Address line 1</span>
+                    <input class="form-control" type="search" placeholder="Address line 1" [(ngModel)]="line1Value" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>Address line 2</span>
+                    <input class="form-control" type="search" placeholder="Address line 2" [(ngModel)]="line2Value" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>City</span>
+                    <input class="form-control" type="search" placeholder="City" [(ngModel)]="cityValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>State</span>
+                    <input class="form-control" type="search" placeholder="State" [(ngModel)]="stateValue" (input)="handleChange($event)">
+                </label>
+
+                <label class="dashboard-filter-field">
+                    <span>ZIP</span>
+                    <input class="form-control" type="search" placeholder="ZIP" [(ngModel)]="zipValue" (input)="handleChange($event)">
+                </label>
+            </div>
+        </article>
+    </div>
+</section>

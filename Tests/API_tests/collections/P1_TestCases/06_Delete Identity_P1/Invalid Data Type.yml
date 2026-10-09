@@ -1,0 +1,68 @@
+info:
+  name: Invalid Data Type
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{URL}}{{Delete}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{ \r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"source\": {\r
+
+      \            \"name\": \"{{SourceName}}\",\r
+
+      \            \"id\": \"{{sourceId}}\"\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setEnvVar("SourceName", "dshs.bams");
+
+
+        bru.setVar('sourceId', 1345678908762);
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Response body", function () {
+            
+            
+            // Check that 'success' is false
+            expect(jsonData.success).to.eql(true);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,113 @@
+info:
+  name: Successful unlinking of two records
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{URL}}{{Unlink}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      { 
+        "trackingId": "{{trackingId}}",
+        "content": {
+          "unlinkFromSource": {
+            "name": "{{SourceName1}}",
+            "id": "{{id1}}"
+          },
+          "source": {
+            "name": "{{SourceName2}}",
+            "id": "{{id2}}"
+          }
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Set all vars first
+        bru.setVar("id1", "eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setVar("id2", "346a2b95-cb1c-46c6-abdf-114133b8beec");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+        bru.setVar("link_id", "67bf663a6d5f0d47b68c5902");
+
+        var Url = bru.getEnvVar("URL");
+        var link = bru.getEnvVar("Link");
+
+        var requestOptions = {
+            url: Url + link,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            data: JSON.stringify({
+                "trackingId": bru.getVar("trackingId"),   
+                "content": {
+                    "linkToSource": {
+                        "name": bru.getVar("SourceName1"), 
+                        "id": bru.getVar("id1")            
+                    },
+                    "source": {
+                        "name": bru.getVar("SourceName2"), 
+                        "id": bru.getVar("id2")            
+                    }
+                }
+            })
+        };
+
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+            }
+        });
+    - type: after-response
+      code: |-
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Response body is correct", function () {
+            var jsonData = res.getBody();
+
+            // link_id was set via setEnvVar in previous request keep getEnvVar
+            expect(jsonData.content.unlinkedFromId).to.eql(bru.getVar("link_id"));
+            expect(jsonData.content.unlinkedId).to.exist;
+
+            // These were set via setVar in pre-script  change to getVar
+            expect(jsonData.content.unlinkedSource.name).to.eql(bru.getVar("SourceName2"));
+            expect(jsonData.content.unlinkedSource.id).to.eql(bru.getVar("id2"));
+
+            expect(jsonData.content.unlinkedFromSource.name).to.eql(bru.getVar("SourceName1"));
+            expect(jsonData.content.unlinkedFromSource.id).to.eql(bru.getVar("id1"));
+
+            // trackingId - was set via setVar in previous pre-script change to getVar
+            expect(jsonData.trackingId).to.eql(bru.getVar("trackingId"));
+
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.retryableError).to.be.false;
+            expect(jsonData.message).to.be.null;
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

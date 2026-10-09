@@ -1,0 +1,107 @@
+﻿using HCA.Data.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace HCA.Data;
+
+public class IntReturn
+{
+    public int Value { get; set; }
+}
+
+public class HcaDbContext : DbContext
+{
+    public HcaDbContext(DbContextOptions<HcaDbContext> options) : base(options)
+    {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
+    public DbSet<ClientIdentityEntity> ClientIdentities { get; set; }
+
+    public DbSet<ClientIdentityAddressEntity> ClientIdentityAddresses { get; set; }
+
+    public DbSet<ClientIdentityCommunicationEntity> ClientIdentityCommunications { get; set; }
+
+    public DbSet<ClientIdentityAddressCommunicationEntity> ClientIdentityAddressCommunication { get; set; }
+
+    public DbSet<FileRequestEntity> FileRequests { get; set; }
+
+    public DbSet<UserRequestEntity> UserRequests { get; set; }
+
+    public DbSet<ClientIdentityRequestEntity> ClientIdentityRequests { get; set; }
+
+    public DbSet<MpiLinkIdHistoryEntity> MpiLinkIdHistory { get; set; }
+
+    public DbSet<RequestProcessLogEntity> RequestProcessLogs { get; set; }
+
+    public DbSet<UserModifyRecordsEntity> UserModifyRecords { get; set; }
+
+    public DbSet<SftpFileTransferEntity> SftpFileTransfers { get; set; }
+    public DbSet<CustomDataMappingEntity> CustomDataMappings { get; set; }
+
+    public DbSet<ServiceAccountEntity> ServiceAccounts { get; set; }
+
+    public DbSet<OnboardedSystemEntity> OnboardedSystem { get; set; }
+
+    public DbSet<DataShareMappingEntity> DataShareMappings { get; set; }
+
+    public DbSet<AppRolesEntity> AppRoles { get; set; }
+
+    public DbSet<AppRoleMappingEntity> AppRoleMappings { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ClientIdentityEntity>()
+            .HasKey(c => new { c.SourceSystemName, c.SourceSystemId });
+
+        modelBuilder.Entity<ClientIdentityEntity>()
+            .Property(f => f.Id)
+            .ValueGeneratedOnAdd();
+
+        modelBuilder.Entity<ClientIdentityEntity>()
+            .HasMany(c => c.Addresses)
+            .WithOne(a => a.ClientIdentity)
+            .HasForeignKey(a => new { a.SourceSystemName, a.SourceSystemId })
+            .IsRequired();
+
+        modelBuilder.Entity<ClientIdentityEntity>()
+            .HasMany(c => c.Communications)
+            .WithOne(c => c.ClientIdentity)
+            .HasForeignKey(c => new { c.SourceSystemName, c.SourceSystemId })
+            .IsRequired();
+
+        modelBuilder.Entity<ClientIdentityAddressCommunicationEntity>()
+            .HasKey(c => new { c.ClientIdentityAddressId, c.ClientIdentityCommunicationId });
+
+        modelBuilder.Entity<ClientIdentityAddressCommunicationEntity>()
+            .HasOne(ac => ac.Address)
+            .WithMany(a => a.AddressCommunications)
+            .HasForeignKey(ac => ac.ClientIdentityAddressId);
+
+        modelBuilder.Entity<ClientIdentityAddressCommunicationEntity>()
+           .HasOne(ac => ac.Communication)
+           .WithMany(c => c.AddressCommunications)
+           .HasForeignKey(ac => ac.ClientIdentityCommunicationId);
+
+        modelBuilder.Entity<AppRoleMappingEntity>()
+             .HasOne(m => m.AppRole)
+             .WithMany(r => r.AppRolesMappings)
+             .HasForeignKey(m => m.RoleId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DataShareMappingEntity>()
+            .HasOne(d => d.SourceSystem)
+            .WithMany(s => s.SourceSystemMappings)
+            .HasForeignKey(d => d.SourceSystemId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<DataShareMappingEntity>()
+            .HasOne(d => d.AllowedSystem)
+            .WithMany(a => a.AllowedSystemMappings)
+            .HasForeignKey(d => d.AllowedSystemId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<IntReturn>().HasNoKey();
+
+        base.OnModelCreating(modelBuilder);
+    }
+}

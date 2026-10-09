@@ -1,0 +1,150 @@
+info:
+  name: Link Two records that are aleardy linked
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{URL}}{{Link}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |
+      { 
+        "trackingId": "{{trackingId}}",
+        "content": {
+          "linkToSource": {
+            "name": "{{SourceName1}}",
+            "id": "{{id1}}"
+          },
+          "source": {
+            "name": "{{SourceName2}}",
+            "id": "{{id2}}"
+          }
+        }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        var Url = bru.getEnvVar("URL");
+        var link = bru.getEnvVar("Link");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + link;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+
+                "trackingId": bru.getEnvVar("trackingId"),
+                "content": {
+                    "linkToSource": {
+                       "name": bru.getEnvVar("SourceName1"),
+                        "id": bru.getEnvVar("id1")
+                    },
+                    "source": {
+                        "name": bru.getEnvVar("SourceName2"),
+                        "id": bru.getEnvVar("id2")
+                    }
+                }
+            })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        // Validate that the response status code is 200 OK
+        test("Response status is 200 OK", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+
+        // Parse the response body
+        var jsonData = res.getBody();
+
+        // Validate that the success field is false
+        test("Success field is false", function () {
+            expect(jsonData.success).to.eql(false);
+        });
+
+        // Validate that the message field is as expected
+        test("Check message field", function () {
+            expect(jsonData.message).to.include("Request was previously processed.");
+        });
+
+        // Validate that the errors field is not empty and contains the expected error message
+        test("Errors field is not empty and contains the correct message", function () {
+            expect(jsonData.errors).to.not.be.empty;
+            expect(jsonData.errors[0]).to.include("Request was previously processed.");
+        });
+
+
+        var Url = bru.getEnvVar("URL");
+        var unlink = bru.getEnvVar("Unlink");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + unlink;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+                "unlinkFromSource": {
+                    "name": bru.getEnvVar("SourceName1"),
+                    "id": bru.getEnvVar("id1")
+                },
+                "source": {
+                    "name": bru.getEnvVar("SourceName2"),
+                    "id": bru.getEnvVar("id2")
+                }
+            }
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

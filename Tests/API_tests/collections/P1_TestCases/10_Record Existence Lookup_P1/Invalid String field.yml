@@ -1,0 +1,298 @@
+info:
+  name: Invalid String field
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{URL}}{{Record_Existence}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \"trackingId\":\"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"identity\": {\r
+
+      \            \"sources\": [\r
+
+      \                {\r
+
+      \                    \"name\": \"{{Source_name}}\",\r
+
+      \                    \"id\": \"{{sourceId}}\"\r
+
+      \                }\r
+
+      \            ],\r
+
+      \            \"names\": [\r
+
+      \                {\r
+
+      \                    \"first\": \"{{FirstName}}\",\r
+
+      \                    \"last\": \"{{LastName}}\"\r
+
+      \                }\r
+
+      \            ],\r
+
+      \            \"datesOfBirth\": [\r
+
+      \                \"{{DateOfBirth}}\"\r
+
+      \            ],\r
+
+      \            \"ssns\": [\r
+
+      \                \"{{SSN}}\"\r
+
+      \            ],\r
+
+      \            \"addresses\": [\r
+
+      \                {\r
+
+      \                    \"line1\": \"{{AddressLine1}}\",\r
+
+      \                    \"line2\": \"{{AddressLine2}}\",\r
+
+      \                    \"city\": \"{{City}}\",\r
+
+      \                    \"state\": \"{{State}}\",\r
+
+      \                    \"postalCode\": \"{{ZipCode}}\"\r
+
+      \                }\r
+
+      \            ],\r
+
+      \            \"genders\": [\r
+
+      \                \"{{Gender}}\"\r
+
+      \            ],\r
+
+      \            \"emails\": [\r
+
+      \                \"{{Email}}\"\r
+
+      \            ],\r
+
+      \            \"phoneNumbers\": [\r
+
+      \                {\r
+
+      \                    \"number\": \"{{Number}}\"\r
+
+      \                }\r
+
+      \            ]\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN', responseIdentityFormatNames);
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade");
+        bru.setEnvVar("SourceName","dshs.bams")
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of 243 characters (to fit 255 with @example.com)
+        const randomEmailString = generateRandomString(244);
+        const email = randomEmailString + '@example.com'; // 243 characters + 12 characters from @example.com
+
+        // Generate a random string of exactly 255 characters for Address Line 1 and Line 2
+        const randomAddressString = generateRandomString(256);
+
+        // Set the generated string to email, address line1, and address line2
+        bru.setVar('Email', email); // Random email with 255 characters
+        bru.setVar('AddressLine1', randomAddressString); // Random Address Line 1 with 255 characters
+        bru.setVar('AddressLine2', randomAddressString); // Random Address Line 2 with 255 characters
+
+        // Generate a random string of exactly 100 characters
+        const randomCitySourceIdString = generateRandomString(101);
+
+        // Assign the random string to City and SourceId
+        bru.setVar('City', randomCitySourceIdString);
+        bru.setVar('sourceId', randomCitySourceIdString);
+
+        // Generate a random string of exactly 40 characters for Name-related fields
+        const randomNameString = generateRandomString(41);
+
+        // Assign the random string to FirstName, MiddleName, LastName, Suffix, and State
+        bru.setVar('FirstName', randomNameString);
+        bru.setVar('MiddleName', randomNameString);
+        bru.setVar('LastName', randomNameString);
+        bru.setVar('Suffix', randomNameString);
+        bru.setVar('State', randomNameString);
+
+        // Generate a random string of 50 characters for DateOfBirth
+        const randomDOBString = generateRandomString(51);
+        bru.setVar('DateOfBirth', randomDOBString);
+
+        // Generate a random string of 20 characters for Phone Number
+        const randomPhoneString = generateRandomString(21);
+        bru.setVar('Number', randomPhoneString);
+
+        // Generate a random string of 10 characters for Gender and ZipCode
+        const randomGenderString = generateRandomString(11);
+        bru.setVar('Gender', randomGenderString);
+        bru.setVar('ZipCode', randomGenderString);
+
+        // Generate a random string of 12 characters for SSN
+        const randomSSNString = generateRandomString(13);
+        bru.setVar('SSN', randomSSNString);
+
+        // Set random AreaCode and Extension using predefined variables
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+        bru.setVar("CountryCode", "USA");
+
+
+        //Post identity
+
+        var Url = bru.getGlobalEnvVar("URL");
+        var Post = bru.getGlobalEnvVar("Post");
+
+        //Define the URL for the next request
+        var postRequestUrl = Url + Post;
+
+        //Define the options for the next request 
+        var postRequestOptions= {
+            url: postRequestUrl,
+            method: 'POST',
+            headers: {
+                
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify( 
+        {
+
+        "trackingId":bru.getEnvVar("trackingId"),
+        "protectedPopulation": [
+            {
+                "ProtectedPopulationFlag": bru.getEnvVar("ProtectedPopulationFlag")
+            }
+        ],
+        "content": {
+            "responseIdentityFormatNames":[bru.getVar("RIFN")],
+
+            "identity": {
+                "custom.CreateDates": [
+                    {
+                        "createDate": bru.getEnvVar("createDate")
+                    }
+                ],
+                "sources": [
+                    {
+                        "name": bru.getEnvVar("Source_name"),
+                        "id": bru.getVar("sourceId")
+                    }
+                ],
+                "emails": [bru.getVar("Email")],
+                "addresses": [
+                    {
+                        "line1": bru.getVar("AddressLine1"),
+                        "line2": bru.getVar("AddressLine2"),
+                        "city": bru.getVar("City"),
+                        "state": bru.getVar("State"),
+                        "postalCode": bru.getVar("ZipCode")
+                    }
+                ],
+                "names": [
+                    {
+                        "first": bru.getVar("FirstName"),
+                        "middle": bru.getVar("MiddleName"),
+                        "last": bru.getVar("LastName"),
+                        "suffix": bru.getVar("Suffix")
+                    }
+                ],
+                "ssns": [bru.getVar("SSN")],
+                "genders": [
+                    bru.getVar("Gender")
+                ],
+                "datesOfBirth": [
+                    bru.getVar("DateOfBirth")
+                ],
+                "phoneNumbers": [
+                    {
+                        "number": bru.getVar("Number"),
+                        "areaCode": bru.getVar("AreaCode"),
+                        "extension": bru.getVar("Extension"),
+                        "countryCode": bru.getVar("CountryCode")
+                    }
+                ]
+            }
+        }
+        })
+        };
+
+        // Make the POST request and capture the response
+        await bru.sendRequest(postRequestOptions, async function(err, res) {
+            if (err) {
+                console.error('Error during POST request:', err);
+            } else {
+                let response = res.data;
+                
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        // Validate status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.eql(200); // Replace 200 with your expected status code
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time is within acceptable range", function () {
+            expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Validate response body
+        test("Response body is valid", function () {
+            const jsonData = res.getBody();
+
+            // Validate success field
+            expect(jsonData.success).to.be.false;
+            
+
+
+            // Validate the message
+            expect(jsonData.message).to.include("One or more validation errors occurred.");
+            
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

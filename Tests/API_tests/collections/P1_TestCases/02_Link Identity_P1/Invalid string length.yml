@@ -1,0 +1,92 @@
+info:
+  name: Invalid string length
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{URL}}{{Link}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \  \"trackingId\": \"{{trackingId}}\",\r
+
+      \  \"content\": {\r
+
+      \    \"linkToSource\": {\r
+
+      \      \"name\": \"{{SourceName1}}\",\r
+
+      \      \"id\": \"{{id1}}\"\r
+
+      \    },\r
+
+      \    \"source\": {\r
+
+      \      \"name\": \"{{SourceName2}}\",\r
+
+      \      \"id\": \"{{id2}}\"\r
+
+      \    }\r
+
+      \  }\r
+
+      }\r\n"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade")
+
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of exactly 100 characters
+        const id1 = generateRandomString(101);
+        const id2 = generateRandomString(101);
+
+        // Assign the random string to SourceId
+        bru.setVar('id1', id1);
+        bru.setVar('id2', id2);
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Response body", function () {
+        //     // pm.expect(jsonData).to.have.property("errorCode");
+        //     // pm.expect(jsonData.errorCode).to.eql(null);
+            expect(jsonData.success).to.eql(false);
+            expect(jsonData.message).to.include("missing.required.record");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

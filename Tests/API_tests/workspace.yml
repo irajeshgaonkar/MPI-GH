@@ -1,0 +1,16 @@
+opencollection: 1.0.0
+info:
+  name: "MPI_API_Tests_DEV_INT"
+  type: workspace
+
+collections:
+  - name: "P0_TestsCases"
+    path: "collections/P0_TestsCases"
+  - name: "P1_TestCases"
+    path: "collections/P1_TestCases"
+
+specs:
+
+docs: ''
+
+activeEnvironmentUid: 1c8a7xa00000000000000

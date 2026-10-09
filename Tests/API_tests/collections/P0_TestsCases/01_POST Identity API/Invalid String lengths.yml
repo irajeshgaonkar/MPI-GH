@@ -1,0 +1,169 @@
+info:
+  name: Invalid String lengths
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{URL}}{{Post}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |2-
+       
+      {
+          "trackingId":"{{trackingId}}",
+          "protectedPopulation": [
+              {
+                  "ProtectedPopulationFlag": "{{ProtectedPopulationFlag}}"
+              }
+          ],
+          "content": {
+              "responseIdentityFormatNames":["{{RIFN}}"],
+
+              "identity": {
+                  "custom.CreateDates": [
+                      {
+                          "createDate": "{{createDate}}"
+                      }
+                  ],
+                  "sources": [
+                      {
+                          "name": "{{SourceName}}",
+                          "id": "{{sourceId}}"
+                      }
+                  ],
+                  "emails": ["{{Email}}"],
+                  "addresses": [
+                      {
+                          "line1": "{{AddressLine1}}",
+                          "line2": "{{AddressLine2}}",
+                          "city": "{{City}}",
+                          "state": "{{State}}",
+                          "postalCode": "{{ZipCode}}"
+                      }
+                  ],
+                  "names": [
+                      {
+                          "first": "{{FirstName}}",
+                          "middle": "{{MiddleName}}",
+                          "last": "{{LastName}}",
+                          "suffix": "{{Suffix}}"
+                      }
+                  ],
+                  "ssns": ["{{SSN}}"],
+                  "genders": [
+                      "{{Gender}}"
+                  ],
+                  "datesOfBirth": [
+                      "{{DateOfBirth}}"
+                  ],
+                  "phoneNumbers": [
+                      {
+                          "number": "{{Number}}",
+                          "areaCode": "{{AreaCode}}",
+                          "extension": "{{Extension}}",
+                          "countryCode": "USA"
+                      }
+                  ]
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        let responseIdentityFormatNames = "DEFAULT";
+        bru.setVar('RIFN', responseIdentityFormatNames);
+
+        // Function to generate a random string of a specified length
+        function generateRandomString(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        // Generate a random string of 243 characters (to fit 255 with @example.com)
+        const randomEmailString = generateRandomString(244);
+        const email = randomEmailString + '@example.com'; // 243 characters + 12 characters from @example.com
+
+        // Generate a random string of exactly 255 characters for Address Line 1 and Line 2
+        const randomAddressString = generateRandomString(256);
+
+        // Set the generated string to email, address line1, and address line2
+        bru.setVar('Email', email); // Random email with 255 characters
+        bru.setVar('AddressLine1', randomAddressString); // Random Address Line 1 with 255 characters
+        bru.setVar('AddressLine2', randomAddressString); // Random Address Line 2 with 255 characters
+
+        // Generate a random string of exactly 100 characters
+        const randomCitySourceIdString = generateRandomString(101);
+
+        // Assign the random string to City and SourceId
+        bru.setVar('City', randomCitySourceIdString);
+        bru.setVar('sourceId', randomCitySourceIdString);
+
+        // Generate a random string of exactly 40 characters for Name-related fields
+        const randomNameString = generateRandomString(41);
+
+        // Assign the random string to FirstName, MiddleName, LastName, Suffix, and State
+        bru.setVar('FirstName', randomNameString);
+        bru.setVar('MiddleName', randomNameString);
+        bru.setVar('LastName', randomNameString);
+        bru.setVar('Suffix', randomNameString);
+        bru.setVar('State', randomNameString);
+
+        // Generate a random string of 50 characters for DateOfBirth
+        const randomDOBString = generateRandomString(51);
+        bru.setVar('DateOfBirth', randomDOBString);
+
+        // Generate a random string of 20 characters for Phone Number
+        const randomPhoneString = generateRandomString(21);
+        bru.setVar('Number', randomPhoneString);
+
+        // Generate a random string of 10 characters for Gender and ZipCode
+        const randomGenderString = generateRandomString(11);
+        bru.setVar('Gender', randomGenderString);
+        bru.setVar('ZipCode', randomGenderString);
+
+        // Generate a random string of 12 characters for SSN
+        const randomSSNString = generateRandomString(13);
+        bru.setVar('SSN', randomSSNString);
+
+        // Set random AreaCode and Extension using predefined variables
+        var areacode = bru.interpolate('{{$randomInt}}');
+        var extension = bru.interpolate('{{$randomInt}}');
+        bru.setVar('AreaCode', areacode);
+        bru.setVar('Extension', extension);
+    - type: after-response
+      code: |-
+        test("Status code is 200", function() {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Response body", function () {
+            expect(jsonData).to.have.property("errorCode");
+            expect(jsonData.errorCode).to.eql("400");
+            expect(jsonData.success).to.eql(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

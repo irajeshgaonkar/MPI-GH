@@ -1,0 +1,85 @@
+info:
+  name: Invalid Data type
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{URL}}{{Merge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: "{\r
+
+      \    \"trackingId\": \"{{trackingId}}\",\r
+
+      \    \"content\": {\r
+
+      \        \"toSurviveSource\": {\r
+
+      \            \"name\": \"{{SourceName1}}\",\r
+
+      \            \"id\": {{id1}}\r
+
+      \        },\r
+
+      \        \"toRetireSource\": {\r
+
+      \            \"name\": \"{{SourceName2}}\",\r
+
+      \            \"id\": {{id2}}\r
+
+      \        }\r
+
+      \    }\r
+
+      }"
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        bru.deleteEnvVar("SourceName1");
+        bru.deleteEnvVar("SourceName2");
+        bru.deleteEnvVar("id1");
+        bru.deleteEnvVar("id2");
+
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+
+        bru.setVar("id1", 1235690876);
+        bru.setVar("id2", 1345678908762);
+        bru.setEnvVar("trackingId","testing post for .NetUpgrade")
+    - type: after-response
+      code: |-
+        test("Status code is 500", function() {
+            expect(res.getStatus()).to.equal(500);
+        });
+
+
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        // Get the response body as JSON
+        let jsonData = res.getBody();
+
+        test("Response body", function () {
+            // Check if errorCode exists before testing its value
+            expect(jsonData).to.have.property("errorCode");
+            expect(jsonData.errorCode).to.eql("500");  // Compare as string since errorCode is a string in the response
+            
+            // Check that 'success' is false
+            expect(jsonData.success).to.eql(false);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

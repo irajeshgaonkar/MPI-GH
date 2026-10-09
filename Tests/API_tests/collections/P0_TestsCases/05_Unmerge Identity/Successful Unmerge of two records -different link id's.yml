@@ -1,0 +1,123 @@
+info:
+  name: Successful Unmerge of two records -different link id's
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{URL}}{{Unmerge}}"
+  headers:
+    - name: Accept
+      value: application/json
+    - name: Content-Type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+          "trackingId": "{{trackingId}}",
+          "content": {
+              "unmergeFromSource": {
+                  "name": "{{SourceName1}}",
+                  "id": "{{id1}}"
+              },
+              "unmergeSource": {
+                  "name": "{{SourceName2}}",
+                  "id": "{{id2}}"
+              }
+          }
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        //merge
+        bru.setVar("id1", "eeab43c9-b118-405c-b393-083fd2ed5755");
+        bru.setVar("id2", "346a2b95-cb1c-46c6-abdf-114133b8beec");
+        bru.setVar("SourceName1", "dshs.bams");
+        bru.setVar("SourceName2", "dshs.bams");
+        bru.setVar("trackingId", "testing post for .NetUpgrade");
+        bru.setVar("link_id", "67bf663a6d5f0d47b68c5902");
+        var Url = bru.getEnvVar("URL");
+        var Merge = bru.getEnvVar("Merge");
+
+        //Define the URL for the next request
+        var nextRequestUrl = Url + Merge;
+
+        //Define the options for the next request 
+        var requestOptions= {
+            url: nextRequestUrl,
+            method: 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Accept' : 'application/json'
+            },
+            data:JSON.stringify({
+            "trackingId": bru.getEnvVar("trackingId"),
+            "content": {
+            "toSurviveSource": {
+                "name": bru.getEnvVar("SourceName1"),
+                "id": bru.getEnvVar("id1")
+            },
+            "toRetireSource": {
+                "name": bru.getEnvVar("SourceName2"),
+                "id": bru.getEnvVar("id2")
+            }
+        }
+            
+        })
+        };
+
+        // Make the request
+        await bru.sendRequest(requestOptions, async function(err, res) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log(res);
+                
+            }
+        });
+    - type: after-response
+      code: |-
+        // Validate 200 OK status code
+        test("Status code is 200", function () {
+            expect(res.getStatus()).to.equal(200);
+        });
+
+        // Validate runtime is within 200 ms
+        test("Response time", function () {
+          expect(res.getResponseTime()).to.be.below(Number(bru.getGlobalEnvVar("Runtime")));
+        });
+
+        test("Validate response Body", function () {
+            var jsonData = res.getBody();
+
+            // Validate content fields
+            expect(jsonData.content).to.have.property("unmergedId").that.is.a("string").and.is.not.empty;
+            expect(jsonData.content).to.have.property("unmergedFromId").that.equals(bru.getVar("link_id"));
+
+            // Validate unmergedSource
+            expect(jsonData.content.unmergedSource.name).to.eql(bru.getVar("SourceName2"));
+            expect(jsonData.content.unmergedSource.id).to.eql(bru.getVar("id2"));
+
+            // Validate unmergedFromSource
+            expect(jsonData.content.unmergedFromSource.name).to.eql(bru.getVar("SourceName1"));
+            expect(jsonData.content.unmergedFromSource.id).to.eql(bru.getVar("id1"));
+
+            // Validate trackingId and auditId
+            expect(jsonData.trackingId).to.eql(bru.getVar("trackingId"));
+
+            // Validate success flag, retryableError, message, and errors
+            expect(jsonData.success).to.be.true;
+            expect(jsonData.retryableError).to.be.false;
+            expect(jsonData.message).to.be.null;
+            expect(jsonData.errors).to.be.null;
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

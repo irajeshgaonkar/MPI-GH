@@ -1,0 +1,100 @@
+name: INT
+variables:
+  - name: trackingId
+    value: ""
+  - name: ProtectedPopulationFlag
+    value: ""
+  - name: createDate
+    value: ""
+  - name: link_id
+    value: ""
+  - name: Post
+    value: /api/v1/postIdentity
+  - name: URL
+    value: https://hhscoalitionmpi-api-int.hca.wa.gov
+  - name: Link
+    value: /api/v1/linkIdentities
+  - name: Unlink
+    value: /api/v1/unlinkIdentities
+  - name: Runtime
+    value: "5000"
+  - name: Merge
+    value: /api/v1/mergeIdentities
+  - name: Unmerge
+    value: /api/v1/unMergeIdentities
+  - name: Delete
+    value: /api/v1/deleteSourceIdentity
+  - name: DemographicQuery
+    value: /api/v1/demographicsQuery
+  - name: LinkId
+    value: ""
+  - name: DemographicSearch
+    value: /api/v1/demographicsSearch
+  - name: U_id
+    value: ""
+  - name: Sourcesystem
+    value: ""
+  - name: Id1
+    value: ""
+  - name: Id2
+    value: ""
+  - name: linkId
+    value: ""
+  - name: maxResponseTime
+    value: ""
+  - name: minResponseTime
+    value: ""
+  - name: totalResponseTime
+    value: ""
+  - name: iterationsCount
+    value: ""
+  - name: FirstName
+    value: ""
+  - name: MiddleName
+    value: ""
+  - name: LastName
+    value: ""
+  - name: Suffix
+    value: ""
+  - name: AddressLine1
+    value: ""
+  - name: AddressLine2
+    value: ""
+  - name: City
+    value: ""
+  - name: State
+    value: ""
+  - name: ZipCode
+    value: ""
+  - name: Gender
+    value: ""
+  - name: Email
+    value: ""
+  - name: DateOfBirth
+    value: ""
+  - name: Number
+    value: ""
+  - name: AreaCode
+    value: ""
+  - name: Extension
+    value: ""
+  - name: CountryCode
+    value: ""
+  - name: Record_Existence
+    value: /api/v1/identityExists
+  - name: Token
+    value: ""
+  - name: SourceName
+    value: ""
+  - name: id1
+    value: ""
+  - name: id2
+    value: ""
+  - name: SourceName1
+    value: ""
+  - name: SourceName2
+    value: ""
+  - name: Enrich
+    value: /api/v1/enrichDemographicsQuery
+  - name: Source_name
+    value: WAHCA.Providerone
