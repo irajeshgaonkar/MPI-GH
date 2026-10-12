@@ -3,8 +3,6 @@ using HCA.Api.Dto;
 using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Core.Services;
-using HCA.Data.Repository;
-using HCA.Infrastructure.Exceptions;
 using HCA.Infrastructure.Extensions;
 using HCA.Infrastructure.Logger;
 using HCA.Models.Enums;
@@ -25,13 +23,11 @@ namespace HCA.Api.Controllers
     [Route("api/v1")]
     [Consumes("application/json")]
     [Produces("application/json")]
-    public class ExternalIdentitiesController(IAppLogger logger, IClientIdentityService clientIdentityService, IOnboardedSystemRepository onboardedSystemRepository) : Controller
+    public class ExternalIdentitiesController(IAppLogger logger, IClientIdentityService clientIdentityService) : Controller
     {
         private readonly IAppLogger _logger = logger;
 
         private readonly IClientIdentityService _clientIdentityService = clientIdentityService;
-
-        private readonly IOnboardedSystemRepository _onboardedSystemRepository = onboardedSystemRepository;
 
         /// <summary>
         /// Demographic query  retrieves the single matching identity from identity provider (Verato) that matches the demographic data provided in the web service request.
@@ -159,7 +155,11 @@ namespace HCA.Api.Controllers
                 return BuildOkObjectResultWith400Error(["Identity is required."], request.TrackingId);
             }
 
-            request.SourceSystem = await ResolveLinkIdCallerAsync(request);
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                request.SourceSystem = HttpContext.Items["SourceSystem"]?.ToString();
+            }
+
             var result = await _clientIdentityService.IdentityLinkIdAsync(request, HttpContext.GetCurrentUser());
             return Ok(result);
         }
@@ -606,50 +606,6 @@ namespace HCA.Api.Controllers
             string appName = options[1];
             string messageGroupId = options[2];
             return (ProcessType.Async, new NotificationOptions() { AppName = appName, MessageGroup = messageGroupId });
-        }
-
-        private async Task<string> ResolveLinkIdCallerAsync(IdentityLinkIdRequest request)
-        {
-            var ipAddress = request.IpAddress;
-            if (string.IsNullOrWhiteSpace(ipAddress))
-            {
-                var forwarded = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(forwarded))
-                {
-                    ipAddress = forwarded.Split(',')[0].Trim();
-                }
-                else
-                {
-                    ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(ipAddress))
-            {
-                throw new IPValidationException("ipAddress validation failed. Incoming request does not have an IP Address.");
-            }
-
-            var names = await _onboardedSystemRepository.GetActiveSourceSystemsByIPAsync(ipAddress);
-            var distinct = names
-                .Where(name => !string.IsNullOrWhiteSpace(name))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            if (distinct.Count == 1)
-            {
-                return distinct[0];
-            }
-
-            if (distinct.Count > 1)
-            {
-                var match = distinct.FirstOrDefault(name => string.Equals(name, request.SourceSystem, StringComparison.OrdinalIgnoreCase));
-                if (match != null)
-                {
-                    return match;
-                }
-            }
-
-            throw new IPValidationException("sourceSystem validation failed. ipAddress/sourceSystem mismatch. Please contact MPI to resolve.");
         }
 
         private static bool HasIdentity(IdentityLinkIdRequestContent? content)
