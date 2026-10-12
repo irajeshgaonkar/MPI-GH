@@ -62,6 +62,9 @@ public enum ApiCallType
     [StringValue("VE Identity Exists")]
     VEIdentityExists,
 
+    [StringValue("VE Identity Link Id")]
+    VEIdentityLinkId,
+
     [StringValue("VE Native Id Query")]
     VENativeIdQuery,
 

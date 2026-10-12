@@ -50,4 +50,6 @@ public interface IClientIdentityService
     Task<dynamic?>  DOH_EnrichDemographicQuery(DOH_EnrichDemographicQueryRequest filter, string currentUser, ProcessType processType, NotificationOptions? notificationOptions);
 
     Task<IdentityExistsResponse?> IdentityExistsAsync(IdentityExistsRequest request, string currentUser, NotificationOptions? notificationOptions);
+
+    Task<IdentityLinkIdResponse> IdentityLinkIdAsync(IdentityLinkIdRequest request, string currentUser);
 }

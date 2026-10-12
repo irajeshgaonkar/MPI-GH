@@ -18,6 +18,11 @@
         /// <summary>
         /// Full data access
         /// </summary>
-        Full
+        Full,
+
+        /// <summary>
+        /// Link id only
+        /// </summary>
+        LinkId
     }
 }
