@@ -2,7 +2,7 @@
 
 `POST api/v1/identityLinkId`
 
-The caller sends demographics and receives the MPI link id. The demographics follow `POST api/v1/demographicsSearch`. `matchScoreThreshold` and `maxSearchResults` are not part of this request.
+The caller sends demographics and receives the MPI link id. Internally this uses `POST api/v1/demographicsQuery` so Verato returns one match with its built-in cutoff. `matchScoreThreshold` and `maxSearchResults` are not part of this request.
 
 ## Request
 

@@ -4,14 +4,35 @@ namespace HCA.Core.Services
 {
     public static class IdentityLinkIdSelector
     {
-        public static string? Select(string? searchContentJson, string caller, IEnumerable<string> allowedLinkIdSystems)
+        /// <summary>
+        /// Picks the MPI identity link id from a demographics query response.
+        /// </summary>
+        /// <param name="queryContentJson">JSON content from demographics query, including linkId and identityGroupedBySource.</param>
+        /// <param name="callingSourceSystem">Source system that made the identity link id request.</param>
+        /// <param name="allowedLinkIdSystems">Other source system names this caller may see at the LinkId share level.</param>
+        /// <returns>
+        /// The linkId string when at least one source on the identity is the calling source system
+        /// or an allowed LinkId share; otherwise null.
+        /// </returns>
+        public static string? Select(string? queryContentJson, string callingSourceSystem, IEnumerable<string> allowedLinkIdSystems)
         {
-            if (string.IsNullOrWhiteSpace(searchContentJson) || string.IsNullOrWhiteSpace(caller))
+            if (string.IsNullOrWhiteSpace(queryContentJson) || string.IsNullOrWhiteSpace(callingSourceSystem))
             {
                 return null;
             }
 
-            if (JToken.Parse(searchContentJson) is not JObject content || content["searchResults"] is not JArray searchResults)
+            if (JToken.Parse(queryContentJson) is not JObject content)
+            {
+                return null;
+            }
+
+            var linkId = content["linkId"]?.ToString();
+            if (string.IsNullOrWhiteSpace(linkId))
+            {
+                return null;
+            }
+
+            if (content["identityGroupedBySource"] is not JArray groups)
             {
                 return null;
             }
@@ -19,47 +40,16 @@ namespace HCA.Core.Services
             var allowed = new HashSet<string>(
                 allowedLinkIdSystems.Where(name => !string.IsNullOrWhiteSpace(name)),
                 StringComparer.OrdinalIgnoreCase);
-            var linkIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var result in searchResults)
-            {
-                if (!IsVisible(result, caller, allowed))
-                {
-                    continue;
-                }
-
-                var linkId = result["linkId"]?.ToString();
-                if (!string.IsNullOrWhiteSpace(linkId))
-                {
-                    linkIds.Add(linkId);
-                }
-            }
-
-            return linkIds.Count == 1 ? linkIds.First() : null;
-        }
-
-        private static bool IsVisible(JToken result, string caller, HashSet<string> allowed)
-        {
-            if (result["identityGroupedBySource"] is not JArray groups)
-            {
-                return false;
-            }
-
-            foreach (var group in groups)
+            var isVisible = groups.Any(group =>
             {
                 var name = group["source"]?["name"]?.ToString();
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    continue;
-                }
+                return !string.IsNullOrWhiteSpace(name)
+                    && (string.Equals(name, callingSourceSystem, StringComparison.OrdinalIgnoreCase)
+                        || allowed.Contains(name));
+            });
 
-                if (string.Equals(name, caller, StringComparison.OrdinalIgnoreCase) || allowed.Contains(name))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return isVisible ? linkId : null;
         }
     }
 }

@@ -1401,12 +1401,12 @@ public class ClientIdentityService : IClientIdentityService
                 throw new HcaBadRequestException("Identity is required.");
             }
 
-            var searchRequest = new DOH_DemographicsSearchRequest
+            var queryRequest = new DOH_DemographicQueryRequest
             {
                 Trackingid = trackingId,
                 SourceSystem = request.SourceSystem,
                 Agency = request.Agency,
-                content = new ContentSearch
+                content = new Content
                 {
                     identity = request.Content.Identity,
                     responseIdentityFormatNames = ["GROUP_BY_SOURCE"]
@@ -1415,27 +1415,28 @@ public class ClientIdentityService : IClientIdentityService
 
             userRequestEntity = CreateUserRequest(request, ApiCallType.VEIdentityLinkId, currentUser, trackingId, null);
 
-            var searchTask = SearchDemographicsUnfiltered(userRequestEntity, searchRequest);
+            var queryTask = DOH_DemographicQuery(userRequestEntity, queryRequest, filterQueryResponse: false);
             var shareTask = _dataShareMappingRepository.GetActiveAllowedSystemNamesByLevelAsync(
                 request.SourceSystem,
                 DataSharingLevel.LinkId.ToString());
 
-            await Task.WhenAll(searchTask, shareTask);
-            var searchResponse = await searchTask;
+            await Task.WhenAll(queryTask, shareTask);
             var allowedSystems = await shareTask;
+            var queryResponse = (await queryTask) as DOH_DemographicQueryClientIdentityResponse
+                ?? throw new HcaBadRequestException("Failed to process request");
 
-            if (!searchResponse.Success)
+            if (!queryResponse.Success)
             {
-                throw new HcaVeratoException(string.IsNullOrWhiteSpace(searchResponse.Message)
+                throw new HcaVeratoException(string.IsNullOrWhiteSpace(queryResponse.Message)
                     ? "Failed to process request"
-                    : searchResponse.Message);
+                    : queryResponse.Message);
             }
 
-            var linkId = IdentityLinkIdSelector.Select(searchResponse.Content?.ToString(), request.SourceSystem, allowedSystems);
+            var linkId = IdentityLinkIdSelector.Select(queryResponse.Content?.ToString(), request.SourceSystem, allowedSystems);
             var response = new IdentityLinkIdResponse
             {
                 TrackingId = trackingId,
-                AuditId = searchResponse.AuditId,
+                AuditId = queryResponse.AuditId,
                 Success = true,
                 Message = linkId == null ? "No identity found." : "Identity found.",
                 Content = new IdentityLinkIdContent { LinkId = linkId }
@@ -2477,23 +2478,6 @@ public class ClientIdentityService : IClientIdentityService
         UpdateProcessStatus(userRequestEntity, requestStatus, requestMessage);
 
         return response;
-    }
-
-    private async Task<DOH_DemographicSearchClientIdentityResponse> SearchDemographicsUnfiltered(UserRequestEntity userRequestEntity, DOH_DemographicsSearchRequest filter)
-    {
-        var requestStatusUpdater = new UserRequestStatusUpdater(_userRequestRepository, _requestProcessLogRepository);
-        ContentSearch content = new() { identity = filter.content.identity, responseIdentityFormatNames = ["GROUP_BY_SOURCE"] };
-
-        var demographicSearchRequest = new DOH_DemographicSearchClientIdentityRequest(userRequestEntity.TrackingId)
-        {
-            SourceSystem = filter.SourceSystem,
-            Agency = filter.Agency,
-            Content = content,
-            Caller = ServiceLayer.API.ToString()
-        };
-
-        return await _clientIdentityRequestExecutor.Execute<DOH_DemographicSearchClientIdentityResponse>(demographicSearchRequest, requestStatusUpdater)
-            ?? throw new HcaBadRequestException("Failed to process request");
     }
 
     private void FilterSearchResponse( DOH_DemographicsSearchRequest filter, DOH_DemographicSearchClientIdentityResponse response )

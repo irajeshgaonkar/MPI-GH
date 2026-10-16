@@ -5,14 +5,14 @@ namespace HCA.Api.Tests;
 
 public class IdentityLinkIdSelectorTests
 {
-    private const string Caller = "wadshs.verificationhub";
+    private const string CallingSourceSystem = "wadshs.verificationhub";
 
     [Fact]
-    public void Select_ReturnsLinkId_WhenSourceIsTheCaller()
+    public void Select_ReturnsLinkId_WhenSourceIsTheCallingSourceSystem()
     {
-        var content = SearchResult("own-link", Caller);
+        var content = QueryResult("own-link", CallingSourceSystem);
 
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, []);
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, []);
 
         Assert.Equal("own-link", linkId);
     }
@@ -20,9 +20,9 @@ public class IdentityLinkIdSelectorTests
     [Fact]
     public void Select_ReturnsLinkId_WhenSourceIsAnActiveLinkIdShare()
     {
-        var content = SearchResult("shared-link", "providerone");
+        var content = QueryResult("shared-link", "providerone");
 
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, ["providerone"]);
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, ["providerone"]);
 
         Assert.Equal("shared-link", linkId);
     }
@@ -30,17 +30,17 @@ public class IdentityLinkIdSelectorTests
     [Fact]
     public void Select_ReturnsNull_WhenShareIsNotInTheLinkIdList()
     {
-        var content = SearchResult("hidden-link", "providerone");
+        var content = QueryResult("hidden-link", "providerone");
 
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, []);
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, []);
 
         Assert.Null(linkId);
     }
 
     [Fact]
-    public void Select_ReturnsNull_WhenCallerIsOnlyTheParentPrefix()
+    public void Select_ReturnsNull_WhenCallingSourceSystemIsOnlyTheParentPrefix()
     {
-        var content = SearchResult("child-link", "wadshs.verificationhub");
+        var content = QueryResult("child-link", "wadshs.verificationhub");
 
         var linkId = IdentityLinkIdSelector.Select(content, "wadshs", ["providerone"]);
 
@@ -50,68 +50,58 @@ public class IdentityLinkIdSelectorTests
     [Fact]
     public void Select_ReturnsNull_WhenNothingMatches()
     {
-        var content = SearchResult("other-link", "aces");
+        var content = QueryResult("other-link", "aces");
 
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, ["providerone"]);
-
-        Assert.Null(linkId);
-    }
-
-    [Fact]
-    public void Select_ReturnsNull_WhenTwoDifferentLinkIdsAreVisible()
-    {
-        var content = """
-            {
-              "searchResults": [
-                {
-                  "linkId": "first-link",
-                  "identityGroupedBySource": [{ "source": { "name": "wadshs.verificationhub" } }]
-                },
-                {
-                  "linkId": "second-link",
-                  "identityGroupedBySource": [{ "source": { "name": "providerone" } }]
-                }
-              ]
-            }
-            """;
-
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, ["providerone"]);
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, ["providerone"]);
 
         Assert.Null(linkId);
     }
 
     [Fact]
-    public void Select_ReturnsLinkId_WhenTheSameLinkIdIsVisibleTwice()
+    public void Select_ReturnsLinkId_WhenAnyGroupedSourceIsVisible()
     {
         var content = """
             {
-              "searchResults": [
-                {
-                  "linkId": "same-link",
-                  "identityGroupedBySource": [{ "source": { "name": "wadshs.verificationhub" } }]
-                },
-                {
-                  "linkId": "same-link",
-                  "identityGroupedBySource": [{ "source": { "name": "providerone" } }]
-                }
+              "linkId": "same-link",
+              "identityGroupedBySource": [
+                { "source": { "name": "esd" } },
+                { "source": { "name": "providerone" } }
               ]
             }
             """;
 
-        var linkId = IdentityLinkIdSelector.Select(content, Caller, ["providerone"]);
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, ["providerone"]);
 
         Assert.Equal("same-link", linkId);
     }
 
-    private static string SearchResult(string linkId, string sourceName) =>
+    [Fact]
+    public void Select_ReturnsNull_WhenLinkIdIsMissing()
+    {
+        var content = """
+            {
+              "identityGroupedBySource": [{ "source": { "name": "wadshs.verificationhub" } }]
+            }
+            """;
+
+        var linkId = IdentityLinkIdSelector.Select(content, CallingSourceSystem, []);
+
+        Assert.Null(linkId);
+    }
+
+    [Fact]
+    public void Select_ReturnsNull_WhenContentIsEmpty()
+    {
+        var linkId = IdentityLinkIdSelector.Select("{}", CallingSourceSystem, []);
+
+        Assert.Null(linkId);
+    }
+
+    private static string QueryResult(string linkId, string sourceName) =>
         $$"""
         {
-          "searchResults": [
-            {
-              "linkId": "{{linkId}}",
-              "identityGroupedBySource": [{ "source": { "name": "{{sourceName}}" } }]
-            }
-          ]
+          "linkId": "{{linkId}}",
+          "identityGroupedBySource": [{ "source": { "name": "{{sourceName}}" } }]
         }
         """;
 }
