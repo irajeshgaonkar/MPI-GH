@@ -30,5 +30,18 @@ namespace HCA.Data.Repository.Impl
 
             return result;
         }
+
+        public async Task<List<string>> GetActiveAllowedSystemNamesByLevelAsync(string sourceSystem, string dataSharingLevel)
+        {
+            var caller = sourceSystem.ToLower();
+            var level = dataSharingLevel.ToLower();
+
+            return await _hcaDbContext.DataShareMappings
+                .Where(mapping => mapping.IsActive
+                    && mapping.SourceSystem.SourceSystemName.ToLower() == caller
+                    && mapping.DataSharingLevel.ToLower() == level)
+                .Select(mapping => mapping.AllowedSystem.SourceSystemName)
+                .ToListAsync();
+        }
     }
 }

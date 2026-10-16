@@ -1382,6 +1382,84 @@ public class ClientIdentityService : IClientIdentityService
         }
     }
 
+    public async Task<IdentityLinkIdResponse> IdentityLinkIdAsync(IdentityLinkIdRequest request, string currentUser)
+    {
+        UserRequestEntity userRequestEntity = new();
+        var trackingId = string.IsNullOrEmpty(request.TrackingId)
+            ? $"{ApiCallType.VEIdentityLinkId.GetStringValue()}-{ClientIdentityRequestExtension.GetTrackingId()}"
+            : request.TrackingId;
+
+        try
+        {
+            if (string.IsNullOrEmpty(request.SourceSystem))
+            {
+                throw new HcaBadRequestException("SourceSystem is required.");
+            }
+
+            if (request.Content?.Identity == null)
+            {
+                throw new HcaBadRequestException("Identity is required.");
+            }
+
+            var queryRequest = new DOH_DemographicQueryRequest
+            {
+                Trackingid = trackingId,
+                SourceSystem = request.SourceSystem,
+                Agency = request.Agency,
+                content = new Content
+                {
+                    identity = request.Content.Identity,
+                    responseIdentityFormatNames = ["GROUP_BY_SOURCE"]
+                }
+            };
+
+            userRequestEntity = CreateUserRequest(request, ApiCallType.VEIdentityLinkId, currentUser, trackingId, null);
+
+            var queryTask = DOH_DemographicQuery(userRequestEntity, queryRequest, filterQueryResponse: false);
+            var shareTask = _dataShareMappingRepository.GetActiveAllowedSystemNamesByLevelAsync(
+                request.SourceSystem,
+                DataSharingLevel.LinkId.ToString());
+
+            await Task.WhenAll(queryTask, shareTask);
+            var allowedSystems = await shareTask;
+            var queryResponse = (await queryTask) as DOH_DemographicQueryClientIdentityResponse
+                ?? throw new HcaBadRequestException("Failed to process request");
+
+            if (!queryResponse.Success)
+            {
+                throw new HcaVeratoException(string.IsNullOrWhiteSpace(queryResponse.Message)
+                    ? "Failed to process request"
+                    : queryResponse.Message);
+            }
+
+            var linkId = IdentityLinkIdSelector.Select(queryResponse.Content?.ToString(), request.SourceSystem, allowedSystems);
+            var response = new IdentityLinkIdResponse
+            {
+                TrackingId = trackingId,
+                AuditId = queryResponse.AuditId,
+                Success = true,
+                Message = linkId == null ? "No identity found." : "Identity found.",
+                Content = new IdentityLinkIdContent { LinkId = linkId }
+            };
+
+            userRequestEntity.ResponseJson = JsonSerializer.Serialize(response);
+            UpdateProcessStatus(userRequestEntity, RequestStatus.Success, response.Message);
+            _logger.LogInformation($"IdentityLinkId TrackingId={trackingId}; SourceSystem={request.SourceSystem}; Outcome={(linkId == null ? "none" : "found")}");
+
+            return response;
+        }
+        catch (Exception e)
+        {
+            if (!string.IsNullOrEmpty(userRequestEntity.TrackingId))
+            {
+                UpdateProcessStatus(userRequestEntity, RequestStatus.Failed, e.Message);
+            }
+
+            _logger.LogError(e, $"IdentityLinkId failed. TrackingId={trackingId}; SourceSystem={request.SourceSystem}");
+            throw;
+        }
+    }
+
     /// <summary>
     /// Check if identity exists in allowed systems
     /// </summary>
