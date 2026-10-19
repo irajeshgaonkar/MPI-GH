@@ -13,11 +13,18 @@ Run the steps below **in sequence**.
 
 ---
 
-## Step 0 — Pick a real IP to use
+## Step 0 — Known IPs for these sources (DEV)
+
+These ranges do **not** overlap. Use a **different** `ipAddress` per source.
+
+| Source | CIDR | Example `ipAddress` to send |
+| --- | --- | --- |
+| `test1` | `10.0.0.0/32` | `10.0.0.0` (only this host; `/32` is a single IP) |
+| `wadoh.test` | `192.230.0.0/20` | `192.230.0.1` (any host in `192.230.0.0`–`192.230.15.255`) |
 
 Do **not** use text like `YOUR.IP.HERE` in SQL (`inet` cast will fail).
 
-### Option A — IPs already on the dummy sources (simplest)
+Confirm what is stored:
 
 ```sql
 SELECT
@@ -31,33 +38,7 @@ WHERE LOWER(source_system_name) IN ('test1', 'wadoh.test')
 ORDER BY source_system_name;
 ```
 
-Copy a value from `start_ip_address` or a host inside `ip_address_cidr` (for example if CIDR is `10.52.14.0/24`, use `10.52.14.23`).  
-Use that same IP in later SQL and in Bruno as `ipAddress`.
-
-### Option B — IP already working for ProviderOne
-
-```sql
-SELECT
-    source_system_name,
-    start_ip_address,
-    end_ip_address,
-    ip_address_cidr
-FROM coalitionmpi.onboarded_system
-WHERE is_active = TRUE
-  AND LOWER(source_system_name) = 'wahca.providerone';
-```
-
-Only useful if `test1` / `wadoh.test` are also whitelisted for that same IP.
-
-### Option C — Your machine / VPN public IP (PowerShell)
-
-```powershell
-(Invoke-RestMethod -Uri "https://api.ipify.org").Trim()
-```
-
-Only works if that IP is already on the whitelist for those sources.
-
-In the commands below, replace every `10.52.14.23` with the IP you chose.
+If a source has **many** rows (multiple IP ranges), any matching active row is enough. Pick one IP that falls in that source’s CIDR/range for Bruno.
 
 ---
 
@@ -89,7 +70,9 @@ ORDER BY source_system_name;
 
 ---
 
-## Step 2 — Confirm your chosen IP is allowed for those sources
+## Step 2 — Confirm each source IP is allowed
+
+### 2a — `test1` with `10.0.0.0`
 
 ```sql
 SELECT
@@ -100,25 +83,24 @@ SELECT
     ip_address_cidr
 FROM coalitionmpi.onboarded_system
 WHERE is_active = TRUE
-  AND LOWER(source_system_name) IN ('test1', 'wadoh.test')
+  AND LOWER(source_system_name) = 'test1'
   AND (
         (
           start_ip_address IS NOT NULL
           AND end_ip_address IS NOT NULL
-          AND CAST('10.52.14.23' AS inet)
+          AND CAST('10.0.0.0' AS inet)
               BETWEEN start_ip_address::inet AND end_ip_address::inet
         )
         OR (
           ip_address_cidr IS NOT NULL
-          AND CAST('10.52.14.23' AS inet) <<= ip_address_cidr::inet
+          AND CAST('10.0.0.0' AS inet) <<= ip_address_cidr::inet
         )
-      )
-ORDER BY source_system_name;
+      );
 ```
 
-Need both `test1` and `wadoh.test` in the result. If empty, fix whitelist before continuing.
+Need at least one row.
 
-Optional — see every source that allows that IP:
+### 2b — `wadoh.test` with `192.230.0.1`
 
 ```sql
 SELECT
@@ -129,20 +111,22 @@ SELECT
     ip_address_cidr
 FROM coalitionmpi.onboarded_system
 WHERE is_active = TRUE
+  AND LOWER(source_system_name) = 'wadoh.test'
   AND (
         (
           start_ip_address IS NOT NULL
           AND end_ip_address IS NOT NULL
-          AND CAST('10.52.14.23' AS inet)
+          AND CAST('192.230.0.1' AS inet)
               BETWEEN start_ip_address::inet AND end_ip_address::inet
         )
         OR (
           ip_address_cidr IS NOT NULL
-          AND CAST('10.52.14.23' AS inet) <<= ip_address_cidr::inet
+          AND CAST('192.230.0.1' AS inet) <<= ip_address_cidr::inet
         )
-      )
-ORDER BY source_system_name;
+      );
 ```
+
+Need at least one row.
 
 ---
 
@@ -246,7 +230,7 @@ Expected: `wadoh.test` at `LinkId`, `is_active = true`.
   "trackingId": "dummy-linkid-post-001",
   "sourceSystem": "wadoh.test",
   "agency": "",
-  "ipAddress": "10.52.14.23",
+  "ipAddress": "192.230.0.1",
   "protectedPopulation": [
     { "ProtectedPopulationFlag": "N" }
   ],
@@ -273,7 +257,7 @@ Expected: `wadoh.test` at `LinkId`, `is_active = true`.
 }
 ```
 
-Use the same IP from Step 0. Confirm post succeeds.
+Use `wadoh.test` IP (`192.230.0.1`). Confirm post succeeds.
 
 ---
 
@@ -286,7 +270,7 @@ Use the same IP from Step 0. Confirm post succeeds.
   "trackingId": "dummy-linkid-get-001",
   "sourceSystem": "test1",
   "agency": "",
-  "ipAddress": "10.52.14.23",
+  "ipAddress": "10.0.0.0",
   "content": {
     "identity": {
       "names": [
@@ -303,7 +287,7 @@ Use the same IP from Step 0. Confirm post succeeds.
 }
 ```
 
-Same demographics as Step 6. Same IP from Step 0.
+Same demographics as Step 6. Use `test1` IP (`10.0.0.0`) — not the `wadoh.test` IP.
 
 ### Expected response
 
@@ -323,17 +307,22 @@ If mapping is missing or IP not allowed for `test1`, you may get `"No identity f
 
 ## Step 8 — Optional Bruno IP smoke check (before Steps 6–7)
 
-`POST {{URL}}/api/v1/identityLinkId` (or any `/api/v1` call) with:
-
 ```json
 "sourceSystem": "test1",
-"ipAddress": "10.52.14.23"
+"ipAddress": "10.0.0.0"
 ```
 
-Then repeat with `"sourceSystem": "wadoh.test"`.
+Then:
+
+```json
+"sourceSystem": "wadoh.test",
+"ipAddress": "192.230.0.1"
+```
 
 - Allowed → request proceeds past IP filter  
 - Blocked → IP / sourceSystem mismatch  
+
+Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those CIDRs do not overlap.
 
 ---
 
