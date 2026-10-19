@@ -16,6 +16,32 @@ Run these in order. Confirm names in step 1 before inserting.
 
 ## Step 1 — Confirm onboarded systems
 
+Exact short names (`providerone`, `healthplanfinder`, `aces`) often do not match what is stored. Prefer a broader search first:
+
+```sql
+SELECT id, source_system_name, agency_name, is_active
+FROM coalitionmpi.onboarded_system
+WHERE LOWER(source_system_name) LIKE '%provider%'
+   OR LOWER(source_system_name) LIKE '%healthplan%'
+   OR LOWER(source_system_name) LIKE '%hpf%'
+   OR LOWER(source_system_name) LIKE '%aces%'
+   OR LOWER(source_system_name) LIKE '%verification%'
+   OR LOWER(source_system_name) LIKE '%wadshs%'
+ORDER BY source_system_name;
+```
+
+Example stored name: `WAHCA.Providerone` (not `providerone`).
+
+If that returns no rows, list everything onboarded:
+
+```sql
+SELECT id, source_system_name, agency_name, is_active
+FROM coalitionmpi.onboarded_system
+ORDER BY source_system_name;
+```
+
+Optional exact-name check (only works when names match exactly):
+
 ```sql
 SELECT id, source_system_name, agency_name, is_active
 FROM coalitionmpi.onboarded_system
@@ -28,7 +54,7 @@ WHERE LOWER(source_system_name) IN (
 ORDER BY source_system_name;
 ```
 
-You should see 4 rows. If a name differs, use the exact `source_system_name` from this result in later steps.
+You should identify 4 systems: the caller plus ProviderOne, HealthPlanFinder, and ACES. Use the exact `source_system_name` values from these results in later steps. Do not run the insert until those names are confirmed.
 
 ---
 
@@ -59,7 +85,7 @@ If ProviderOne, HealthPlanFinder, and ACES are already active, skip step 3.
 
 ## Step 3 — Insert LinkId mappings (idempotent)
 
-Replace `your.user.id` with the person applying the change.
+Replace `your.user.id` with the person applying the change. Replace the `IN (...)` list with the exact `source_system_name` values from step 1 (for example `wahca.providerone` if that is what is stored).
 
 ```sql
 BEGIN;
