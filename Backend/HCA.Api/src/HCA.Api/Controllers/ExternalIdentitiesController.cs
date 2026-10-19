@@ -1,4 +1,5 @@
-﻿using HCA.Api.Dto;
+﻿using System.Text.Json;
+using HCA.Api.Dto;
 using HCA.Api.Extensions;
 using HCA.Api.Filters;
 using HCA.Core.Services;
@@ -132,6 +133,35 @@ namespace HCA.Api.Controllers
             var identityExistsResult = await _clientIdentityService.IdentityExistsAsync(request, HttpContext.GetCurrentUser(), notificationOptions);
 
             return Ok(identityExistsResult);
+        }
+
+        [SwaggerResponse(StatusCodes.Status200OK, "Get identity link id response", typeof(IdentityLinkIdResponse))]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized)]
+        [SwaggerResponse(StatusCodes.Status403Forbidden)]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError)]
+        [ServiceFilter(typeof(IPValidationFilter))]
+        [ServiceFilter(typeof(ValidateIdentityFilter))]
+        [HttpPost("identityLinkId")]
+        public async Task<IActionResult> IdentityLinkIdAsync([FromBody] IdentityLinkIdRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errorMessage = GetErrorMessages(ModelState);
+                return BuildOkObjectResultWith400Error(errorMessage, request?.TrackingId);
+            }
+
+            if (!HasIdentity(request.Content))
+            {
+                return BuildOkObjectResultWith400Error(["Identity is required."], request.TrackingId);
+            }
+
+            if (HttpContext.Items["SourceSystem"] != null)
+            {
+                request.SourceSystem = HttpContext.Items["SourceSystem"]?.ToString();
+            }
+
+            var result = await _clientIdentityService.IdentityLinkIdAsync(request, HttpContext.GetCurrentUser());
+            return Ok(result);
         }
 
         /// <summary>
@@ -576,6 +606,24 @@ namespace HCA.Api.Controllers
             string appName = options[1];
             string messageGroupId = options[2];
             return (ProcessType.Async, new NotificationOptions() { AppName = appName, MessageGroup = messageGroupId });
+        }
+
+        private static bool HasIdentity(IdentityLinkIdRequestContent? content)
+        {
+            if (content is null)
+            {
+                return false;
+            }
+
+            // System.Text.Json deserializes dynamic identity as JsonElement (struct).
+            // Do not compare it with == null; that throws at runtime.
+            object? identity = content.Identity;
+            if (identity is JsonElement element)
+            {
+                return element.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined;
+            }
+
+            return identity is not null;
         }
     }
 }

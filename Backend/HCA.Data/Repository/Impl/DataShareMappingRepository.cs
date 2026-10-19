@@ -30,5 +30,29 @@ namespace HCA.Data.Repository.Impl
 
             return result;
         }
+
+        public async Task<List<string>> GetActiveAllowedSystemNamesByLevelAsync(string sourceSystem, string dataSharingLevel)
+        {
+            var caller = sourceSystem.ToLower();
+
+            // data_sharing_level is a Postgres enum. Comparing it to text in SQL fails
+            // (lower(enum) and enum = text). Read rows for the caller, then filter level in memory
+            // — same approach identityExists uses via GetAllowedDataShareMappingForSourceSystemAsync.
+            var rows = await _hcaDbContext.DataShareMappings
+                .Where(mapping => mapping.IsActive
+                    && mapping.SourceSystem.SourceSystemName.ToLower() == caller)
+                .Select(mapping => new
+                {
+                    mapping.DataSharingLevel,
+                    AllowedSystemName = mapping.AllowedSystem.SourceSystemName
+                })
+                .ToListAsync();
+
+            return rows
+                .Where(row => string.Equals(row.DataSharingLevel, dataSharingLevel, StringComparison.OrdinalIgnoreCase))
+                .Select(row => row.AllowedSystemName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .ToList()!;
+        }
     }
 }
