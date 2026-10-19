@@ -25,7 +25,7 @@ WHERE LOWER(source_system_name) LIKE '%provider%'
    OR LOWER(source_system_name) LIKE '%verification%'
    OR LOWER(source_system_name) LIKE '%wadshs%'
 ORDER BY source_system_name;
-```
+````
 
 Confirmed stored names:
 
