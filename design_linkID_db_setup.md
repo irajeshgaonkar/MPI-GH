@@ -6,8 +6,8 @@
 | --- | --- |
 | Schema | `coalitionmpi` |
 | Caller | `wadshs.verificationhub` |
-| Allowed systems | ProviderOne, HealthPlanFinder, ACES |
-| Not included | ESD, WTB |
+| Allowed systems (this change) | `WAHCA.Providerone` |
+| Not included yet | `Wahbe.hpf`, `wadshs.aces`, ESD, WTB |
 | Sharing level | `LinkId` |
 
 Run these in order. Confirm names in step 1 before inserting.
@@ -16,45 +16,47 @@ Run these in order. Confirm names in step 1 before inserting.
 
 ## Step 1 — Confirm onboarded systems
 
-Exact short names (`providerone`, `healthplanfinder`, `aces`) often do not match what is stored. Prefer a broader search first:
+Exact short names (`providerone`) do not match what is stored. Prefer a broader search first:
 
 ```sql
 SELECT id, source_system_name, agency_name, is_active
 FROM coalitionmpi.onboarded_system
 WHERE LOWER(source_system_name) LIKE '%provider%'
-   OR LOWER(source_system_name) LIKE '%healthplan%'
-   OR LOWER(source_system_name) LIKE '%hpf%'
-   OR LOWER(source_system_name) LIKE '%aces%'
    OR LOWER(source_system_name) LIKE '%verification%'
    OR LOWER(source_system_name) LIKE '%wadshs%'
 ORDER BY source_system_name;
 ```
 
-Example stored name: `WAHCA.Providerone` (not `providerone`).
+Confirmed stored names:
 
-If that returns no rows, list everything onboarded:
+| Role | `source_system_name` | In this mapping? |
+| --- | --- | --- |
+| Caller | `wadshs.verificationhub` | Caller (no mapping row needed for itself) |
+| ProviderOne | `WAHCA.Providerone` | Yes |
+| HealthPlanFinder | `Wahbe.hpf` | No (later) |
+| ACES | `wadshs.aces` | No (later) |
 
-```sql
-SELECT id, source_system_name, agency_name, is_active
-FROM coalitionmpi.onboarded_system
-ORDER BY source_system_name;
-```
-
-Optional exact-name check (only works when names match exactly):
+Exact-name check for this change:
 
 ```sql
 SELECT id, source_system_name, agency_name, is_active
 FROM coalitionmpi.onboarded_system
 WHERE LOWER(source_system_name) IN (
     'wadshs.verificationhub',
-    'providerone',
-    'healthplanfinder',
-    'aces'
+    'wahca.providerone'
 )
 ORDER BY source_system_name;
 ```
 
-You should identify 4 systems: the caller plus ProviderOne, HealthPlanFinder, and ACES. Use the exact `source_system_name` values from these results in later steps. Do not run the insert until those names are confirmed.
+You should see 2 active rows. If a name differs in another environment, use the exact `source_system_name` from that result in later steps. Do not run the insert until those names are confirmed.
+
+If the exact check returns no rows, list everything onboarded:
+
+```sql
+SELECT id, source_system_name, agency_name, is_active
+FROM coalitionmpi.onboarded_system
+ORDER BY source_system_name;
+```
 
 ---
 
@@ -79,13 +81,13 @@ WHERE LOWER(caller.source_system_name) = 'wadshs.verificationhub'
 ORDER BY allowed.source_system_name;
 ```
 
-If ProviderOne, HealthPlanFinder, and ACES are already active, skip step 3.
+If `WAHCA.Providerone` is already active at `LinkId`, skip step 3.
 
 ---
 
-## Step 3 — Insert LinkId mappings (idempotent)
+## Step 3 — Insert LinkId mapping (idempotent)
 
-Replace `your.user.id` with the person applying the change. Replace the `IN (...)` list with the exact `source_system_name` values from step 1 (for example `wahca.providerone` if that is what is stored).
+Replace `your.user.id` with the person applying the change.
 
 ```sql
 BEGIN;
@@ -107,11 +109,7 @@ SELECT
     TRUE
 FROM coalitionmpi.onboarded_system caller
 JOIN coalitionmpi.onboarded_system allowed
-    ON LOWER(allowed.source_system_name) IN (
-        'providerone',
-        'healthplanfinder',
-        'aces'
-    )
+    ON LOWER(allowed.source_system_name) = 'wahca.providerone'
 WHERE LOWER(caller.source_system_name) = 'wadshs.verificationhub'
   AND COALESCE(caller.is_active, TRUE) = TRUE
   AND COALESCE(allowed.is_active, TRUE) = TRUE
@@ -128,7 +126,7 @@ COMMIT;
 
 If anything looks wrong before commit, use `ROLLBACK;` instead of `COMMIT;`.
 
-Expected insert count: `3` if none existed, `0` if already present.
+Expected insert count: `1` if none existed, `0` if already present.
 
 ---
 
@@ -149,17 +147,17 @@ ORDER BY allowed.source_system_name;
 
 Expected:
 
-- ProviderOne (or your exact stored name)
-- HealthPlanFinder
-- ACES
+- `WAHCA.Providerone`
 
-ESD and WTB must not appear.
+`Wahbe.hpf`, `wadshs.aces`, ESD, and WTB must not appear for this change.
 
 ---
 
 ## Notes
 
 - The calling system can always see its own source data; that does not need a mapping row.
+- After this change, `wadshs.verificationhub` can get a link id when the matched identity includes `wadshs.verificationhub` or `WAHCA.Providerone`.
+- Identities that only have `Wahbe.hpf` or `wadshs.aces` will still return no link id until those mappings are added later.
 - `data_sharing_level` must be `LinkId` (matches `DataSharingLevel.LinkId`).
 - Only `is_active = TRUE` rows are used by the API.
 - Apply in the correct environment (dev / int / test / prod) with the right approvals.

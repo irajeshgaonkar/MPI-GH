@@ -45,14 +45,12 @@ When no link id is returned, `content.linkId` is null and `message` is "No ident
 
 ## Database
 
-Add these rows to `coalitionmpi.data_share_mapping`. Look up the `onboarded_system` id for `wadshs.verificationhub` and the id for each target by `source_system_name`, then insert. `LinkId` allows the link id to be returned. 
+Add this row to `coalitionmpi.data_share_mapping`. Look up the `onboarded_system` id for `wadshs.verificationhub` and for `WAHCA.Providerone`, then insert. `LinkId` allows the link id to be returned.
 
 
-| Caller                   | Can see          | Level  | Active |
-| ------------------------ | ---------------- | ------ | ------ |
-| `wadshs.verificationhub` | ProviderOne      | `LinkId` | true   |
-| `wadshs.verificationhub` | HealthPlanFinder | `LinkId` | true   |
-| `wadshs.verificationhub` | ACES             | `LinkId` | true   |
+| Caller                   | Can see            | Level    | Active |
+| ------------------------ | ------------------ | -------- | ------ |
+| `wadshs.verificationhub` | `WAHCA.Providerone` | `LinkId` | true   |
 
 
-ESD and WTB are not included.
+`Wahbe.hpf`, `wadshs.aces`, ESD, and WTB are not included in this change.
