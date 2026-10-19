@@ -149,7 +149,8 @@ WHERE LOWER(caller.source_system_name) = 'test1'
 ORDER BY dsm.mapping_id;
 ```
 
-If you already see an active `LinkId` row, skip Step 4.
+If you already see an active `LinkId` row, skip Step 4.  
+If this fails with `does not exist` or `transaction is aborted`, go to Step 4a / 4b first, then re-run this query with the correct `schema.table`.
 
 ---
 
@@ -158,6 +159,68 @@ If you already see an active `LinkId` row, skip Step 4.
 Caller `test1` may see link ids from `wadoh.test`.  
 Replace `your.user.id` with your id.  
 Do not use `LOWER(data_sharing_level)` — that column is a Postgres enum.
+
+### 4a — If a previous statement failed (aborted transaction)
+
+You will see: `current transaction is aborted, commands ignored until end of transaction block`.
+
+```sql
+ROLLBACK;
+```
+
+Then continue. Do not run more queries until you `ROLLBACK` (or reconnect).
+
+### 4b — Confirm table schema / name
+
+If you see `relation "coalitionmpi.data_share_mapping" does not exist`:
+
+```sql
+SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_name ILIKE '%share%mapping%'
+   OR table_name ILIKE '%data_share%'
+ORDER BY table_schema, table_name;
+```
+
+```sql
+SELECT nspname
+FROM pg_namespace
+WHERE nspname ILIKE '%mpi%' OR nspname ILIKE '%coalition%'
+ORDER BY 1;
+```
+
+Use the exact `table_schema.table_name` returned (examples: `coalitionmpi.data_share_mapping` or `public.data_share_mapping`).  
+In app code the table name is `data_share_mapping`.
+
+### 4c — Confirm exact enum label (case-sensitive)
+
+Invalid values like `'Linkid'` or `'linkid'` fail if the label is different (for example `'LinkId'`).
+
+```sql
+SELECT t.typname, e.enumlabel
+FROM pg_type t
+JOIN pg_enum e ON e.enumtypid = t.oid
+JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname IN ('coalitionmpi', 'public')
+  AND (
+        t.typname ILIKE '%sharing%'
+     OR t.typname ILIKE '%share%level%'
+     OR t.typname = 'data_sharing_level'
+  )
+ORDER BY t.typname, e.enumsortorder;
+```
+
+If the table exists and has rows:
+
+```sql
+SELECT DISTINCT data_sharing_level::text AS level_label
+FROM coalitionmpi.data_share_mapping
+ORDER BY 1;
+```
+
+Copy the label **exactly** into the insert below (replace `'LinkId'` if your label differs).
+
+### 4d — Insert
 
 ```sql
 BEGIN;
@@ -195,7 +258,7 @@ COMMIT;
 ```
 
 Expected insert count: `1` if none existed, `0` if already present.  
-If something looks wrong before commit, run `ROLLBACK;` instead of `COMMIT;`.
+If the insert fails, run `ROLLBACK;` then fix the enum label / table name and retry.
 
 ---
 
@@ -217,7 +280,7 @@ WHERE LOWER(caller.source_system_name) = 'test1'
 ORDER BY allowed_system;
 ```
 
-Expected: `wadoh.test` at `LinkId`, `is_active = true`.
+Expected: `wadoh.test` at `linkid`, `is_active = true`.
 
 ---
 
@@ -323,6 +386,18 @@ Then:
 - Blocked → IP / sourceSystem mismatch  
 
 Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those CIDRs do not overlap.
+
+---
+
+## Troubleshooting
+
+| Error | What to do |
+| --- | --- |
+| `current transaction is aborted...` | Run `ROLLBACK;` then retry. |
+| `relation "...data_share_mapping" does not exist` | Run Step 4b; use the real `schema.table` name. Confirm you are on the DEV MPI database. |
+| `invalid input value for enum ... "Linkid"` / `"linkid"` | Enum labels are case-sensitive. Run Step 4c and use the exact `enumlabel`. |
+| `invalid input syntax for type inet` | Do not use placeholders like `YOUR.IP.HERE`. Use a real IP such as `10.0.0.0`. |
+| `function lower(data_sharing_level) does not exist` or `operator does not exist: data_sharing_level = text` | Do not filter the enum with `LOWER()` or compare to text in SQL. App code filters level in memory (API branch). |
 
 ---
 
