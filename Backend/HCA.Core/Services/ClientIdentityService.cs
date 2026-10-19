@@ -1396,11 +1396,7 @@ public class ClientIdentityService : IClientIdentityService
                 throw new HcaBadRequestException("SourceSystem is required.");
             }
 
-            if (request.Content?.Identity == null)
-            {
-                throw new HcaBadRequestException("Identity is required.");
-            }
-
+            // Identity required-check lives in ExternalIdentitiesController.HasIdentity (JsonElement-safe).
             var queryRequest = new DOH_DemographicQueryRequest
             {
                 Trackingid = trackingId,
@@ -1408,7 +1404,7 @@ public class ClientIdentityService : IClientIdentityService
                 Agency = request.Agency,
                 content = new Content
                 {
-                    identity = request.Content.Identity,
+                    identity = request.Content!.Identity,
                     responseIdentityFormatNames = ["GROUP_BY_SOURCE"]
                 }
             };
