@@ -34,12 +34,13 @@ namespace HCA.Data.Repository.Impl
         public async Task<List<string>> GetActiveAllowedSystemNamesByLevelAsync(string sourceSystem, string dataSharingLevel)
         {
             var caller = sourceSystem.ToLower();
-            var level = dataSharingLevel.ToLower();
 
+            // data_sharing_level is a Postgres enum in some environments; lower() is not valid on enums.
+            // Compare the level with the exact stored value (e.g. DataSharingLevel.LinkId -> "LinkId").
             return await _hcaDbContext.DataShareMappings
                 .Where(mapping => mapping.IsActive
                     && mapping.SourceSystem.SourceSystemName.ToLower() == caller
-                    && mapping.DataSharingLevel.ToLower() == level)
+                    && mapping.DataSharingLevel == dataSharingLevel)
                 .Select(mapping => mapping.AllowedSystem.SourceSystemName)
                 .ToListAsync();
         }
