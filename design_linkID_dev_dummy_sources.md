@@ -218,9 +218,51 @@ FROM coalitionmpi.data_share_mapping
 ORDER BY 1;
 ```
 
-Copy the label **exactly** into the insert below (replace `'LinkId'` if your label differs).
+Copy the label **exactly** into the insert below.  
+App code matches with `ToLower() == "linkid"`, so the DB label must be some form of linkid (`linkid` / `LinkId`).
 
-### 4d — Insert
+**Important:** `DISTINCT` on the table only shows levels already used in rows. If you only see `existence`, that does **not** prove `linkid` is missing — run Step 4e (`pg_enum`). If `linkid` is absent, ask DB team (Step 4d), then insert (Step 4f).
+
+### 4d — Add `linkid` enum value if missing (DB team)
+
+App logins usually **cannot** alter the enum (`must be owner of type ... data_sharing_level`).  
+Open a ticket / email the DB team to add `linkid` on DEV. Type name: `coalitionmpi.data_sharing_level`.
+
+Optional — find type owner (read-only):
+
+```sql
+SELECT n.nspname, t.typname, pg_get_userbyid(t.typowner) AS type_owner
+FROM pg_type t
+JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname = 'coalitionmpi'
+  AND t.typname = 'data_sharing_level';
+```
+
+If you *are* the owner (or a DBA), run outside a failed transaction (`ROLLBACK;` first if needed).  
+DEV labels are lowercase (`existence`, …) → add `linkid`:
+
+```sql
+ALTER TYPE coalitionmpi.data_sharing_level ADD VALUE IF NOT EXISTS 'linkid';
+```
+
+### 4e — Confirm `linkid` exists (after DB team)
+
+```sql
+SELECT e.enumlabel
+FROM pg_type t
+JOIN pg_enum e ON e.enumtypid = t.oid
+JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE n.nspname = 'coalitionmpi'
+  AND t.typname = 'data_sharing_level'
+ORDER BY e.enumsortorder;
+```
+
+Need `linkid` in the list before inserting.  
+Expected labels include: `existence`, `exceptprotectedpopulation`, `full`, `linkid`.
+
+### 4f — Insert mapping
+
+Replace `your.user.id` with your id.
 
 ```sql
 BEGIN;
@@ -236,7 +278,7 @@ INSERT INTO coalitionmpi.data_share_mapping (
 SELECT
     caller.id,
     allowed.id,
-    'LinkId',
+    'linkid',
     'your.user.id',
     NOW(),
     TRUE
@@ -276,8 +318,7 @@ JOIN coalitionmpi.onboarded_system caller
 JOIN coalitionmpi.onboarded_system allowed
     ON allowed.id = dsm.allowed_system_id
 WHERE LOWER(caller.source_system_name) = 'test1'
-  AND dsm.is_active = TRUE
-ORDER BY allowed_system;
+  AND LOWER(allowed.source_system_name) = 'wadoh.test';
 ```
 
 Expected: `wadoh.test` at `linkid`, `is_active = true`.
@@ -395,7 +436,8 @@ Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those 
 | --- | --- |
 | `current transaction is aborted...` | Run `ROLLBACK;` then retry. |
 | `relation "...data_share_mapping" does not exist` | Run Step 4b; use the real `schema.table` name. Confirm you are on the DEV MPI database. |
-| `invalid input value for enum ... "Linkid"` / `"linkid"` | Enum labels are case-sensitive. Run Step 4c and use the exact `enumlabel`. |
+| `invalid input value for enum ... "Linkid"` / `"linkid"` | Enum labels are case-sensitive. Run Step 4c / 4e. If missing, ask DB team (Step 4d), then insert (Step 4f). |
+| `must be owner of type ... data_sharing_level` | Ticket / email DB team (Step 4d). Do not expect app logins to alter enums. |
 | `invalid input syntax for type inet` | Do not use placeholders like `YOUR.IP.HERE`. Use a real IP such as `10.0.0.0`. |
 | `function lower(data_sharing_level) does not exist` or `operator does not exist: data_sharing_level = text` | Do not filter the enum with `LOWER()` or compare to text in SQL. App code filters level in memory (API branch). |
 
