@@ -325,13 +325,20 @@ Expected: `wadoh.test` at `linkid`, `is_active = true`.
 
 ---
 
-## Step 6 — Bruno: create identity under allowed source
+## Step 6 — Bruno: three request bodies (same unique person)
+
+Use the **same** unique demographics in all three calls below.  
+Do **not** only rename `sourceSystem` on an old Bruno script that already matches another source — Verato will return that existing person and you will get `"No identity found."` for `wadoh.test` / `test1`.
+
+Also for postIdentity: top-level `sourceSystem` and `sources[0].name` must both be `wadoh.test`.
+
+### 6a — postIdentity (`wadoh.test`)
 
 `POST {{URL}}/api/v1/postIdentity`
 
 ```json
 {
-  "trackingId": "dummy-linkid-post-001",
+  "trackingId": "dummy-linkid-post-uniq-001",
   "sourceSystem": "wadoh.test",
   "agency": "",
   "ipAddress": "192.230.0.1",
@@ -344,28 +351,57 @@ Expected: `wadoh.test` at `linkid`, `is_active = true`.
       "sources": [
         {
           "name": "wadoh.test",
-          "id": "DUMMYLINKID001"
+          "id": "WADOH-LINKID-BANDIR-001"
         }
       ],
       "names": [
         {
-          "first": "DummyFirst",
-          "last": "DummyLast"
+          "first": "BandirLink",
+          "last": "Testuniq001"
         }
       ],
-      "datesOfBirth": ["1990-01-15"],
-      "ssns": ["000-11-2233"],
-      "genders": ["F"]
+      "datesOfBirth": ["1988-03-22"],
+      "ssns": ["001-88-4321"],
+      "genders": ["M"]
     }
   }
 }
 ```
 
-Use `wadoh.test` IP (`192.230.0.1`). Confirm post succeeds.
+Confirm response includes `wadoh.test` under `identityGroupedBySource` (or equivalent). Note the `linkId`.
 
----
+### 6b — demographicsQuery (`wadoh.test`)
 
-## Step 7 — Bruno: call identityLinkId as caller
+`POST {{URL}}/api/v1/demographicsQuery`
+
+Demographic query **filters** to sources matching the caller. If the identity only has another source, you get `"No identity found."` even though the person exists.
+
+```json
+{
+  "trackingId": "dummy-linkid-demo-uniq-001",
+  "sourceSystem": "wadoh.test",
+  "agency": "",
+  "ipAddress": "192.230.0.1",
+  "content": {
+    "responseIdentityFormatNames": ["GROUP_BY_SOURCE"],
+    "identity": {
+      "names": [
+        {
+          "first": "BandirLink",
+          "last": "Testuniq001"
+        }
+      ],
+      "datesOfBirth": ["1988-03-22"],
+      "ssns": ["001-88-4321"],
+      "genders": ["M"]
+    }
+  }
+}
+```
+
+Expect a hit with `wadoh.test` in the grouped sources before Step 7.
+
+### 6c — identityLinkId as caller (`test1`)
 
 `POST {{URL}}/api/v1/identityLinkId`
 
@@ -379,21 +415,22 @@ Use `wadoh.test` IP (`192.230.0.1`). Confirm post succeeds.
     "identity": {
       "names": [
         {
-          "first": "DummyFirst",
-          "last": "DummyLast"
+          "first": "BandirLink",
+          "last": "Testuniq001"
         }
       ],
-      "datesOfBirth": ["1990-01-15"],
-      "ssns": ["000-11-2233"],
-      "genders": ["F"]
+      "datesOfBirth": ["1988-03-22"],
+      "ssns": ["001-88-4321"],
+      "genders": ["M"]
     }
   }
 }
 ```
 
-Same demographics as Step 6. Use `test1` IP (`10.0.0.0`) — not the `wadoh.test` IP.
+Use `test1` IP (`10.0.0.0`) — not the `wadoh.test` IP.  
+`responseIdentityFormatNames` is not required; the API uses `GROUP_BY_SOURCE` internally.
 
-### Expected response
+### Expected identityLinkId response
 
 ```json
 {
@@ -405,7 +442,16 @@ Same demographics as Step 6. Use `test1` IP (`10.0.0.0`) — not the `wadoh.test
 }
 ```
 
-If mapping is missing or IP not allowed for `test1`, you may get `"No identity found."` or an IP validation error.
+`linkId` should match Step 6a.
+
+### Split test if 6c fails
+
+Call `identityLinkId` as `wadoh.test` / IP `192.230.0.1` with the same demographics as 6c (only change `sourceSystem` and `ipAddress`).
+
+| Call as | IP | Meaning if found / not found |
+| --- | --- | --- |
+| `wadoh.test` | `192.230.0.1` | Found → person OK; 6c issue is mapping / allowed list. Not found → demographics or `wadoh.test` not on the identity (see 6a / 6b). |
+| `test1` | `10.0.0.0` | Found → mapping works. Not found while `wadoh.test` works → check Step 5 mapping / API LinkId share load. |
 
 ---
 
@@ -440,6 +486,8 @@ Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those 
 | `must be owner of type ... data_sharing_level` | Ticket / email DB team (Step 4d). Do not expect app logins to alter enums. |
 | `invalid input syntax for type inet` | Do not use placeholders like `YOUR.IP.HERE`. Use a real IP such as `10.0.0.0`. |
 | `function lower(data_sharing_level) does not exist` or `operator does not exist: data_sharing_level = text` | Do not filter the enum with `LOWER()` or compare to text in SQL. App code filters level in memory (API branch). |
+| `"Source system mismatch."` on postIdentity | Top-level `sourceSystem` must match `content.identity.sources[0].name`. |
+| `"No identity found."` on demographic query / identityLinkId | Usually: (1) reused demographics so identity only has another source; (2) demographic query filtered to caller source; (3) missing LinkId mapping for `test1` → `wadoh.test`; (4) wrong IP. Re-run Step 6a → 6b → 6c with unique demographics. |
 
 ---
 
@@ -447,5 +495,6 @@ Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those 
 
 - API IP order: body `ipAddress` → `X-Forwarded-For` → remote IP. Prefer setting `ipAddress` in Bruno.
 - Caller can always see its own source; that does not need a mapping row.
+- Same demographics find the **person**; `identityLinkId` / demographic query still require a **source visible to the caller** (own source or LinkId share).
 - Same-source smoke test (no mapping): call as `WAHCA.Providerone` for an identity under that source.
 - See also: `design_linkID_db_setup.md`, `design_linkID_bruno_test.md`, `design_linkID_lookup.md`.
