@@ -610,17 +610,20 @@ namespace HCA.Api.Controllers
 
         private static bool HasIdentity(IdentityLinkIdRequestContent? content)
         {
-            if (content?.Identity == null)
+            if (content is null)
             {
                 return false;
             }
 
-            if (content.Identity is JsonElement element)
+            // System.Text.Json deserializes dynamic identity as JsonElement (struct).
+            // Do not compare it with == null; that throws at runtime.
+            object? identity = content.Identity;
+            if (identity is JsonElement element)
             {
                 return element.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined;
             }
 
-            return true;
+            return identity is not null;
         }
     }
 }

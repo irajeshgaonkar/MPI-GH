@@ -1396,7 +1396,8 @@ public class ClientIdentityService : IClientIdentityService
                 throw new HcaBadRequestException("SourceSystem is required.");
             }
 
-            if (request.Content?.Identity == null)
+            object? identity = request.Content is null ? null : (object?)request.Content.Identity;
+            if (!HasDynamicIdentity(identity))
             {
                 throw new HcaBadRequestException("Identity is required.");
             }
@@ -1458,6 +1459,20 @@ public class ClientIdentityService : IClientIdentityService
             _logger.LogError(e, $"IdentityLinkId failed. TrackingId={trackingId}; SourceSystem={request.SourceSystem}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// System.Text.Json deserializes dynamic identity as JsonElement (struct).
+    /// Comparing JsonElement with == null throws at runtime.
+    /// </summary>
+    private static bool HasDynamicIdentity(object? identity)
+    {
+        if (identity is JsonElement element)
+        {
+            return element.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined;
+        }
+
+        return identity is not null;
     }
 
     /// <summary>
