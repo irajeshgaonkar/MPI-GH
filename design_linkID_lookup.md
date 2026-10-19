@@ -54,3 +54,5 @@ Add this row to `coalitionmpi.data_share_mapping`. Look up the `onboarded_system
 
 
 `Wahbe.hpf`, `wadshs.aces`, ESD, and WTB are not included in this change.
+
+If Verification Hub is not onboarded in DEV, use dummy sources for internal testing — see `design_linkID_dev_dummy_sources.md` (`test1` → `wadoh.test`).

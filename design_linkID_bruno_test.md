@@ -131,4 +131,5 @@ Not found / not visible to caller:
 
 - Without LinkId data share mappings, a link id is returned only when the matched identity already includes the calling `sourceSystem` (for example `WAHCA.Providerone`).
 - Verification Hub mapping (`wadshs.verificationhub` → `WAHCA.Providerone`) is a later DB step. See `design_linkID_db_setup.md`.
+- If Verification Hub is not onboarded in DEV, use dummy sources — see `design_linkID_dev_dummy_sources.md` (`test1` → `wadoh.test`), including IP whitelist checks.
 - Query vs search: identity block is the same; search adds `matchScoreThreshold` and `maxSearchResults`. Do not use those on this endpoint.

@@ -25,7 +25,7 @@ WHERE LOWER(source_system_name) LIKE '%provider%'
    OR LOWER(source_system_name) LIKE '%verification%'
    OR LOWER(source_system_name) LIKE '%wadshs%'
 ORDER BY source_system_name;
-````
+```
 
 Confirmed stored names:
 
@@ -161,3 +161,4 @@ Expected:
 - `data_sharing_level` must be `LinkId` (matches `DataSharingLevel.LinkId`).
 - Only `is_active = TRUE` rows are used by the API.
 - Apply in the correct environment (dev / int / test / prod) with the right approvals.
+- If Verification Hub is not in `onboarded_system` in DEV, use dummy sources for internal testing — see `design_linkID_dev_dummy_sources.md` (`test1` → `wadoh.test`).
