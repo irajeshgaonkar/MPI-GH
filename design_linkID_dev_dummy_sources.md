@@ -328,17 +328,38 @@ Expected: `wadoh.test` at `linkid`, `is_active = true`.
 ## Step 6 — Bruno: three request bodies (same unique person)
 
 Use the **same** unique demographics in all three calls below.  
-Do **not** only rename `sourceSystem` on an old Bruno script that already matches another source — Verato will return that existing person and you will get `"No identity found."` for `wadoh.test` / `test1`.
+Each failed attempt → bump the source `id` and demographics (e.g. `...-002`, new name/SSN). Do **not** keep retrying a source id that never returns in demographicsQuery (e.g. abandon `WADOH-LINKID-BANDIR-001` if Verato never finds it).
+
+Do **not** only rename `sourceSystem` on an old Bruno script — Verato may return an existing person under another source; then `wadoh.test` / `test1` get `"No identity found."`.
 
 Also for postIdentity: top-level `sourceSystem` and `sources[0].name` must both be `wadoh.test`.
 
-### 6a — postIdentity (`wadoh.test`)
+### UI vs Bruno (important)
+
+| | UI / local DB | Bruno `demographicsQuery` / `identityLinkId` |
+| --- | --- | --- |
+| Reads | `coalitionmpi.client_identity` | **Verato** |
+| `is_active = true` in SQL | Can make UI show the row | Does **not** fix Verato query |
+
+`postIdentity` returning a `linkId` only means Verato accepted that post. It does **not** guarantee a later demographicsQuery hit.
+
+Get `source_system_id` from DB or post response:
+
+```sql
+SELECT source_system_name, source_system_id, mpi_link_id, first_name, last_name, is_active, is_delete
+FROM coalitionmpi.client_identity
+WHERE LOWER(source_system_name) = 'wadoh.test'
+ORDER BY created_date DESC
+LIMIT 10;
+```
+
+### 6a — postIdentity (`wadoh.test`) — clean person
 
 `POST {{URL}}/api/v1/postIdentity`
 
 ```json
 {
-  "trackingId": "dummy-linkid-post-uniq-001",
+  "trackingId": "dummy-linkid-post-uniq-002",
   "sourceSystem": "wadoh.test",
   "agency": "",
   "ipAddress": "192.230.0.1",
@@ -351,18 +372,18 @@ Also for postIdentity: top-level `sourceSystem` and `sources[0].name` must both 
       "sources": [
         {
           "name": "wadoh.test",
-          "id": "WADOH-LINKID-BANDIR-001"
+          "id": "WADOH-LINKID-BANDIR-002"
         }
       ],
       "names": [
         {
-          "first": "BandirLink",
-          "last": "Testuniq001"
+          "first": "Zedlink",
+          "last": "Qtest99002"
         }
       ],
-      "datesOfBirth": ["1988-03-22"],
-      "ssns": ["001-88-4321"],
-      "genders": ["M"]
+      "datesOfBirth": ["1977-11-08"],
+      "ssns": ["887-66-5544"],
+      "genders": ["F"]
     }
   }
 }
@@ -370,44 +391,71 @@ Also for postIdentity: top-level `sourceSystem` and `sources[0].name` must both 
 
 Confirm response includes `wadoh.test` under `identityGroupedBySource` (or equivalent). Note the `linkId`.
 
-### 6b — demographicsQuery (`wadoh.test`)
+### 6a2 — If local row is `is_active = false` (sync bug)
+
+New sync inserts can land as `is_active = false` and `is_delete = false` (mapper omits `IsActive = true`). UI hides them; this is **not** from the LinkId feature.
+
+DEV workaround:
+
+```sql
+UPDATE coalitionmpi.client_identity
+SET is_active = TRUE,
+    updated_date = NOW()
+WHERE source_system_id = 'WADOH-LINKID-BANDIR-002'
+  AND LOWER(source_system_name) = 'wadoh.test';
+```
+
+Code fix later: `NewClientIdentityMapper.MapIdentityToClientIdentityEntity` → `result.IsActive = !isDelete;`.  
+SQL activate helps **UI only** — Bruno still needs Verato (6b).
+
+### 6b — demographicsQuery (`wadoh.test`) — include source id
 
 `POST {{URL}}/api/v1/demographicsQuery`
 
-Demographic query **filters** to sources matching the caller. If the identity only has another source, you get `"No identity found."` even though the person exists.
+Turn off Bruno before-request scripts that overwrite demographics.  
+Include `sources` with the **same** id as 6a.
 
 ```json
 {
-  "trackingId": "dummy-linkid-demo-uniq-001",
+  "trackingId": "dummy-linkid-demo-uniq-002",
   "sourceSystem": "wadoh.test",
   "agency": "",
   "ipAddress": "192.230.0.1",
   "content": {
     "responseIdentityFormatNames": ["GROUP_BY_SOURCE"],
     "identity": {
-      "names": [
+      "sources": [
         {
-          "first": "BandirLink",
-          "last": "Testuniq001"
+          "name": "wadoh.test",
+          "id": "WADOH-LINKID-BANDIR-002"
         }
       ],
-      "datesOfBirth": ["1988-03-22"],
-      "ssns": ["001-88-4321"],
-      "genders": ["M"]
+      "names": [
+        {
+          "first": "Zedlink",
+          "last": "Qtest99002"
+        }
+      ],
+      "datesOfBirth": ["1977-11-08"],
+      "ssns": ["887-66-5544"],
+      "genders": ["F"]
     }
   }
 }
 ```
 
-Expect a hit with `wadoh.test` in the grouped sources before Step 7.
+Expect a hit with `wadoh.test` before 6c.  
+If still `"No identity found."` after a fresh unique post → do not keep debugging that source id; try another new id, or a known-good source (e.g. Providerone) for the share test. `wadoh.test` may be onboarded in MPI DB but not fully queryable in Verato DEV.
 
 ### 6c — identityLinkId as caller (`test1`)
 
 `POST {{URL}}/api/v1/identityLinkId`
 
+Only after 6b works as `wadoh.test`.
+
 ```json
 {
-  "trackingId": "dummy-linkid-get-001",
+  "trackingId": "dummy-linkid-get-002",
   "sourceSystem": "test1",
   "agency": "",
   "ipAddress": "10.0.0.0",
@@ -415,13 +463,13 @@ Expect a hit with `wadoh.test` in the grouped sources before Step 7.
     "identity": {
       "names": [
         {
-          "first": "BandirLink",
-          "last": "Testuniq001"
+          "first": "Zedlink",
+          "last": "Qtest99002"
         }
       ],
-      "datesOfBirth": ["1988-03-22"],
-      "ssns": ["001-88-4321"],
-      "genders": ["M"]
+      "datesOfBirth": ["1977-11-08"],
+      "ssns": ["887-66-5544"],
+      "genders": ["F"]
     }
   }
 }
@@ -450,7 +498,7 @@ Call `identityLinkId` as `wadoh.test` / IP `192.230.0.1` with the same demograph
 
 | Call as | IP | Meaning if found / not found |
 | --- | --- | --- |
-| `wadoh.test` | `192.230.0.1` | Found → person OK; 6c issue is mapping / allowed list. Not found → demographics or `wadoh.test` not on the identity (see 6a / 6b). |
+| `wadoh.test` | `192.230.0.1` | Found → person OK; 6c issue is mapping / allowed list. Not found → 6b failed; fix Verato person first. |
 | `test1` | `10.0.0.0` | Found → mapping works. Not found while `wadoh.test` works → check Step 5 mapping / API LinkId share load. |
 
 ---
@@ -487,7 +535,9 @@ Do not send `10.0.0.0` for `wadoh.test`, or `192.230.0.1` for `test1` — those 
 | `invalid input syntax for type inet` | Do not use placeholders like `YOUR.IP.HERE`. Use a real IP such as `10.0.0.0`. |
 | `function lower(data_sharing_level) does not exist` or `operator does not exist: data_sharing_level = text` | Do not filter the enum with `LOWER()` or compare to text in SQL. App code filters level in memory (API branch). |
 | `"Source system mismatch."` on postIdentity | Top-level `sourceSystem` must match `content.identity.sources[0].name`. |
-| `"No identity found."` on demographic query / identityLinkId | Usually: (1) reused demographics so identity only has another source; (2) demographic query filtered to caller source; (3) missing LinkId mapping for `test1` → `wadoh.test`; (4) wrong IP. Re-run Step 6a → 6b → 6c with unique demographics. |
+| `"No identity found."` on demographic query / identityLinkId | Usually: (1) reused demographics; (2) UI shows row but Verato query does not (SQL `is_active` fix does not help Bruno); (3) missing LinkId mapping for `test1`; (4) wrong IP. Fresh unique post (6a) → 6b with `sources.id` → then 6c. |
+| UI shows person, Bruno does not | Expected if only local `is_active` was fixed. Bruno uses Verato — re-post (6a) and pass 6b before 6c. |
+| `is_active = false` and `is_delete = false` in `client_identity` | Sync insert bug (Step 6a2). DEV: `UPDATE` to true. Not caused by LinkId mapping. |
 
 ---
 
